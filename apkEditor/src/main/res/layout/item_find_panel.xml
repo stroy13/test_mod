@@ -15,16 +15,16 @@
         android:id="@id/panel_button"
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
-        android:background="#ff111111"
+        android:background="?labSurfaceAlt"
         android:gravity="center"
         android:padding="2dip"
-        android:src="@drawable/edit_slide_left" />
+        android:src="@drawable/edit_slide_left" android:tint="?labText" />
 
     <RelativeLayout
         android:id="@id/panel_content"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:background="#ff111111">
+        android:background="?labSurfaceAlt">
 
         <ViewAnimator
             android:id="@+id/searchAnimator"
@@ -36,7 +36,7 @@
                 android:id="@id/documentList"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
-                android:background="#ff111111"
+                android:background="?labHeader"
                 android:focusable="false"
                 android:orientation="vertical" />
             -->

@@ -1,6 +1,6 @@
 package com.gmail.heagoo.apkeditor.prj;
 
-import android.app.Activity;
+import com.gmail.heagoo.common.ThemedActivity;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -31,7 +31,7 @@ import java.util.Map;
 
 import common.types.ProjectInfo_V1;
 
-public class ProjectListActivity extends Activity implements View.OnClickListener {
+public class ProjectListActivity extends ThemedActivity implements View.OnClickListener {
     private ProjectListAdapter adapter;
     private String projectFolder; // like "/sdcard/ApkEditor/.projects/"
     private List<ProjectListAdapter.ItemInfo> projectItems;

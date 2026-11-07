@@ -32,7 +32,7 @@
             android:ellipsize="marquee"
             android:singleLine="true"
             android:textAppearance="?android:textAppearanceMedium"
-            android:textColor="@color/lightblack" />
+            android:textColor="?labText" />
 
         <TextView
             android:id="@+id/detail1"
@@ -41,7 +41,7 @@
             android:layout_gravity="center_vertical"
             android:layout_marginTop="-4.0dip"
             android:textAppearance="?android:textAppearanceSmall"
-            android:textColor="@color/lightblack"
+            android:textColor="?labText"
             android:textSize="5.0pt" />
     </LinearLayout>
 

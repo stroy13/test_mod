@@ -1,36 +1,25 @@
 package com.gmail.heagoo.common;
 
-import android.app.Activity;
 import android.content.res.Configuration;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-
 import java.util.Locale;
 
-/**
- * Created by phe3 on 1/29/2017.
- */
-
-public class CustomizedLangActivity extends Activity {
-
+/** Shared language and theme setup for the editor's framework activities. */
+public class CustomizedLangActivity extends ThemedActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        String languageToLoad =
-                PreferenceManager.getDefaultSharedPreferences(this).getString("Language", "");
-        if (!languageToLoad.equals("")) {
-            Locale locale = new Locale(languageToLoad);
+        String language = PreferenceManager.getDefaultSharedPreferences(this).getString("Language", "");
+        if (!language.isEmpty()) {
+            Locale locale = new Locale(language);
             Locale.setDefault(locale);
-            Configuration config = new Configuration();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                config.setLocale(locale);
-            } else {
-                config.locale = locale;
-            }
-            getBaseContext().getResources().updateConfiguration(config,
-                    getBaseContext().getResources().getDisplayMetrics());
+            // Copy the current configuration: creating an empty one resets night mode,
+            // density, font scale and other device settings while changing language.
+            Configuration config = new Configuration(getResources().getConfiguration());
+            config.setLocale(locale);
+            config.setLayoutDirection(locale);
+            getResources().updateConfiguration(config, getResources().getDisplayMetrics());
         }
     }
 }

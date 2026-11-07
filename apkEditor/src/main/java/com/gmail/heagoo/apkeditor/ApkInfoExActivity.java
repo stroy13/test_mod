@@ -124,7 +124,7 @@ public class ApkInfoExActivity extends ApkInfoActivity {
     private View createVerticalLine() {
         View line = new View(this);
         line.setLayoutParams(new LinearLayout.LayoutParams(1, -1));
-        line.setBackgroundColor(this.isDarkTheme ? -8355712 : -1842205);
+        line.setBackgroundColor(com.gmail.heagoo.common.ThemeColors.color(this, com.gmail.heagoo.common.R.attr.labBorder));
         return line;
     }
 

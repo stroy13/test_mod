@@ -20,6 +20,11 @@ public final class ThemeRegistry {
         return STYLES[valid(id) ? id : 0];
     }
 
+    public static String dialogStyleName(int id) {
+        String style = styleName(id);
+        return "EditorDialog" + style.substring("EditorTheme".length());
+    }
+
     public static boolean isDark(int id) {
         return valid(id) && id > 0 && id < 9;
     }

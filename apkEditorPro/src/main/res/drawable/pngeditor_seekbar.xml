@@ -3,13 +3,13 @@
   xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@android:id/background">
         <shape android:shape="rectangle">
-            <solid android:color="#ff808080" />
+            <solid android:color="?labBorder" />
         </shape>
     </item>
     <item android:id="@android:id/progress">
         <clip>
             <shape android:shape="rectangle">
-                <solid android:color="#ff00cc00" />
+                <solid android:color="?labAccent" />
             </shape>
         </clip>
     </item>

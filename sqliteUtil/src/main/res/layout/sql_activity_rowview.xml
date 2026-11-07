@@ -2,13 +2,13 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="?labSurface"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:orientation="horizontal">
 
         <ImageView
@@ -26,7 +26,7 @@
             android:gravity="center"
             android:text="@string/table_record"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="@color/lightblue" />
+            android:textColor="?labAccent" />
 
         <ImageView
             android:id="@+id/image_next"
@@ -41,7 +41,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dip"
         android:layout_weight="1"
-        android:background="@color/white"></ListView>
+        android:background="?labSurface"></ListView>
 
     <LinearLayout
         android:layout_width="fill_parent"

@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="?labSurface"
     android:orientation="vertical"
     android:padding="4dip" >
 
@@ -58,7 +58,7 @@
             android:layout_height="wrap_content"
             android:layout_toLeftOf="@id/image_next"
             android:layout_toRightOf="@id/image_prev"
-            android:textColor="@color/lightblue" />
+            android:textColor="?labAccent" />
 
         <LinearLayout
             android:id="@+id/key_layout"
@@ -74,7 +74,7 @@
                 android:layout_width="40dip"
                 android:layout_height="wrap_content"
                 android:text="@string/appdm_key"
-                android:textColor="@color/lightblue" />
+                android:textColor="?labAccent" />
 
             <EditText
                 android:id="@+id/et_key"
@@ -100,7 +100,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:text="@string/value"
-                android:textColor="@color/lightblue" />
+                android:textColor="?labAccent" />
 
             <EditText
                 android:id="@+id/et_valuey"

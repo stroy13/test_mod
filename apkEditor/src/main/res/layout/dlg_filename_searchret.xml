@@ -12,7 +12,7 @@
             android:id="@+id/res_header_selection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/littleblue"
+            android:background="?labHeader"
             android:orientation="horizontal"
             android:visibility="invisible">
 
@@ -39,7 +39,7 @@
                 android:layout_gravity="center"
                 android:layout_marginLeft="4dip"
                 android:layout_weight="1"
-                android:background="@color/littleblue" />
+                android:background="?labHeader" />
 
             <RelativeLayout
                 android:id="@+id/menu_select"
@@ -61,25 +61,25 @@
             android:id="@+id/title"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:background="@color/littleblue"
+            android:background="?labHeader"
             android:gravity="center_vertical"
             android:minHeight="40dip"
             android:paddingLeft="4dip"
             android:text=""
             android:textAppearance="?android:textAppearanceMedium"
-            android:textColor="@color/lightblue" />
+            android:textColor="?labAccent" />
     </FrameLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1px"
-        android:background="#ffe3e3e3" />
+        android:background="?labHeader" />
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dip"
         android:layout_weight="1"
-        android:background="#ffffffff">
+        android:background="?labSurface">
 
         <ListView
             android:id="@+id/file_list"
@@ -115,14 +115,14 @@
                 android:layout_marginTop="16.0dip"
                 android:maxLines="2"
                 android:text="@string/searching"
-                android:textColor="@color/lightblue" />
+                android:textColor="?labAccent" />
         </LinearLayout>
     </FrameLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="?labSurface"
         android:orientation="horizontal">
 
         <Button

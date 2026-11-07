@@ -1,18 +1,16 @@
 package com.gmail.heagoo.apkeditor;
 
-import android.app.Activity;
+import com.gmail.heagoo.common.ThemedActivity;
 import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import android.webkit.WebView;
 import android.widget.ImageView;
 import com.gmail.heagoo.apkeditor.base.R;
-import com.gmail.heagoo.common.EditorTheme;
 import com.gmail.heagoo.neweditor.Encoding;
 
-public class DonateActivity extends Activity {
+public class DonateActivity extends ThemedActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        EditorTheme.apply(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_donate);
         initIcon();

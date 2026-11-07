@@ -13,7 +13,7 @@
             android:id="@+id/layout_apk_composing"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:background="@color/apked_white"
+            android:background="?labSurface"
             android:gravity="center"
             android:orientation="vertical">
 
@@ -38,7 +38,7 @@
                     android:layout_margin="20.0dip"
                     android:text="@string/in_progress"
                     android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:textColor="@color/lightblue" />
+                    android:textColor="?labAccent" />
             </LinearLayout>
 
             <Button
@@ -53,7 +53,7 @@
             android:id="@+id/layout_apk_composed"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:background="@color/apked_white"
+            android:background="?labSurface"
             android:gravity="center"
             android:orientation="vertical">
 
@@ -102,7 +102,7 @@
                             android:layout_marginLeft="12.0dip"
                             android:layout_marginRight="12.0dip"
                             android:textAppearance="?android:attr/textAppearanceMedium"
-                            android:textColor="@color/lightblue" />
+                            android:textColor="?labAccent" />
                     </LinearLayout>
                 </ScrollView>
             </FrameLayout>

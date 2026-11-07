@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#ffffffff">
+    android:background="?labSurface">
 
     <TextView
         android:id="@+id/title"
@@ -11,13 +11,13 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:gravity="center_vertical"
         android:minHeight="40dip"
         android:paddingLeft="4dip"
         android:text="@string/translate_plugin"
         android:textAppearance="?android:textAppearanceMedium"
-        android:textColor="@color/lightblue" />
+        android:textColor="?labAccent" />
 
     <TextView
         android:id="@+id/tv_tip"
@@ -28,7 +28,7 @@
         android:layout_alignParentRight="true"
         android:layout_margin="4dip"
         android:text="@string/translate_plugin_notfound_tip"
-        android:textColor="@color/lightblue" />
+        android:textColor="?labAccent" />
 
     <Button
         android:id="@+id/btn_close"

@@ -47,7 +47,7 @@
                     </LinearLayout>
                 </HorizontalScrollView>
             </FrameLayout>
-            <View android:background="#ffe3e3e3" android:layout_width="fill_parent" android:layout_height="1.0px" />
+            <View android:background="?labHeader" android:layout_width="fill_parent" android:layout_height="1.0px" />
             <ListView android:id="@id/resource_list" android:fadingEdge="none" android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_marginLeft="4.0dip" android:layout_marginRight="4.0dip" android:listSelector="@drawable/list_selector" android:cacheColorHint="#00000000" android:groupIndicator="@null" android:layout_weight="1.0" />
             <FrameLayout android:id="@id/dex_decode_layout" android:layout_width="fill_parent" android:layout_height="wrap_content">
                 <ImageView android:id="@id/imageview_dex2smali" android:background="@drawable/bg_icon_dex2smali" android:clickable="true" android:layout_width="fill_parent" android:layout_height="wrap_content" />
@@ -57,31 +57,31 @@
                 </LinearLayout>
                 <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/decode_result_layout" android:visibility="invisible" android:layout_width="fill_parent" android:layout_height="wrap_content">
                     <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/down_arrow_container" android:background="@drawable/selector_menu_light" android:layout_width="fill_parent" android:layout_height="wrap_content">
-                        <View android:background="#ffe3e3e3" android:layout_width="fill_parent" android:layout_height="1.0px" />
+                        <View android:background="?labHeader" android:layout_width="fill_parent" android:layout_height="1.0px" />
                         <ImageView android:background="@drawable/down_arrow_grey" android:layout_width="24.0dip" android:layout_height="12.0dip" android:layout_marginTop="8.0dip" android:layout_marginBottom="8.0dip" />
-                        <View android:background="#ffe3e3e3" android:layout_width="fill_parent" android:layout_height="1.0px" />
+                        <View android:background="?labHeader" android:layout_width="fill_parent" android:layout_height="1.0px" />
                     </LinearLayout>
                     <TextView android:textAppearance="?android:textAppearanceMedium" android:textColor="?labAccent" android:id="@id/decode_result_title" android:layout_width="wrap_content" android:layout_height="wrap_content" />
                     <TextView android:id="@id/decode_result_detail" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" />
                 </LinearLayout>
             </FrameLayout>
-            <View android:background="#ffe3e3e3" android:layout_width="fill_parent" android:layout_height="1.0px" />
+            <View android:background="?labHeader" android:layout_width="fill_parent" android:layout_height="1.0px" />
             <FrameLayout android:layout_width="fill_parent" android:layout_height="wrap_content">
                 <LinearLayout android:orientation="horizontal" android:id="@id/res_menu_layout" android:visibility="gone" android:layout_width="fill_parent" android:layout_height="wrap_content" />
                 <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/res_search_layout" android:layout_width="fill_parent" android:layout_height="wrap_content">
                     <RelativeLayout android:id="@id/menu_addfile" android:background="@drawable/selector_menu_light" android:layout_width="48.0dip" android:layout_height="44.0dip">
                         <ImageView android:layout_width="32.0dip" android:layout_height="32.0dip" android:src="@drawable/ic_add_file" android:layout_centerInParent="true" />
                     </RelativeLayout>
-                    <View android:background="#ffe3e3e3" android:layout_width="1.0px" android:layout_height="fill_parent" />
+                    <View android:background="?labHeader" android:layout_width="1.0px" android:layout_height="fill_parent" />
                     <RelativeLayout android:id="@id/menu_addfolder" android:background="@drawable/selector_menu_light" android:layout_width="48.0dip" android:layout_height="fill_parent">
                         <ImageView android:layout_width="32.0dip" android:layout_height="32.0dip" android:src="@drawable/ic_add_folder" android:layout_centerInParent="true" />
                     </RelativeLayout>
                     <com.gmail.heagoo.apkeditor.ac.EditTextWithTip android:id="@id/et_res_keyword" android:layout_width="0.0dip" android:layout_height="wrap_content" android:maxLines="5" android:ems="10" android:layout_weight="1.0" />
                     <RelativeLayout android:id="@id/menu_caseinsensitive" android:background="@drawable/selector_menu_light" android:layout_width="40.0dip" android:layout_height="fill_parent">
-                        <ImageView android:id="@id/imageview_insensitive_check" android:layout_width="32.0dip" android:layout_height="32.0dip" android:src="@drawable/ic_case_insensitive" android:layout_centerInParent="true" />
+                        <ImageView android:id="@id/imageview_insensitive_check" android:layout_width="32.0dip" android:layout_height="32.0dip" android:src="@drawable/ic_case_insensitive" android:layout_centerInParent="true" android:tint="?labText" />
                     </RelativeLayout>
                     <RelativeLayout android:id="@id/menu_searchoptions" android:background="@drawable/selector_menu_light" android:layout_width="40.0dip" android:layout_height="fill_parent">
-                        <ImageView android:id="@id/imageview_text_check" android:layout_width="32.0dip" android:layout_height="32.0dip" android:src="@drawable/searchtxt_checked" android:layout_centerInParent="true" />
+                        <ImageView android:id="@id/imageview_text_check" android:layout_width="32.0dip" android:layout_height="32.0dip" android:src="@drawable/searchtxt_checked" android:layout_centerInParent="true" android:tint="?labText" />
                     </RelativeLayout>
                     <RelativeLayout android:id="@id/menu_search_res" android:background="@drawable/selector_menu_light" android:layout_width="48.0dip" android:layout_height="fill_parent" android:layout_marginRight="4.0dip">
                         <ImageView android:layout_width="32.0dip" android:layout_height="32.0dip" android:src="@drawable/ic_search_big" android:layout_centerInParent="true" />

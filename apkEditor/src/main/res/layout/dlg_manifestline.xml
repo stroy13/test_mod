@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#ffffffff"
+    android:background="?labSurface"
     android:orientation="vertical">
 
     <TextView
@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:paddingLeft="8dip"
         android:text="@string/line_data"
-        android:textColor="#222222"
+        android:textColor="?labText"
         android:textSize="16sp" />
 
     <TextView
@@ -19,7 +19,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dip"
         android:paddingLeft="24dip"
-        android:textColor="#222222"
+        android:textColor="?labText"
         android:textSize="14sp" />
 
     <TextView
@@ -27,7 +27,7 @@
         android:layout_height="wrap_content"
         android:paddingLeft="8dip"
         android:text="@string/description"
-        android:textColor="#222222"
+        android:textColor="?labText"
         android:textSize="16sp" />
 
     <TextView
@@ -36,13 +36,13 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dip"
         android:paddingLeft="24dip"
-        android:textColor="#222222"
+        android:textColor="?labText"
         android:textSize="14sp" />
 
     <View
         android:layout_width="fill_parent"
         android:layout_height="1px"
-        android:background="#555555" />
+        android:background="?labBorder" />
 
     <TextView
         android:id="@+id/delete"
@@ -52,13 +52,13 @@
         android:gravity="center_vertical"
         android:paddingLeft="8dip"
         android:text="@string/delete_this_line"
-        android:textColor="@color/textview_color"
+        android:textColor="@color/lab_text_selector"
         android:textSize="20sp" />
 
     <View
         android:layout_width="fill_parent"
         android:layout_height="1px"
-        android:background="#555555" />
+        android:background="?labBorder" />
 
     <TextView
         android:id="@+id/extract"
@@ -69,13 +69,13 @@
         android:paddingLeft="8dip"
         android:singleLine="true"
         android:text="@string/extract"
-        android:textColor="@color/textview_color"
+        android:textColor="@color/lab_text_selector"
         android:textSize="20sp" />
 
     <View
         android:layout_width="fill_parent"
         android:layout_height="1px"
-        android:background="#555555" />
+        android:background="?labBorder" />
 
     <TextView
         android:id="@+id/replace"
@@ -86,13 +86,13 @@
         android:paddingLeft="8dip"
         android:singleLine="true"
         android:text="@string/replace"
-        android:textColor="@color/textview_color"
+        android:textColor="@color/lab_text_selector"
         android:textSize="20sp" />
 
     <View
         android:layout_width="fill_parent"
         android:layout_height="1px"
-        android:background="#555555" />
+        android:background="?labBorder" />
 
     <TextView
         android:id="@+id/open_in_new_window"
@@ -103,13 +103,13 @@
         android:paddingLeft="8dip"
         android:singleLine="true"
         android:text="@string/open_in_new_window"
-        android:textColor="@color/textview_color"
+        android:textColor="@color/lab_text_selector"
         android:textSize="20sp" />
 
     <View
         android:layout_width="fill_parent"
         android:layout_height="1px"
-        android:background="#555555" />
+        android:background="?labBorder" />
 
     <TextView
         android:id="@+id/close"
@@ -119,7 +119,7 @@
         android:gravity="center_vertical"
         android:paddingLeft="8dip"
         android:text="@string/close"
-        android:textColor="@color/textview_color"
+        android:textColor="@color/lab_text_selector"
         android:textSize="20sp" />
 
 </LinearLayout>

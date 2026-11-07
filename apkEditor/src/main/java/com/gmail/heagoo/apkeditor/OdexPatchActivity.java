@@ -1,6 +1,6 @@
 package com.gmail.heagoo.apkeditor;
 
-import android.app.Activity;
+import com.gmail.heagoo.common.ThemedActivity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -12,16 +12,14 @@ import com.gmail.heagoo.apkeditor.ProcessingDialog;
 import com.gmail.heagoo.apkeditor.base.R;
 import com.gmail.heagoo.apkeditor.util.OdexPatcher;
 import com.gmail.heagoo.common.ApkInfoParser;
-import com.gmail.heagoo.common.EditorTheme;
 import java.io.File;
 import java.util.Locale;
 
-public class OdexPatchActivity extends Activity implements View.OnClickListener, FileSelectDialog.IFileSelection {
+public class OdexPatchActivity extends ThemedActivity implements View.OnClickListener, FileSelectDialog.IFileSelection {
     private EditText apkPathEt;
 
     @Override
     public void onCreate(Bundle bundle) {
-        EditorTheme.apply(this);
         super.onCreate(bundle);
         if (getActionBar() != null) {
             getActionBar().hide();

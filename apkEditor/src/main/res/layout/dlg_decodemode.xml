@@ -13,13 +13,13 @@
         android:paddingLeft="8dip"
         android:singleLine="true"
         android:text="@string/decode_all_files"
-        android:textColor="@color/textview_color"
+        android:textColor="@color/lab_text_selector"
         android:textSize="20sp" />
 
     <View
         android:layout_width="fill_parent"
         android:layout_height="1px"
-        android:background="#555555" />
+        android:background="?labBorder" />
 
     <TextView
         android:id="@+id/decode_partial_files"
@@ -30,13 +30,13 @@
         android:paddingLeft="8dip"
         android:singleLine="true"
         android:text="@string/decode_partial_files"
-        android:textColor="@color/textview_color"
+        android:textColor="@color/lab_text_selector"
         android:textSize="20sp" />
 
     <View
         android:layout_width="fill_parent"
         android:layout_height="1px"
-        android:background="#555555" />
+        android:background="?labBorder" />
 
     <TextView
         android:id="@+id/cancel"
@@ -47,7 +47,7 @@
         android:paddingLeft="8dip"
         android:singleLine="true"
         android:text="@android:string/cancel"
-        android:textColor="@color/textview_color"
+        android:textColor="@color/lab_text_selector"
         android:textSize="20sp" />
 
 

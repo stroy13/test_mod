@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<selector
-  xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_selected="true" android:drawable="@drawable/pngeditor_coloritem_grey" />
-    <item android:state_pressed="true" android:drawable="@drawable/pngeditor_coloritem_grey" />
-    <item android:drawable="@drawable/pngeditor_coloritem_blue" />
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true"><shape><solid android:color="?labPressed" /><corners android:radius="8dp" /></shape></item>
+    <item android:state_selected="true"><shape><solid android:color="?labPressed" /><corners android:radius="8dp" /></shape></item>
+    <item><shape><solid android:color="@android:color/transparent" /></shape></item>
 </selector>

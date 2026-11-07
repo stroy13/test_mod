@@ -22,6 +22,6 @@
         android:layout_height="wrap_content"
         android:background="@drawable/bg_edittext"
         android:ems="10"
-        android:textColor="@color/lightblack" />
+        android:textColor="?labText" />
 
 </LinearLayout>

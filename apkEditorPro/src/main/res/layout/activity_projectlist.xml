@@ -5,5 +5,5 @@
         <TextView android:textColor="?labText" android:id="@id/tv_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="4.0dip" android:singleLine="true" android:layout_alignParentLeft="true" android:layout_centerVertical="true" />
         <Button android:id="@id/btn_close" android:layout_width="wrap_content" android:layout_height="40.0dip" android:layout_margin="4.0dip" android:text="@string/close" android:layout_alignParentRight="true" />
     </RelativeLayout>
-    <ListView android:id="@id/project_list" android:layout_width="fill_parent" android:layout_height="0.0dip" android:cacheColorHint="#00000000" android:divider="#ffcccfc4" android:dividerHeight="1.0px" android:layout_weight="1.0" />
+    <ListView android:id="@id/project_list" android:layout_width="fill_parent" android:layout_height="0.0dip" android:cacheColorHint="#00000000" android:divider="?labBorder" android:dividerHeight="1.0px" android:layout_weight="1.0" />
 </LinearLayout>

@@ -6,7 +6,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#ff28649c"
+        android:background="?labHeader"
         android:orientation="horizontal">
 
         <ImageView
@@ -14,7 +14,7 @@
             android:layout_width="200dip"
             android:layout_height="match_parent"
             android:layout_gravity="center"
-            android:src="@drawable/editor_log" />
+            android:src="@drawable/editor_log" android:tint="?labText" />
 
         <LinearLayout
             android:layout_width="0dip"
@@ -45,7 +45,7 @@
                         android:gravity="center"
                         android:singleLine="true"
                         android:text="@string/select_apk_file"
-                        android:textColor="#ff28649c"
+                        android:textColor="?labAccent"
                         android:textSize="20sp" />
 
                     <TextView
@@ -59,7 +59,7 @@
                         android:gravity="center"
                         android:singleLine="true"
                         android:text="@string/select_apk_from_app"
-                        android:textColor="#ff28649c"
+                        android:textColor="?labAccent"
                         android:textSize="20sp" />
 
                     <TextView
@@ -73,7 +73,7 @@
                         android:gravity="center"
                         android:singleLine="true"
                         android:text="@string/help"
-                        android:textColor="#ff28649c"
+                        android:textColor="?labAccent"
                         android:textSize="20sp" />
 
                     <TextView
@@ -86,7 +86,7 @@
                         android:gravity="center"
                         android:singleLine="true"
                         android:text="@string/exit"
-                        android:textColor="#ff28649c"
+                        android:textColor="?labAccent"
                         android:textSize="20sp" />
                 </LinearLayout>
             </ScrollView>
@@ -105,7 +105,7 @@
         android:layout_width="200dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="#ffffff"
+        android:background="?labSurface"
         android:choiceMode="singleChoice"
         android:divider="@android:color/transparent"
         android:dividerHeight="0dp"

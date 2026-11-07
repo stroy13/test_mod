@@ -10,9 +10,9 @@
             </com.gmail.heagoo.apkeditor.neweditor.ObHorizontalScrollView>
         </LinearLayout>
     </com.gmail.heagoo.apkeditor.neweditor.ObScrollView>
-    <LinearLayout android:orientation="horizontal" android:id="@id/menu_layout" android:background="#ff111111" android:layout_width="fill_parent" android:layout_height="48.0dip">
-        <ImageView android:layout_gravity="center_vertical" android:id="@id/saveBtn" android:background="@drawable/selector_iv_button" android:layout_width="wrap_content" android:layout_height="fill_parent" android:src="@drawable/edit_save" android:scaleType="center" android:minWidth="80.0dip" />
-        <ImageView android:layout_gravity="center_vertical" android:id="@id/openFindBtn" android:background="@drawable/selector_iv_button" android:layout_width="wrap_content" android:layout_height="fill_parent" android:src="@drawable/edit_find" android:scaleType="center" android:minWidth="80.0dip" />
-        <ImageView android:layout_gravity="center_vertical" android:id="@id/configBtn" android:background="@drawable/selector_iv_button" android:layout_width="wrap_content" android:layout_height="fill_parent" android:src="@drawable/edit_config" android:scaleType="center" android:minWidth="80.0dip" />
+    <LinearLayout android:orientation="horizontal" android:id="@id/menu_layout" android:background="?labHeader" android:layout_width="fill_parent" android:layout_height="48.0dip">
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/saveBtn" android:background="@drawable/selector_iv_button" android:layout_width="wrap_content" android:layout_height="fill_parent" android:src="@drawable/edit_save" android:scaleType="center" android:minWidth="80.0dip" android:tint="?labText" />
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/openFindBtn" android:background="@drawable/selector_iv_button" android:layout_width="wrap_content" android:layout_height="fill_parent" android:src="@drawable/edit_find" android:scaleType="center" android:minWidth="80.0dip" android:tint="?labText" />
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/configBtn" android:background="@drawable/selector_iv_button" android:layout_width="wrap_content" android:layout_height="fill_parent" android:src="@drawable/edit_config" android:scaleType="center" android:minWidth="80.0dip" android:tint="?labText" />
     </LinearLayout>
 </LinearLayout>

@@ -1,5 +1,6 @@
 package com.gmail.heagoo.pngeditor;
 
+import com.gmail.heagoo.common.ThemedAppCompatActivity;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
@@ -25,7 +26,6 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -37,7 +37,7 @@ import com.gmail.heagoo.pngeditor.editor.Transparency;
 import com.polites.android.GestureImageView;
 import com.polites.android.GestureImageViewListener;
 
-public class PngEditActivity extends AppCompatActivity implements
+public class PngEditActivity extends ThemedAppCompatActivity implements
         View.OnClickListener, SeekBar.OnSeekBarChangeListener, GestureImageViewListener {
 
     private int WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 1;

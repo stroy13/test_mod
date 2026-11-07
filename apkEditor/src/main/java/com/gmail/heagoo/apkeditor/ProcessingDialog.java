@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 import com.gmail.heagoo.apkeditor.base.R;
+import com.gmail.heagoo.common.EditorTheme;
 import java.lang.ref.WeakReference;
 
 public class ProcessingDialog extends Dialog implements View.OnClickListener {
@@ -22,7 +23,7 @@ public class ProcessingDialog extends Dialog implements View.OnClickListener {
     }
 
     public ProcessingDialog(Activity activity, ProcessingInterface processor, int okTipResId) {
-        super(activity, R.style.Dialog_No_Border_2);
+        super(activity, EditorTheme.dialogStyle(activity));
         this.activityRef = new WeakReference<>(activity);
         this.processor = processor;
         this.successTipResId = okTipResId;

@@ -17,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.gmail.heagoo.apkeditor.base.R;
+import com.gmail.heagoo.common.EditorTheme;
 import com.gmail.heagoo.common.RefInvoke;
 import java.lang.ref.WeakReference;
 
@@ -24,7 +25,7 @@ public class AboutDialog extends Dialog implements View.OnClickListener {
     private final WeakReference<Activity> activityRef;
 
     public AboutDialog(final Activity activity) {
-        super(activity, R.style.Dialog_No_Border_2);
+        super(activity, EditorTheme.dialogStyle(activity));
         this.activityRef = new WeakReference<>(activity);
         requestWindowFeature(1);
         LayoutInflater inflater = LayoutInflater.from(activity);

@@ -19,7 +19,7 @@ public class ProcessingDialog extends Dialog {
     @SuppressLint("InflateParams")
     public ProcessingDialog(Activity activity, ProcessingInterface processor,
                             int okTipResId) {
-        super(activity, R.style.Dialog_No_Border_2);
+        super(activity, EditorTheme.dialogStyle(activity));
         this.activity = activity;
         this.processor = processor;
         this.successTipResId = okTipResId;

@@ -1,7 +1,7 @@
 package com.gmail.heagoo.apkeditor;
 
+import com.gmail.heagoo.common.ThemedActivity;
 import android.R;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -17,7 +17,6 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import com.android.apksig.ApkVerifier;
 import com.gmail.heagoo.apkeditor.FileSelectDialog;
-import com.gmail.heagoo.common.EditorTheme;
 import com.gmail.heagoo.neweditor.Document;
 import com.gmail.heagoo.neweditor.ParserRule;
 import java.io.File;
@@ -27,7 +26,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 
-public final class ApkInspectionActivity extends Activity implements FileSelectDialog.IFileSelection {
+public final class ApkInspectionActivity extends ThemedActivity implements FileSelectDialog.IFileSelection {
     private boolean busy;
     private Button compare;
     private Button decoded;
@@ -44,7 +43,6 @@ public final class ApkInspectionActivity extends Activity implements FileSelectD
 
     @Override
     protected void onCreate(Bundle state) {
-        EditorTheme.apply(this);
         super.onCreate(state);
         if (state != null) {
             this.first = state.getString("first");

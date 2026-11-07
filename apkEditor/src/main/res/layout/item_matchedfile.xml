@@ -15,7 +15,7 @@
         android:layout_weight="1"
         android:focusable="false"
         android:padding="2.0dip"
-        android:textColor="@color/lightblack"
+        android:textColor="?labText"
         android:textSize="16.0sp"
         android:textStyle="bold" />
 

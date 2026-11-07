@@ -156,7 +156,7 @@ class ProjectListAdapter extends BaseAdapter
                 int color = holder.subTitle1.getCurrentTextColor();
                 holder.subTitle1.setTag(color);
             }
-            holder.subTitle1.setTextColor(themeId == GlobalConfig.THEME_LIGHT ? 0xffff4444 : 0xffcc0000);
+            holder.subTitle1.setTextColor(com.gmail.heagoo.common.ThemeColors.color(activityRef.get(), com.gmail.heagoo.common.R.attr.labError));
         } else {
             Integer color = (Integer) holder.subTitle1.getTag();
             if (color != null) { // Set back the orginal color

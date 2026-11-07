@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#ff333333"
+    android:background="?labSurfaceAlt"
     android:gravity="center"
     android:orientation="vertical">
 
@@ -18,14 +18,14 @@
         android:layout_marginTop="8dip"
         android:text="@string/app_name"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:textColor="#ffffffff" />
+        android:textColor="?labText" />
 
     <TextView
         android:id="@+id/tv_version"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="#ffffffff" />
+        android:textColor="?labText" />
 
     <TextView
         android:id="@+id/tv_dep_version"
@@ -34,7 +34,7 @@
         android:layout_marginTop="4dip"
         android:gravity="center_horizontal"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="#ffffffff" />
+        android:textColor="?labText" />
 
     <Button
         android:id="@+id/btn_get_pro"
@@ -43,7 +43,7 @@
         android:layout_marginTop="20dip"
         android:background="@drawable/about_button_bg"
         android:text="APK Editor Pro"
-        android:textColor="@color/lightblue"
+        android:textColor="?labAccent"
         android:textSize="14sp" />
 
     <TextView
@@ -52,7 +52,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dip"
         android:text="@string/why_get_pro"
-        android:textColor="#ffffffff" />
+        android:textColor="?labText" />
 
     <TextView
         android:id="@+id/textView2"
@@ -60,14 +60,14 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dip"
         android:text="@string/pro_promote"
-        android:textColor="#ffffffff" />
+        android:textColor="?labText" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dip"
         android:text="Copyright 2023 timscriptov"
-        android:textColor="#ffffffff" />
+        android:textColor="?labText" />
 
     <Button
         android:id="@+id/telegram"

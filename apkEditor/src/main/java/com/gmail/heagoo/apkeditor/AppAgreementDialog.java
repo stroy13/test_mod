@@ -12,6 +12,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.gmail.heagoo.apkeditor.base.R;
+import com.gmail.heagoo.common.EditorTheme;
 import java.lang.ref.WeakReference;
 
 public class AppAgreementDialog extends Dialog implements View.OnClickListener {
@@ -20,7 +21,7 @@ public class AppAgreementDialog extends Dialog implements View.OnClickListener {
 
     /* JADX WARN: Multi-variable type inference failed */
     public AppAgreementDialog(MainActivity mainActivity) {
-        super(mainActivity, R.style.Dialog_No_Border_2);
+        super(mainActivity, EditorTheme.dialogStyle(mainActivity));
         requestWindowFeature(1);
         this.activityRef = new WeakReference<>(mainActivity);
         LayoutInflater inflater = LayoutInflater.from(mainActivity);

@@ -9,7 +9,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:gravity="center"
@@ -23,7 +23,7 @@
             android:gravity="center"
             android:singleLine="true"
             android:textAppearance="?android:textAppearanceMedium"
-            android:textColor="@color/lightblack" />
+            android:textColor="?labText" />
 
         <RelativeLayout
             android:id="@+id/menu_more"
@@ -37,7 +37,7 @@
                 android:layout_width="32dip"
                 android:layout_height="32dip"
                 android:layout_centerInParent="true"
-                android:src="@drawable/more" />
+                android:src="@drawable/more" android:tint="?labText" />
         </RelativeLayout>
     </LinearLayout>
 
@@ -50,9 +50,9 @@
             android:id="@+id/application_list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/apked_white"
+            android:background="?labSurface"
             android:cacheColorHint="#00000000"
-            android:divider="#ffcad1d7"
+            android:divider="?labBorder"
             android:dividerHeight="1.0px" />
 
         <ProgressBar
@@ -70,7 +70,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:gravity="center"
@@ -87,7 +87,7 @@
             android:enabled="false"
             android:hint="@string/keyword_hint"
             android:singleLine="true"
-            android:textColor="@color/lightblack" />
+            android:textColor="?labText" />
 
         <Button
             android:id="@+id/btn_search"
