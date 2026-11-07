@@ -1,5 +1,7 @@
 # APK Editor Plus v1.10.0.175 — исходники
 
+[![build](https://github.com/stroy13/test_mod/actions/workflows/build.yml/badge.svg)](https://github.com/stroy13/test_mod/actions/workflows/build.yml)
+
 Восстановленное дерево исходников Android-приложения **APK Editor Plus**
 (`ru.apkeditor.plus`, versionCode **175**, versionName **1.10.0.175**).
 
@@ -79,6 +81,21 @@
 Совет из практики восстановления: при нехватке RAM на dex-этапе помогает повторный запуск
 без `clean` и `org.gradle.jvmargs=-Xmx900m` в `gradle.properties`.
 
+## CI и готовый APK
+
+`.github/workflows/build.yml` собирает `:apkEditorPro:assembleDebug` на каждый push
+(JDK 17, Android SDK platform 37.0, build-tools 37.0.0, NDK 30.0.16248370):
+
+- APK доступен как артефакт запуска (`apkEditorPro-debug`);
+- удачная сборка публикуется в релиз
+  [debug-latest](https://github.com/stroy13/test_mod/releases/tag/debug-latest)
+  (`apkEditorPro-debug.apk`, ассет перезаписывается каждой успешной сборкой);
+- при падении сборки диагностика (хвост логов Gradle/SDK) публикуется комментарием
+  к коммиту — логи GitHub Actions из внешней сети не всегда доступны.
+
+Учтите: это debug-подпись, поверх релизной сборки из релиза `test` такой APK не
+встанет — потребуется удалить установленное приложение.
+
 ## Что изменено относительно «сырого» архива исходников
 
 Архив с исходниками лежал в релизе одним файлом со случайным именем
@@ -97,6 +114,11 @@ Gradle-проект в корне репозитория:
   (они не используются сборкой — там подключаются только jar) и
   `apkEditor/src/main/jni/injector/jni/injector.c.bak`;
 - отчёт о восстановлении и лог ошибок сборки перенесены в `docs/`.
+
+## Список изменений
+
+Правки поверх восстановленных исходников (исправление «вечной» загрузки
+«Обработка манифеста и ресурсов…» и др.) — в [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
 ## Источники и происхождение
 
