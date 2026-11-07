@@ -1,63 +1,63 @@
 package com.gmail.heagoo.folderlist;
 
+import com.gmail.heagoo.common.NaturalOrderComparator;
 import java.util.Comparator;
 import java.util.Locale;
 
-/* loaded from: /tmp/apkx/classes7.dex */
+/** Sorting used by the file browser and every file-selection dialog. */
 public final class FileSort implements Comparator<FileRecord> {
-    public static final int MODIFIED = 1;
     public static final int NAME = 0;
+    public static final int MODIFIED = 1;
     public static final int SIZE = 2;
     public static final int TYPE = 3;
     private final boolean descending;
     private final int key;
+    private final NaturalOrderComparator names;
 
     public FileSort(int key, boolean descending) {
-        this.key = (key < 0 || key > 3) ? 0 : key;
+        this(key, descending, Locale.getDefault());
+    }
+
+    public FileSort(int key, boolean descending, Locale locale) {
+        this.key = normalizeKey(key);
         this.descending = descending;
+        names = new NaturalOrderComparator(locale);
     }
 
-    private static int number(long a, long b) {
-        if (a < b) {
-            return -1;
-        }
-        return a > b ? 1 : 0;
+    public static int normalizeKey(int key) {
+        return key < NAME || key > TYPE ? NAME : key;
     }
 
-    private static int name(String a, String b) {
-        int r = a.compareToIgnoreCase(b);
-        return r != 0 ? r : a.compareTo(b);
+    public int getKey() {
+        return key;
     }
 
-    private static String extension(String n) {
-        int i = n.lastIndexOf(46);
-        return (i <= 0 || i == n.length() + (-1)) ? "" : n.substring(i + 1).toLowerCase(Locale.ROOT);
+    public boolean isDescending() {
+        return descending;
     }
 
-    @Override // java.util.Comparator
+    private static String extension(String name) {
+        if (name == null) return "";
+        int dot = name.lastIndexOf('.');
+        return dot <= 0 || dot == name.length() - 1 ? "" : name.substring(dot + 1);
+    }
+
+    @Override
     public int compare(FileRecord a, FileRecord b) {
-        boolean upB = false;
         boolean upA = a.isDir && "..".equals(a.fileName);
-        if (b.isDir && "..".equals(b.fileName)) {
-            upB = true;
+        boolean upB = b.isDir && "..".equals(b.fileName);
+        if (upA != upB) return upA ? -1 : 1;
+        // Keep navigation and folder grouping predictable in both directions.
+        if (a.isDir != b.isDir) return a.isDir ? -1 : 1;
+        int result = 0;
+        if (key == MODIFIED) {
+            result = Long.compare(a.lastModified, b.lastModified);
+        } else if (key == SIZE && !a.isDir) {
+            result = Long.compare(a.totalSize, b.totalSize);
+        } else if (key == TYPE && !a.isDir) {
+            result = names.compare(extension(a.fileName), extension(b.fileName));
         }
-        if (upA != upB) {
-            return upA ? -1 : 1;
-        }
-        if (a.isDir != b.isDir) {
-            return a.isDir ? -1 : 1;
-        }
-        int r = 0;
-        if (this.key == 1) {
-            r = number(a.lastModified, b.lastModified);
-        } else if (this.key == 2 && !a.isDir) {
-            r = number(a.totalSize, b.totalSize);
-        } else if (this.key == 3 && !a.isDir) {
-            r = extension(a.fileName).compareTo(extension(b.fileName));
-        }
-        if (r == 0) {
-            r = name(a.fileName, b.fileName);
-        }
-        return this.descending ? -Integer.signum(r) : Integer.signum(r);
+        if (result == 0) result = names.compare(a.fileName, b.fileName);
+        return descending ? -Integer.signum(result) : Integer.signum(result);
     }
 }

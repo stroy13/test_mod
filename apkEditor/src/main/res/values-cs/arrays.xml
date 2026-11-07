@@ -4,10 +4,6 @@
         <item>Podle jména aplikace</item>
         <item>Podle času instalace</item>
     </string-array>
-    <string-array name="order_value">
-        <item>Podle jména aplikace</item>
-        <item>Podle času instalace</item>
-    </string-array>
 
     <string-array name="compression_level_key">
         <item>0 (Bez Komprese)</item>

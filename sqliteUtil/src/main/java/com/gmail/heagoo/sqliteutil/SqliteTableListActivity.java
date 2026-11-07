@@ -16,10 +16,12 @@ import android.widget.Toast;
 
 import com.gmail.heagoo.common.ActivityUtil;
 import com.gmail.heagoo.common.CustomizedLangActivity;
+import com.gmail.heagoo.common.NaturalOrderComparator;
 import com.gmail.heagoo.common.ThemeColors;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Show all the table name in the DB
@@ -176,7 +178,9 @@ public class SqliteTableListActivity extends CustomizedLangActivity {
             }
         }
 
+        c.close();
         db.close();
+        Collections.sort(tableList, new NaturalOrderComparator());
     }
 
 }

@@ -64,10 +64,6 @@
         <item>по названию приложения</item>
         <item>по времени установки</item>
     </string-array>
-    <string-array name="order_value">
-        <item>По названию приложения</item>
-        <item>По времени установки</item>
-    </string-array>
     <string-array name="signer_key">
         <item>testkey</item>
         <item>ключ, созданный APK Editor</item>

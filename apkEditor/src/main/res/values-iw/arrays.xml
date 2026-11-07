@@ -6,10 +6,6 @@
         <item>לפי זמן התקנה</item>
     </string-array>
 
-    <string-array name="order_value">
-        <item>לפי שם</item>
-        <item>לפי זמן התקנה</item>
-    </string-array>
 
     <string-array name="compression_level_key">
         <item>0 (ללא דחיסה)</item>

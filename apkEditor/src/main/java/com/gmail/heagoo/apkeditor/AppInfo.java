@@ -16,6 +16,7 @@ public class AppInfo {
     public Date installTime;
     public boolean isSysApp;
     public long lastUpdateTime;
+    public long firstInstallTime;
     public String otherInfo;
     public String packagePath;
     public long size;
@@ -28,10 +29,12 @@ public class AppInfo {
         try {
             PackageInfo packageInfo = pm.getPackageInfo(applicationInfo.packageName, 0);
             appInfo.lastUpdateTime = packageInfo.lastUpdateTime;
+            appInfo.firstInstallTime = packageInfo.firstInstallTime;
             File f = new File(applicationInfo.sourceDir);
             appInfo.size = f.length();
         } catch (Throwable th) {
             appInfo.lastUpdateTime = 0L;
+            appInfo.firstInstallTime = 0L;
         }
         return appInfo;
     }

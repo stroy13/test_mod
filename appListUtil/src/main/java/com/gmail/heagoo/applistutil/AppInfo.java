@@ -20,6 +20,7 @@ public class AppInfo {
     public Drawable icon;
     public String apkPath;
     public long lastUpdateTime;
+    public long firstInstallTime;
     public String otherInfo;
 
     public boolean isSysApp;
@@ -41,6 +42,7 @@ public class AppInfo {
         this.icon = info.icon;
         this.apkPath = info.apkPath;
         this.lastUpdateTime = info.lastUpdateTime;
+        this.firstInstallTime = info.firstInstallTime;
         this.otherInfo = info.otherInfo;
 
         this.isSysApp = info.isSysApp;
@@ -60,8 +62,10 @@ public class AppInfo {
             PackageInfo packageInfo = pm.getPackageInfo(applicationInfo.packageName, 0);
             appInfo.sharedUserId = packageInfo.sharedUserId;
             appInfo.lastUpdateTime = packageInfo.lastUpdateTime;
+            appInfo.firstInstallTime = packageInfo.firstInstallTime;
         } catch (Throwable e) {
             appInfo.lastUpdateTime = 0;
+            appInfo.firstInstallTime = 0;
         }
 
         // Disabled or not

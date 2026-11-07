@@ -64,10 +64,6 @@
         <item>Por Nombre de Aplicación</item>
         <item>Por Fecha de Instalación</item>
     </string-array>
-    <string-array name="order_value">
-        <item>Por Nombre de Aplicación</item>
-        <item>Por Fecha de Instalación</item>
-    </string-array>
     <string-array name="signer_key">
         <item>Clave de Prueba</item>
         <item>Clave de APK Editor Pro</item>

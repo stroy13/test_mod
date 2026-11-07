@@ -86,10 +86,6 @@
         <item>İsime göre</item>
         <item>Kuruluma göre</item>
     </string-array>
-    <string-array name="order_value">
-        <item>İsime göre</item>
-        <item>Kuruluma göre</item>
-    </string-array>
     <string-array name="signer_key">
         <item>Testkey imzası</item>
         <item>Apk editor imzası</item>
