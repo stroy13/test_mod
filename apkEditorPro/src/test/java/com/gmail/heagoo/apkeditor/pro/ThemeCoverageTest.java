@@ -145,7 +145,7 @@ public class ThemeCoverageTest {
         NodeList activities = manifest.getElementsByTagName("activity");
         assertTrue(activities.getLength() >= 30);
         for (int i = 0; i < activities.getLength(); i++) {
-            String name = ((Element) activities.item(i)).getAttributeNS(ANDROID, "name");
+            String name = ((Element) activities.item(i)).getAttribute("android:name");
             String current = name;
             Set<String> seen = new HashSet<>();
             while (bases.containsKey(current) && seen.add(current)) {
