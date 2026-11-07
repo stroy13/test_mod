@@ -17,7 +17,7 @@
         android:layout_width="match_parent"
         android:layout_height="1px"
         android:layout_marginBottom="8dip"
-        android:background="#ff808080" />
+        android:background="?labBorder" />
 
     <CheckBox
         android:id="@+id/cb_rebuild_dex"

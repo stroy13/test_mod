@@ -8,7 +8,7 @@
         android:id="@+id/overview_layout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:orientation="horizontal">
 
         <ImageView
@@ -30,7 +30,7 @@
             android:layout_weight="1"
             android:padding="2.0dip"
             android:singleLine="true"
-            android:textColor="@color/lightblack"
+            android:textColor="?labText"
             android:textSize="16.0sp"
             android:textStyle="bold" />
 
@@ -41,14 +41,14 @@
             android:layout_gravity="center_vertical"
             android:layout_marginTop="2dip"
             android:layout_marginRight="2dip"
-            android:textColor="@color/lightblue" />
+            android:textColor="?labAccent" />
     </LinearLayout>
 
     <FrameLayout
         android:layout_width="fill_parent"
         android:layout_height="0dip"
         android:layout_weight="1"
-        android:background="#ffffffff">
+        android:background="?labSurface">
 
         <ListView
             android:id="@+id/files_list"
@@ -70,7 +70,7 @@
         android:id="@+id/bottom_layout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:orientation="horizontal">
 
         <Button

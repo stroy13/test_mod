@@ -1,6 +1,6 @@
 package com.gmail.heagoo.apkeditor;
 
-import android.app.Activity;
+import com.gmail.heagoo.common.ThemedActivity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -16,19 +16,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.gmail.heagoo.apkeditor.util.ToolFramework;
 import com.gmail.heagoo.apkeditor.util.ToolUpdateChecker;
-import com.gmail.heagoo.common.EditorTheme;
 import java.io.File;
 import java.text.DateFormat;
 import java.util.Date;
 
-public final class ToolManagerActivity extends Activity {
+public final class ToolManagerActivity extends ThemedActivity {
     private int pad;
     private SharedPreferences prefs;
     private LinearLayout root;
 
     @Override
     protected void onCreate(Bundle b) {
-        EditorTheme.apply(this);
         super.onCreate(b);
         setTitle("Инструменты и версии");
         this.prefs = PreferenceManager.getDefaultSharedPreferences(this);

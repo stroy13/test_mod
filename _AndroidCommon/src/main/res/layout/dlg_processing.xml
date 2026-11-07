@@ -22,6 +22,6 @@
         android:gravity="center"
         android:minWidth="160dip"
         android:text="@string/in_progress"
-        android:textColor="#ff5997c4" />
+        android:textColor="?labAccent" />
 
 </LinearLayout>

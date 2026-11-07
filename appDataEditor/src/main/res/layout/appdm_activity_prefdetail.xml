@@ -2,13 +2,13 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@color/white"
+    android:background="?labSurface"
     android:orientation="vertical" >
 
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:orientation="horizontal" >
 
         <RelativeLayout
@@ -25,7 +25,7 @@
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentTop="true"
                 android:text="@string/appdm_label_app_name"
-                android:textColor="@color/lightblack" />
+                android:textColor="?labText" />
 
             <TextView
                 android:id="@+id/tv_appname"
@@ -35,7 +35,7 @@
                 android:layout_toRightOf="@id/label_appname"
                 android:minWidth="120dip"
                 android:singleLine="true"
-                android:textColor="@color/lightblue" />
+                android:textColor="?labAccent" />
 
             <TextView
                 android:id="@+id/label_prefname"
@@ -46,7 +46,7 @@
                 android:layout_below="@id/label_appname"
                 android:singleLine="true"
                 android:text="@string/appdm_label_shared_preference"
-                android:textColor="@color/lightblack" />
+                android:textColor="?labText" />
 
             <TextView
                 android:id="@+id/tv_prefname"
@@ -56,7 +56,7 @@
                 android:layout_marginLeft="4dip"
                 android:layout_toRightOf="@id/label_prefname"
                 android:singleLine="true"
-                android:textColor="@color/lightblue" />
+                android:textColor="?labAccent" />
         </RelativeLayout>
 
         <Button
@@ -105,7 +105,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:gravity="center"

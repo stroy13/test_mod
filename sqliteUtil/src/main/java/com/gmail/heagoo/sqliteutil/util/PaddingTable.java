@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import com.gmail.heagoo.common.ThemeColors;
 import com.gmail.heagoo.sqliteutil.CustomScrollView;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -49,24 +50,16 @@ public class PaddingTable implements View.OnClickListener, View.OnTouchListener 
     }
 
     public PaddingTable(Context ctx, CustomScrollView scrollView, TableLayout tableView, ITableRowClicked rowClickInterface, boolean isDark) {
-        this.bgColor = -1;
-        this.textColor = -15195082;
-        this.hoverColor = -1511944;
-        this.seperateColor = -3355444;
-        this.headerTextColor = -1;
-        this.headerBgColor = -13214523;
         this.ctx = ctx;
         this.scrollView = scrollView;
         this.tableView = tableView;
         this.rowClickInterface = rowClickInterface;
-        if (isDark) {
-            this.bgColor = -14998222;
-            this.textColor = -1182984;
-            this.hoverColor = -14009776;
-            this.seperateColor = -13352107;
-            this.headerTextColor = -1;
-            this.headerBgColor = -13214523;
-        }
+        this.bgColor = ThemeColors.color(ctx, com.gmail.heagoo.common.R.attr.labSurface);
+        this.textColor = ThemeColors.color(ctx, com.gmail.heagoo.common.R.attr.labText);
+        this.hoverColor = ThemeColors.color(ctx, com.gmail.heagoo.common.R.attr.labPressed);
+        this.seperateColor = ThemeColors.color(ctx, com.gmail.heagoo.common.R.attr.labBorder);
+        this.headerTextColor = ThemeColors.color(ctx, com.gmail.heagoo.common.R.attr.labText);
+        this.headerBgColor = ThemeColors.color(ctx, com.gmail.heagoo.common.R.attr.labHeader);
     }
 
     public void setTableHeaderNames(ArrayList<String> columnNames) {

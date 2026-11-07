@@ -1,18 +1,17 @@
 package com.gmail.heagoo.apkeditor;
 
+import com.gmail.heagoo.common.ThemedPreferenceActivity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
-import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import com.gmail.heagoo.apkeditor.base.R;
-import com.gmail.heagoo.common.EditorTheme;
 import com.gmail.heagoo.neweditor.ParserRule;
 
-public class SettingEditorActivity extends PreferenceActivity implements Preference.OnPreferenceChangeListener {
+public class SettingEditorActivity extends ThemedPreferenceActivity implements Preference.OnPreferenceChangeListener {
     public static boolean isLineWrap(Context ctx) {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
         return sp.getBoolean("LineWrap", true);
@@ -60,7 +59,6 @@ public class SettingEditorActivity extends PreferenceActivity implements Prefere
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        EditorTheme.apply(this);
         super.onCreate(savedInstanceState);
         if (GlobalConfig.instance(this).isFullScreen()) {
             getWindow().setFlags(ParserRule.NO_WORD_BREAK, ParserRule.NO_WORD_BREAK);

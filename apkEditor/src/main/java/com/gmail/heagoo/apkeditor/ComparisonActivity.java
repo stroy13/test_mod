@@ -1,7 +1,7 @@
 package com.gmail.heagoo.apkeditor;
 
+import com.gmail.heagoo.common.ThemedActivity;
 import android.R;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -31,7 +31,6 @@ import com.gmail.heagoo.apkeditor.ComparisonCore;
 import com.gmail.heagoo.apkeditor.ComparisonDiffDialog;
 import com.gmail.heagoo.apkeditor.ComparisonPresentation;
 import com.gmail.heagoo.apkeditor.FileSelectDialog;
-import com.gmail.heagoo.common.EditorTheme;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +42,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 
-public final class ComparisonActivity extends Activity implements FileSelectDialog.IFileSelection {
+public final class ComparisonActivity extends ThemedActivity implements FileSelectDialog.IFileSelection {
     public static final String EXTRA_FIRST = "comparison.first";
     public static final String EXTRA_MODE = "comparison.mode";
     public static final String EXTRA_RUN = "comparison.run";
@@ -85,7 +84,6 @@ public final class ComparisonActivity extends Activity implements FileSelectDial
     @Override
     protected void onCreate(Bundle state) {
         String stringExtra;
-        EditorTheme.apply(this);
         super.onCreate(state);
         setTitle("Сравнение");
         if (state != null) {

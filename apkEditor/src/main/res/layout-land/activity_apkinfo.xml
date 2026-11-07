@@ -8,7 +8,7 @@
         android:id="@+id/main_radio"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:gravity="center"
         android:orientation="vertical">
 
@@ -64,7 +64,7 @@
             android:id="@+id/header_layout"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:background="@color/littleblue"
+            android:background="?labHeader"
             android:orientation="horizontal">
 
             <ImageView
@@ -93,7 +93,7 @@
                     android:ellipsize="marquee"
                     android:padding="2.0dip"
                     android:singleLine="true"
-                    android:textColor="@color/lightblue"
+                    android:textColor="?labAccent"
                     android:textSize="16.0sp"
                     android:textStyle="bold" />
 
@@ -105,7 +105,7 @@
                     android:ellipsize="marquee"
                     android:paddingLeft="2.0dip"
                     android:singleLine="true"
-                    android:textColor="@color/lightblue"
+                    android:textColor="?labAccent"
                     android:textSize="10.0sp" />
             </LinearLayout>
 
@@ -172,7 +172,7 @@
             android:layout_width="fill_parent"
             android:layout_height="0.0dip"
             android:layout_weight="1.0"
-            android:background="#ffffffff">
+            android:background="?labSurface">
 
             <!-- String -->
 
@@ -339,7 +339,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1px"
-                    android:background="#ffe3e3e3" />
+                    android:background="?labHeader" />
 
                 <ListView
                     android:id="@+id/resource_list"
@@ -365,12 +365,30 @@
                         android:background="@drawable/bg_icon_dex2smali"
                         android:clickable="true" />
 
-                    <ProgressBar
-                        android:id="@+id/progressbar_dex2smali"
+                    <LinearLayout
+                        android:id="@+id/dex_progress_row"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:visibility="invisible" />
+                        android:layout_gravity="center"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+                        <ProgressBar
+                            android:id="@+id/progressbar_dex2smali"
+                            android:layout_width="20.0dip"
+                            android:layout_height="20.0dip"
+                            android:layout_marginEnd="6.0dip"
+                            style="?android:progressBarStyleSmall" />
+                        <TextView
+                            android:id="@+id/text_dex2smali_progress"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxWidth="200.0dip"
+                            android:maxLines="2"
+                            android:ellipsize="end"
+                            android:textColor="?labText"
+                            android:textSize="11.0sp" />
+                    </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/decode_result_layout"
@@ -391,7 +409,7 @@
                             <View
                                 android:layout_width="match_parent"
                                 android:layout_height="1px"
-                                android:background="#ffe3e3e3" />
+                                android:background="?labHeader" />
 
                             <ImageView
                                 android:layout_width="24dip"
@@ -403,7 +421,7 @@
                             <View
                                 android:layout_width="match_parent"
                                 android:layout_height="1px"
-                                android:background="#ffe3e3e3" />
+                                android:background="?labHeader" />
                         </LinearLayout>
 
                         <TextView
@@ -411,7 +429,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textAppearance="?android:attr/textAppearanceMedium"
-                            android:textColor="@color/lightblue" />
+                            android:textColor="?labAccent" />
 
                         <TextView
                             android:id="@+id/decode_result_detail"
@@ -424,7 +442,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1px"
-                    android:background="#ffe3e3e3" />
+                    android:background="?labHeader" />
 
                 <FrameLayout
                     android:layout_width="fill_parent"
@@ -463,7 +481,7 @@
                         <View
                             android:layout_width="1px"
                             android:layout_height="match_parent"
-                            android:background="#ffe3e3e3" />
+                            android:background="?labHeader" />
 
                         <RelativeLayout
                             android:id="@+id/menu_addfolder"
@@ -498,7 +516,7 @@
                                 android:layout_width="32dip"
                                 android:layout_height="32dip"
                                 android:layout_centerInParent="true"
-                                android:src="@drawable/ic_case_insensitive" />
+                                android:src="@drawable/ic_case_insensitive" android:tint="?labText" />
                         </RelativeLayout>
 
                         <RelativeLayout
@@ -512,7 +530,7 @@
                                 android:layout_width="32dip"
                                 android:layout_height="32dip"
                                 android:layout_centerInParent="true"
-                                android:src="@drawable/searchtxt_checked" />
+                                android:src="@drawable/searchtxt_checked" android:tint="?labText" />
                         </RelativeLayout>
 
                         <RelativeLayout
@@ -559,10 +577,10 @@
                         android:id="@+id/tv_not_support"
                         android:layout_width="fill_parent"
                         android:layout_height="wrap_content"
-                        android:background="#ffffffd5"
+                        android:background="?labSurface"
                         android:gravity="center"
                         android:text="@string/manifest_edit_not_support"
-                        android:textColor="#ff222222" />
+                        android:textColor="?labText" />
 
                     <LinearLayout
                         android:id="@+id/layout_search_mf"
@@ -599,7 +617,7 @@
                 android:id="@+id/layout_loading"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
-                android:background="@color/apked_white"
+                android:background="?labSurface"
                 android:focusable="false"
                 android:gravity="center"
                 android:orientation="vertical">
@@ -619,7 +637,7 @@
                     android:layout_gravity="center"
                     android:layout_marginTop="16.0dip"
                     android:text="@string/loading"
-                    android:textColor="@color/lightblue" />
+                    android:textColor="?labAccent" />
 
             </LinearLayout>
 

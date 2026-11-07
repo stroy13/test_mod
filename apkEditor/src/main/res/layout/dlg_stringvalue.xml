@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#ffffffff"
+    android:background="?labSurface"
     android:orientation="vertical">
 
     <TextView
@@ -14,14 +14,14 @@
         android:padding="2dip"
         android:text="@string/edit_string_value"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textColor="@color/apked_white" />
+        android:textColor="?labText" />
 
     <View
         android:id="@+id/splitter"
         android:layout_width="match_parent"
         android:layout_height="1dip"
         android:layout_below="@id/tv_title"
-        android:background="#ffc0c0c0" />
+        android:background="?labSurfaceAlt" />
 
     <LinearLayout
         android:id="@+id/content_layout"
@@ -46,7 +46,7 @@
                 android:layout_weight="1"
                 android:focusable="false"
                 android:text="@string/key"
-                android:textColor="@color/lightblue"
+                android:textColor="?labAccent"
                 android:textStyle="italic" />
 
             <RelativeLayout
@@ -61,7 +61,7 @@
                     android:layout_width="28dip"
                     android:layout_height="28dip"
                     android:layout_centerInParent="true"
-                    android:src="@drawable/ic_clipboard" />
+                    android:src="@drawable/ic_clipboard" android:tint="?labText" />
             </RelativeLayout>
         </LinearLayout>
 

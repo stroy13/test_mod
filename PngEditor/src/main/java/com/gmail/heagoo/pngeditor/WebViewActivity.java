@@ -1,21 +1,18 @@
 package com.gmail.heagoo.pngeditor;
 
+import com.gmail.heagoo.common.ThemedAppCompatActivity;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.Window;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.appcompat.app.AppCompatActivity;
 
-public class WebViewActivity extends AppCompatActivity {
+public class WebViewActivity extends ThemedAppCompatActivity {
     private final int titleId;
     private final String url;
     private final boolean openWithBrowser;
@@ -43,13 +40,6 @@ public class WebViewActivity extends AppCompatActivity {
 
         setTitle(titleId);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Window window = getWindow();
-            View view = window.getDecorView();
-            int newUiVisibility = view.getSystemUiVisibility();
-            newUiVisibility |= (int) View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            view.setSystemUiVisibility(newUiVisibility);
-        }
 
         this.webView = new WebView(this);
         setContentView(this.webView);

@@ -10,7 +10,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:gravity="center"
@@ -25,7 +25,7 @@
             android:paddingLeft="5.0dip"
             android:singleLine="true"
             android:textAppearance="?android:textAppearanceMedium"
-            android:textColor="@color/lightblack" />
+            android:textColor="?labText" />
     </LinearLayout>
 
     <FrameLayout
@@ -37,16 +37,16 @@
             android:id="@+id/application_list"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:background="@color/white"
+            android:background="?labSurface"
             android:cacheColorHint="#00000000"
-            android:divider="#ffcad1d7"
+            android:divider="?labBorder"
             android:dividerHeight="1.0dip" />
 
         <LinearLayout
             android:id="@+id/layout_app_searching"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:background="@color/white"
+            android:background="?labSurface"
             android:gravity="center"
             android:orientation="vertical">
 
@@ -65,7 +65,7 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="16.0dip"
                 android:text="@string/loading"
-                android:textColor="@color/lightblue" />
+                android:textColor="?labAccent" />
         </LinearLayout>
     </FrameLayout>
 
@@ -74,7 +74,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:gravity="center"
@@ -92,7 +92,7 @@
             android:enabled="false"
             android:hint="@string/keyword_hint"
             android:singleLine="true"
-            android:textColor="@color/lightblack" />
+            android:textColor="?labText" />
 
         <Button
             android:id="@+id/btn_search"

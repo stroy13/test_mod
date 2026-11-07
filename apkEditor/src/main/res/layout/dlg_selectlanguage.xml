@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#ffffffff"
+    android:background="?labSurface"
     android:orientation="vertical">
 
     <TextView
@@ -14,12 +14,12 @@
         android:padding="2dip"
         android:text="@string/add_a_language"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textColor="@color/apked_white" />
+        android:textColor="?labText" />
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dip"
-        android:background="#ffc0c0c0" />
+        android:background="?labSurfaceAlt" />
 
     <RelativeLayout
         android:layout_width="fill_parent"
@@ -34,7 +34,7 @@
             android:layout_margin="4dip"
             android:focusable="false"
             android:text="@string/language"
-            android:textColor="@color/lightblue" />
+            android:textColor="?labAccent" />
 
         <Spinner
             android:id="@+id/language_spinner"
@@ -64,7 +64,7 @@
             android:layout_margin="4dip"
             android:focusable="false"
             android:text="@string/code"
-            android:textColor="@color/lightblue" />
+            android:textColor="?labAccent" />
     </RelativeLayout>
 
     <LinearLayout

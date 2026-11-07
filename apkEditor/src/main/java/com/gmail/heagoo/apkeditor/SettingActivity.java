@@ -1,5 +1,6 @@
 package com.gmail.heagoo.apkeditor;
 
+import com.gmail.heagoo.common.ThemedPreferenceActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,21 +9,19 @@ import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
-import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
 import com.gmail.heagoo.apkeditor.ProcessingDialog;
 import com.gmail.heagoo.apkeditor.base.R;
 import com.gmail.heagoo.common.CommandRunner;
-import com.gmail.heagoo.common.EditorTheme;
 import com.gmail.heagoo.common.RandomUtil;
 import com.gmail.heagoo.common.SDCard;
 import com.gmail.heagoo.common.ThemeRegistry;
 import com.gmail.heagoo.neweditor.ParserRule;
 import java.io.File;
 
-public class SettingActivity extends PreferenceActivity implements Preference.OnPreferenceChangeListener, Preference.OnPreferenceClickListener {
+public class SettingActivity extends ThemedPreferenceActivity implements Preference.OnPreferenceChangeListener, Preference.OnPreferenceClickListener {
     public static final int EXTRACT_AUTORENAME = 0;
     public static final int EXTRACT_OVERWRITE = 1;
     public static final String STR_PRIVATEKEYPATH = "PrivateKeyPath";
@@ -150,7 +149,6 @@ public class SettingActivity extends PreferenceActivity implements Preference.On
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        EditorTheme.apply(this);
         requestWindowFeature(8);
         super.onCreate(savedInstanceState);
         if (GlobalConfig.instance(this).isFullScreen()) {

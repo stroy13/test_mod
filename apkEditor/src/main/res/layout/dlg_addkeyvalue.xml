@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#ffffffff"
+    android:background="?labSurface"
     android:orientation="vertical">
 
     <TextView
@@ -13,12 +13,12 @@
         android:padding="2dip"
         android:text="@string/add_key_value"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textColor="@color/apked_white" />
+        android:textColor="?labText" />
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dip"
-        android:background="#ffc0c0c0" />
+        android:background="?labSurfaceAlt" />
 
     <LinearLayout
         android:id="@+id/content_layout"
@@ -33,7 +33,7 @@
             android:layout_margin="2dip"
             android:focusable="false"
             android:text="@string/key"
-            android:textColor="@color/lightblue" />
+            android:textColor="?labAccent" />
 
         <EditText
             android:id="@+id/key"
@@ -45,7 +45,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dip"
-            android:background="#ffc0c0c0" />
+            android:background="?labSurfaceAlt" />
 
         <TextView
             android:layout_width="fill_parent"
@@ -53,7 +53,7 @@
             android:layout_margin="2dip"
             android:focusable="false"
             android:text="@string/value"
-            android:textColor="@color/lightblue" />
+            android:textColor="?labAccent" />
 
         <EditText
             android:id="@+id/value"

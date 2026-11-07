@@ -20,6 +20,6 @@
         android:paddingTop="6.0dip"
         android:paddingBottom="6.0dip"
         android:singleLine="true"
-        android:textColor="@color/lightblack" />
+        android:textColor="?labText" />
 
 </LinearLayout>

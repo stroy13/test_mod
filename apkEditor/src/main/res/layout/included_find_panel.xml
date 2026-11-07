@@ -15,16 +15,16 @@
         android:id="@+id/panel_button"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:background="#ff111111"
+        android:background="?labSurfaceAlt"
         android:gravity="center"
         android:padding="2dip"
-        android:src="@drawable/edit_slide_left" />
+        android:src="@drawable/edit_slide_left" android:tint="?labText" />
 
     <RelativeLayout
         android:id="@+id/panel_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#ff111111">
+        android:background="?labSurfaceAlt">
 
         <ViewAnimator
             android:id="@+id/searchAnimator"
@@ -58,7 +58,7 @@
                         android:maxLines="1"
                         android:paddingLeft="4dip"
                         android:selectAllOnFocus="true"
-                        android:textColor="#ff333333"
+                        android:textColor="?labText"
                         android:textCursorDrawable="@null">
 
                         <requestFocus />
@@ -76,7 +76,7 @@
                         android:maxLines="1"
                         android:paddingLeft="4dip"
                         android:selectAllOnFocus="true"
-                        android:textColor="#ff333333"
+                        android:textColor="?labText"
                         android:textCursorDrawable="@null" />
                 </LinearLayout>
 
@@ -126,7 +126,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1.0"
                         android:contentDescription="@string/find"
-                        android:src="@drawable/edit_search_dark" />
+                        android:src="@drawable/edit_search_dark" android:tint="?labText" />
 
                     <ImageButton
                         android:id="@+id/replaceBtn"
@@ -134,7 +134,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1.0"
                         android:contentDescription="@string/replace"
-                        android:src="@drawable/edit_replace_dark" />
+                        android:src="@drawable/edit_replace_dark" android:tint="?labText" />
 
                     <ImageButton
                         android:id="@+id/replaceAllBtn"
@@ -142,7 +142,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1.0"
                         android:contentDescription="@string/replace_all"
-                        android:src="@drawable/edit_replaceall_dark" />
+                        android:src="@drawable/edit_replaceall_dark" android:tint="?labText" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -164,7 +164,7 @@
                         android:maxLines="1"
                         android:paddingLeft="4dip"
                         android:selectAllOnFocus="true"
-                        android:textColor="#ff333333"
+                        android:textColor="?labText"
                         android:textCursorDrawable="@null" />
 
                     <ImageButton
@@ -172,7 +172,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:contentDescription="@string/go"
-                        android:src="@drawable/edit_go_dark" />
+                        android:src="@drawable/edit_go_dark" android:tint="?labText" />
                 </LinearLayout>
             </RelativeLayout>
         </ViewAnimator>

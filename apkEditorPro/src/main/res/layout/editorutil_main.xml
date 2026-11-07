@@ -35,8 +35,8 @@
                             <ToggleButton android:textSize="12.0sp" android:id="@id/checkBoxIgnoreCase" android:paddingTop="10.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:textOn="" android:textOff="" android:drawableTop="@drawable/edit_ignorecase" android:layout_weight="1.0" />
                         </LinearLayout>
                         <LinearLayout android:orientation="horizontal" android:id="@id/action_layout" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginBottom="4.0dip" android:layout_alignParentBottom="true">
-                            <ImageButton android:id="@id/findBtn" android:layout_width="0.0dip" android:layout_height="wrap_content" android:src="@drawable/edit_search" android:layout_weight="1.0" />
-                            <ImageButton android:id="@id/replaceBtn" android:layout_width="0.0dip" android:layout_height="wrap_content" android:src="@drawable/edit_replace" android:layout_weight="1.0" />
+                            <ImageButton android:id="@id/findBtn" android:layout_width="0.0dip" android:layout_height="wrap_content" android:src="@drawable/edit_search" android:layout_weight="1.0" android:tint="?labText" />
+                            <ImageButton android:id="@id/replaceBtn" android:layout_width="0.0dip" android:layout_height="wrap_content" android:src="@drawable/edit_replace" android:layout_weight="1.0" android:tint="?labText" />
                         </LinearLayout>
                     </RelativeLayout>
                 </ViewAnimator>

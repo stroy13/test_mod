@@ -35,7 +35,7 @@
             android:ellipsize="marquee"
             android:singleLine="true"
             android:textAppearance="?android:textAppearanceMedium"
-            android:textColor="@color/darkblue" />
+            android:textColor="?labText" />
 
         <TextView
             android:id="@+id/app_desc1"
@@ -44,7 +44,7 @@
             android:layout_gravity="center_vertical"
             android:layout_marginTop="-4.0dip"
             android:textAppearance="?android:textAppearanceSmall"
-            android:textColor="#ff666666" />
+            android:textColor="?labMuted" />
 
         <TextView
             android:id="@+id/app_desc2"
@@ -53,7 +53,7 @@
             android:layout_gravity="center_vertical"
             android:layout_marginTop="-2.0dip"
             android:textAppearance="?android:textAppearanceSmall"
-            android:textColor="#ff666666"
+            android:textColor="?labMuted"
             android:visibility="gone" />
     </LinearLayout>
 

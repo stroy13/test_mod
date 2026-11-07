@@ -23,14 +23,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/pngeditor_save_white"
-                android:visibility="invisible" />
+                android:visibility="invisible" android:tint="?colorOnPrimary" />
 
             <ImageView
                 android:id="@+id/btn_save"
                 android:layout_width="wrap_content"
                 android:layout_height="?android:attr/actionBarSize"
                 android:background="@drawable/pngeditor_clickable_img_bg"
-                android:src="@drawable/pngeditor_save_white" />
+                android:src="@drawable/pngeditor_save_white" android:tint="?colorOnPrimary" />
 
         </LinearLayout>
 
@@ -68,7 +68,7 @@
         android:layout_centerVertical="true"
         android:maxWidth="@android:dimen/thumbnail_width"
         android:maxLines="1"
-        android:textColor="@color/white" />
+        android:textColor="?colorOnPrimary" />
 
 
     <TextView
@@ -79,7 +79,7 @@
         android:layout_marginLeft="8dip"
         android:layout_marginRight="8dip"
         android:layout_toStartOf="@+id/button_layout"
-        android:textColor="@color/white" />
+        android:textColor="?colorOnPrimary" />
 
 
 </RelativeLayout>

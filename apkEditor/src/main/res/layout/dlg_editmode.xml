@@ -13,13 +13,13 @@
         android:paddingLeft="8dip"
         android:singleLine="true"
         android:text="@string/full_edit"
-        android:textColor="@color/textview_color"
+        android:textColor="@color/lab_text_selector"
         android:textSize="20sp" />
 
     <View
         android:layout_width="fill_parent"
         android:layout_height="1px"
-        android:background="#555555" />
+        android:background="?labBorder" />
 
     <TextView
         android:id="@+id/simple_edit"
@@ -30,13 +30,13 @@
         android:paddingLeft="8dip"
         android:singleLine="true"
         android:text="@string/simple_edit"
-        android:textColor="@color/textview_color"
+        android:textColor="@color/lab_text_selector"
         android:textSize="20sp" />
 
     <View
         android:layout_width="fill_parent"
         android:layout_height="1px"
-        android:background="#555555" />
+        android:background="?labBorder" />
 
     <TextView
         android:id="@+id/common_edit"
@@ -47,7 +47,7 @@
         android:paddingLeft="8dip"
         android:singleLine="true"
         android:text="@string/common_edit"
-        android:textColor="@color/textview_color"
+        android:textColor="@color/lab_text_selector"
         android:textSize="20sp" />
 
     <LinearLayout
@@ -59,7 +59,7 @@
         <View
             android:layout_width="fill_parent"
             android:layout_height="1px"
-            android:background="#555555" />
+            android:background="?labBorder" />
 
         <TextView
             android:id="@+id/xml_edit"
@@ -70,7 +70,7 @@
             android:paddingLeft="8dip"
             android:singleLine="true"
             android:text="@string/xml_file_edit"
-            android:textColor="@color/textview_color"
+            android:textColor="@color/lab_text_selector"
             android:textSize="20sp" />
     </LinearLayout>
 
@@ -78,7 +78,7 @@
         android:id="@+id/data_edit_divide"
         android:layout_width="fill_parent"
         android:layout_height="1px"
-        android:background="#555555"
+        android:background="?labBorder"
         android:visibility="gone" />
 
     <TextView
@@ -90,7 +90,7 @@
         android:paddingLeft="8dip"
         android:singleLine="true"
         android:text="@string/edit_data_root"
-        android:textColor="@color/textview_color"
+        android:textColor="@color/lab_text_selector"
         android:textSize="20sp"
         android:visibility="gone" />
 

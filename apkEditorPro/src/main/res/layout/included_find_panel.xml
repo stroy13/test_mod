@@ -16,13 +16,13 @@
                     <ToggleButton android:id="@id/checkBoxIgnoreCase" android:paddingTop="4.0dip" android:layout_width="0.0dip" android:layout_height="48.0dip" android:textOn="" android:textOff="" android:drawableTop="@drawable/edit_ignorecase_dark" android:layout_weight="1.0" android:contentDescription="@string/case_insensitive" style="@style/MyToggleButton" />
                 </LinearLayout>
                 <LinearLayout android:orientation="horizontal" android:id="@id/action_layout" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginBottom="4.0dip" android:layout_alignParentBottom="true">
-                    <ImageButton android:id="@id/findBtn" android:layout_width="0.0dip" android:layout_height="wrap_content" android:src="@drawable/edit_search_dark" android:layout_weight="1.0" android:contentDescription="@string/find" />
-                    <ImageButton android:id="@id/replaceBtn" android:layout_width="0.0dip" android:layout_height="wrap_content" android:src="@drawable/edit_replace_dark" android:layout_weight="1.0" android:contentDescription="@string/replace" />
-                    <ImageButton android:id="@id/replaceAllBtn" android:layout_width="0.0dip" android:layout_height="wrap_content" android:src="@drawable/edit_replaceall_dark" android:layout_weight="1.0" android:contentDescription="@string/replace_all" />
+                    <ImageButton android:id="@id/findBtn" android:layout_width="0.0dip" android:layout_height="wrap_content" android:src="@drawable/edit_search_dark" android:layout_weight="1.0" android:contentDescription="@string/find" android:tint="?labText" />
+                    <ImageButton android:id="@id/replaceBtn" android:layout_width="0.0dip" android:layout_height="wrap_content" android:src="@drawable/edit_replace_dark" android:layout_weight="1.0" android:contentDescription="@string/replace" android:tint="?labText" />
+                    <ImageButton android:id="@id/replaceAllBtn" android:layout_width="0.0dip" android:layout_height="wrap_content" android:src="@drawable/edit_replaceall_dark" android:layout_weight="1.0" android:contentDescription="@string/replace_all" android:tint="?labText" />
                 </LinearLayout>
                 <LinearLayout android:gravity="center" android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_above="@id/action_layout" android:layout_below="@id/option_layout">
                     <EditText android:textColor="?labText" android:id="@id/lineNumEdit" android:background="?labInputBackground" android:paddingLeft="4.0dip" android:layout_width="0.0dip" android:layout_height="wrap_content" android:hint="@string/line_number" android:maxLines="1" android:selectAllOnFocus="true" android:layout_weight="1.0" android:inputType="number" android:textCursorDrawable="@null" />
-                    <ImageButton android:id="@id/goBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/edit_go_dark" android:contentDescription="@string/go" />
+                    <ImageButton android:id="@id/goBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/edit_go_dark" android:contentDescription="@string/go" android:tint="?labText" />
                 </LinearLayout>
             </RelativeLayout>
         </ViewAnimator>

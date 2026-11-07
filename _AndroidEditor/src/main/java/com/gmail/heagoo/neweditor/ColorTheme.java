@@ -2,6 +2,7 @@ package com.gmail.heagoo.neweditor;
 
 import android.content.Context;
 import android.preference.PreferenceManager;
+import com.gmail.heagoo.common.ThemeColors;
 import com.gmail.heagoo.common.ThemeRegistry;
 
 public class ColorTheme {
@@ -37,16 +38,19 @@ public class ColorTheme {
             themeId = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(context).getString("AppTheme", "0"));
         } catch (Exception e) {
         }
+        if (!ThemeRegistry.valid(themeId)) {
+            themeId = 0;
+        }
         boolean dark = ThemeRegistry.isDark(themeId);
         boolean smali = "smali.xml".equals(syntaxFileName);
         boolean xml = "xml.xml".equals(syntaxFileName) || "html.xml".equals(syntaxFileName);
-        this.backgroundColor = dark ? -14671580 : -328966;
-        this.gutterColor = dark ? -15000546 : -986638;
-        this.lineNumberColor = dark ? -8025197 : -9538694;
-        this.dividerColor = dark ? -13289669 : -2630946;
-        this.currentLineColor = dark ? -14079185 : -1446156;
-        this.indentGuideColor = dark ? -13092032 : -2301465;
-        this.foregroundColors[0] = dark ? -2564375 : -14407377;
+        this.backgroundColor = ThemeColors.color(context, com.gmail.heagoo.common.R.attr.labSurface);
+        this.gutterColor = ThemeColors.color(context, com.gmail.heagoo.common.R.attr.labHeader);
+        this.lineNumberColor = ThemeColors.color(context, com.gmail.heagoo.common.R.attr.labMuted);
+        this.dividerColor = ThemeColors.color(context, com.gmail.heagoo.common.R.attr.labBorder);
+        this.currentLineColor = ThemeColors.color(context, com.gmail.heagoo.common.R.attr.labPressed);
+        this.indentGuideColor = ThemeColors.color(context, com.gmail.heagoo.common.R.attr.labBorder);
+        this.foregroundColors[0] = ThemeColors.color(context, com.gmail.heagoo.common.R.attr.labText);
         int[] iArr = this.foregroundColors;
         int i3 = -8236833;
         if (smali) {

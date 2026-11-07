@@ -16,6 +16,7 @@ import android.widget.Toast;
 
 import com.gmail.heagoo.common.ActivityUtil;
 import com.gmail.heagoo.common.CustomizedLangActivity;
+import com.gmail.heagoo.common.ThemeColors;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -50,7 +51,7 @@ public class SqliteTableListActivity extends CustomizedLangActivity {
 
 //		if (themeId != 0) {
 //			super.setTheme(android.R.style.Theme_Black_NoTitleBar);
-        this.textColor = 0xffcccccc;
+        this.textColor = ThemeColors.color(this, com.gmail.heagoo.common.R.attr.labText);
 //			setContentView(themeId == 1 ?
 //					R.layout.sql_activity_tablelist_dark :
 //					R.layout.sql_activity_tablelist_dark_ru);

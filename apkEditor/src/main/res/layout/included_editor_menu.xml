@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="48dip"
-    android:background="#ff111111"
+    android:background="?labHeader"
     android:orientation="horizontal">
 
     <ImageView
@@ -11,13 +11,13 @@
         android:layout_height="match_parent"
         android:layout_gravity="center"
         android:background="@drawable/selector_iv_button"
-        android:src="@drawable/array_switch" />
+        android:src="@drawable/array_switch" android:tint="?labText" />
 
     <View
         android:id="@+id/separate_view"
         android:layout_width="1px"
         android:layout_height="match_parent"
-        android:background="#ff808080" />
+        android:background="?labBorder" />
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -51,7 +51,7 @@
                 android:background="@drawable/selector_iv_button"
                 android:contentDescription="@string/save"
                 android:scaleType="center"
-                android:src="@drawable/edit_save" />
+                android:src="@drawable/edit_save" android:tint="?labText" />
 
             <ImageView
                 android:id="@+id/copyBtn"
@@ -62,7 +62,7 @@
                 android:background="@drawable/selector_iv_button"
                 android:contentDescription="@android:string/copy"
                 android:scaleType="center"
-                android:src="@drawable/edit_copy" />
+                android:src="@drawable/edit_copy" android:tint="?labText" />
 
             <ImageView
                 android:id="@+id/pasteBtn"
@@ -73,7 +73,7 @@
                 android:background="@drawable/selector_iv_button"
                 android:contentDescription="@android:string/paste"
                 android:scaleType="center"
-                android:src="@drawable/ic_clipboard_white" />
+                android:src="@drawable/ic_clipboard_white" android:tint="?labText" />
 
             <ImageView
                 android:id="@+id/openFindBtn"
@@ -84,7 +84,7 @@
                 android:background="@drawable/selector_iv_button"
                 android:contentDescription="@string/find_replace"
                 android:scaleType="centerInside"
-                android:src="@drawable/edit_find" />
+                android:src="@drawable/edit_find" android:tint="?labText" />
 
             <ImageView
                 android:id="@+id/moreBtn"

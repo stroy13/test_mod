@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#ffffffff"
+    android:background="?labSurface"
     android:orientation="vertical"
     android:paddingLeft="2dip"
     android:paddingRight="2dip">
@@ -12,12 +12,12 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_margin="4dip"
-        android:textColor="#ff333333" />
+        android:textColor="?labText" />
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dip"
-        android:background="#ffc0c0c0" />
+        android:background="?labSurfaceAlt" />
 
     <ScrollView
         android:layout_width="match_parent"

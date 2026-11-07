@@ -8,7 +8,7 @@
         android:id="@+id/header_layout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:orientation="horizontal" >
 
         <ImageView
@@ -34,7 +34,7 @@
                 android:ellipsize="marquee"
                 android:padding="2.0dip"
                 android:singleLine="true"
-                android:textColor="@color/lightblue"
+                android:textColor="?labAccent"
                 android:textSize="16.0sp"
                 android:textStyle="bold" />
 
@@ -46,7 +46,7 @@
                 android:ellipsize="marquee"
                 android:paddingLeft="2.0dip"
                 android:singleLine="true"
-                android:textColor="@color/lightblue"
+                android:textColor="?labAccent"
                 android:textSize="10.0sp" />
         </LinearLayout>
 
@@ -64,7 +64,7 @@
         android:layout_width="fill_parent"
         android:layout_height="0.0dip"
         android:layout_weight="1.0"
-        android:background="@color/white" >
+        android:background="?labSurface" >
 
         <!-- APP Info (Signature) -->
 
@@ -113,7 +113,7 @@
             android:id="@+id/layout_scanning"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:background="@color/white"
+            android:background="?labSurface"
             android:gravity="center"
             android:orientation="vertical"
             android:visibility="invisible" >
@@ -133,7 +133,7 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="16.0dip"
                 android:text="@string/loading"
-                android:textColor="@color/lightblue" />
+                android:textColor="?labAccent" />
         </LinearLayout>
     </FrameLayout>
 
@@ -141,7 +141,7 @@
         android:id="@+id/main_radio"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:gravity="center_vertical"
         android:orientation="horizontal" >
 

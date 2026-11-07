@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#ff333333"
+    android:background="?labSurfaceAlt"
     android:gravity="center"
     android:orientation="vertical">
 
@@ -16,13 +16,13 @@
             android:id="@+id/tv_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#ffffffff" />
+            android:textColor="?labText" />
     </ScrollView>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="?labSurface"
         android:orientation="vertical"
         android:padding="4dip">
 
@@ -30,13 +30,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/input_agree_tip"
-            android:textColor="@color/lightblue" />
+            android:textColor="?labAccent" />
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1px"
             android:layout_marginTop="4dip"
-            android:background="@color/littleblue" />
+            android:background="?labHeader" />
 
         <EditText
             android:id="@+id/et_input"

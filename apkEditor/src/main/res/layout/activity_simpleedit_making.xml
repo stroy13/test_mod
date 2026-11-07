@@ -7,7 +7,7 @@
         android:id="@+id/layout_apk_generating"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:background="@color/apked_white"
+        android:background="?labSurface"
         android:gravity="center"
         android:orientation="vertical">
 
@@ -23,21 +23,21 @@
             android:layout_height="wrap_content"
             android:layout_margin="20.0dip"
             android:text="@string/in_progress"
-            android:textColor="@color/lightblack" />
+            android:textColor="?labText" />
 
         <TextView
             android:id="@+id/tv_detail"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12.0dip"
-            android:textColor="@color/lightblack" />
+            android:textColor="?labText" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/layout_apk_reinstall"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:background="@color/apked_white"
+        android:background="?labSurface"
         android:gravity="center"
         android:orientation="vertical">
 
@@ -60,7 +60,7 @@
                 android:layout_marginLeft="24.0dip"
                 android:layout_marginRight="24.0dip"
                 android:textAppearance="?android:attr/textAppearanceMedium"
-                android:textColor="@color/lightblue" />
+                android:textColor="?labAccent" />
 
         </ScrollView>
 

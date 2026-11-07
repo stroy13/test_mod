@@ -1,5 +1,6 @@
 package com.gmail.heagoo.apkeditor;
 
+import com.gmail.heagoo.common.ThemedAppCompatActivity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -26,7 +27,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
 import com.gmail.heagoo.apkeditor.EditModeDialog;
 import com.gmail.heagoo.apkeditor.ProcessingDialog;
@@ -37,7 +37,6 @@ import com.gmail.heagoo.apkeditor.se.SimpleEditActivity;
 import com.gmail.heagoo.apkeditor.util.OnlineMessage;
 import com.gmail.heagoo.apkeditor.util.ToolUpdateChecker;
 import com.gmail.heagoo.common.ActivityUtil;
-import com.gmail.heagoo.common.EditorTheme;
 import com.gmail.heagoo.common.FileUtil;
 import com.gmail.heagoo.common.RefInvoke;
 import com.gmail.heagoo.httpserver.HttpServiceManager;
@@ -46,7 +45,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener, ProcessingDialog.ProcessingInterface {
+public class MainActivity extends ThemedAppCompatActivity implements AdapterView.OnItemClickListener, ProcessingDialog.ProcessingInterface {
     private static int g_vcRet;
     private int WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 1;
     private DrawerLayout mDrawerLayout;
@@ -78,7 +77,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     /* JADX WARN: Multi-variable type inference failed */
     protected void onCreate(Bundle savedInstanceState) {
-        EditorTheme.apply(this);
         super.onCreate(savedInstanceState);
         ToolUpdateChecker.check(this, false, (Runnable) null);
         if (GlobalConfig.instance(this).isFullScreen()) {

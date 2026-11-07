@@ -53,6 +53,21 @@
         <item name="labSurfaceAlt">#ff000000</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#fff2f2f2</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurface</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurface</item>
+        <item name="colorSurface">?labSurface</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorDialogDark" parent="@style/Theme.AppCompat.Dialog.Alert">
         <item name="android:textColorPrimary">#ffedf2f8</item>
@@ -76,6 +91,21 @@
         <item name="labTabBackground">@drawable/lab_tab_select_dark</item>
         <item name="labText">#ffedf2f8</item>
         <item name="textColorAlertDialogListItem">?labText</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurface</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurface</item>
+        <item name="colorSurface">?labSurface</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorDialogDarkAlt" parent="@style/Theme.AppCompat.Dialog.Alert">
         <item name="android:textColorPrimary">#ffeef5f2</item>
@@ -99,6 +129,21 @@
         <item name="labTabBackground">@drawable/lab_tab_select_forest</item>
         <item name="labText">#ffeef5f2</item>
         <item name="textColorAlertDialogListItem">?labText</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurface</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurface</item>
+        <item name="colorSurface">?labSurface</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorDialogGraphite" parent="@style/EditorDialogDark">
         <item name="android:textColorPrimary">#fff5f4f1</item>
@@ -129,6 +174,21 @@
         <item name="labSurfaceAlt">#ff292a2b</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#fff5f4f1</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurface</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurface</item>
+        <item name="colorSurface">?labSurface</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorDialogIce" parent="@style/EditorDialogLight">
         <item name="android:textColorPrimary">#ff182d42</item>
@@ -159,6 +219,21 @@
         <item name="labSurfaceAlt">#ffffffff</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#ff182d42</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurface</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurface</item>
+        <item name="colorSurface">?labSurface</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffb32638</item>
+            <item name="labError">#ffb32638</item>
     </style>
 <style name="EditorDialogLight" parent="@style/Theme.AppCompat.Dialog.Alert">
         <item name="android:textColorPrimary">#ff182436</item>
@@ -182,6 +257,21 @@
         <item name="labTabBackground">@drawable/lab_tab_select_light</item>
         <item name="labText">#ff182436</item>
         <item name="textColorAlertDialogListItem">?labText</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurface</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurface</item>
+        <item name="colorSurface">?labSurface</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffb32638</item>
+            <item name="labError">#ffb32638</item>
     </style>
 <style name="EditorDialogMint" parent="@style/EditorDialogLight">
         <item name="android:textColorPrimary">#ff17382e</item>
@@ -212,6 +302,21 @@
         <item name="labSurfaceAlt">#ffffffff</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#ff17382e</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurface</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurface</item>
+        <item name="colorSurface">?labSurface</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffb32638</item>
+            <item name="labError">#ffb32638</item>
     </style>
 <style name="EditorDialogOcean" parent="@style/EditorDialogDark">
         <item name="android:textColorPrimary">#ffedf8fc</item>
@@ -242,6 +347,21 @@
         <item name="labSurfaceAlt">#ff1b303b</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#ffedf8fc</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurface</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurface</item>
+        <item name="colorSurface">?labSurface</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorDialogRose" parent="@style/EditorDialogDark">
         <item name="android:textColorPrimary">#fffbeff5</item>
@@ -272,6 +392,21 @@
         <item name="labSurfaceAlt">#ff38232f</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#fffbeff5</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurface</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurface</item>
+        <item name="colorSurface">?labSurface</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorDialogSand" parent="@style/EditorDialogLight">
         <item name="android:textColorPrimary">#ff3a2a20</item>
@@ -302,6 +437,21 @@
         <item name="labSurfaceAlt">#ffffffff</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#ff3a2a20</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurface</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurface</item>
+        <item name="colorSurface">?labSurface</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffb32638</item>
+            <item name="labError">#ffb32638</item>
     </style>
 <style name="EditorDialogViolet" parent="@style/EditorDialogDark">
         <item name="android:textColorPrimary">#fff4effb</item>
@@ -332,6 +482,21 @@
         <item name="labSurfaceAlt">#ff292037</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#fff4effb</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurface</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurface</item>
+        <item name="colorSurface">?labSurface</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorDialogWine" parent="@style/EditorDialogDark">
         <item name="android:textColorPrimary">#fffcf0f2</item>
@@ -362,6 +527,21 @@
         <item name="labSurfaceAlt">#ff342329</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#fffcf0f2</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurface</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurface</item>
+        <item name="colorSurface">?labSurface</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeAmoled" parent="@style/EditorThemeDark">
         <item name="android:textColorPrimary">#fff2f2f2</item>
@@ -399,6 +579,25 @@
         <item name="labSurfaceAlt">#ff000000</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#fff2f2f2</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:colorButtonNormal">?labSurfaceAlt</item>
+        <item name="android:panelColorBackground">?labSurfaceAlt</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="colorSurface">?labSurfaceAlt</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+        <item name="actionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeDark" parent="@style/Theme.AppCompat">
         <item name="android:textColorPrimary">#ffedf2f8</item>
@@ -433,6 +632,29 @@
         <item name="labSurfaceAlt">#ff1b2532</item>
         <item name="labTabBackground">@drawable/lab_tab_select_dark</item>
         <item name="labText">#ffedf2f8</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:colorButtonNormal">?labSurfaceAlt</item>
+        <item name="android:panelColorBackground">?labSurfaceAlt</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:statusBarColor">?colorPrimaryDark</item>
+        <item name="android:navigationBarColor">?colorPrimaryDark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="colorSurface">?labSurfaceAlt</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+        <item name="actionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeDarkAlt" parent="@style/Theme.AppCompat">
         <item name="android:textColorPrimary">#ffeef5f2</item>
@@ -467,6 +689,29 @@
         <item name="labSurfaceAlt">#ff1a2927</item>
         <item name="labTabBackground">@drawable/lab_tab_select_forest</item>
         <item name="labText">#ffeef5f2</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:colorButtonNormal">?labSurfaceAlt</item>
+        <item name="android:panelColorBackground">?labSurfaceAlt</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:statusBarColor">?colorPrimaryDark</item>
+        <item name="android:navigationBarColor">?colorPrimaryDark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="colorSurface">?labSurfaceAlt</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+        <item name="actionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeGraphite" parent="@style/EditorThemeDark">
         <item name="android:textColorPrimary">#fff5f4f1</item>
@@ -504,6 +749,25 @@
         <item name="labSurfaceAlt">#ff292a2b</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#fff5f4f1</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:colorButtonNormal">?labSurfaceAlt</item>
+        <item name="android:panelColorBackground">?labSurfaceAlt</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="colorSurface">?labSurfaceAlt</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+        <item name="actionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeIce" parent="@style/EditorThemeLight">
         <item name="android:textColorPrimary">#ff182d42</item>
@@ -541,6 +805,25 @@
         <item name="labSurfaceAlt">#ffffffff</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#ff182d42</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:colorButtonNormal">?labSurfaceAlt</item>
+        <item name="android:panelColorBackground">?labSurfaceAlt</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="colorSurface">?labSurfaceAlt</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffb32638</item>
+        <item name="actionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
+            <item name="labError">#ffb32638</item>
     </style>
 <style name="EditorThemeLight" parent="@style/Theme.AppCompat.Light.DarkActionBar">
         <item name="android:textColorPrimary">#ff182436</item>
@@ -575,6 +858,29 @@
         <item name="labSurfaceAlt">#ffffffff</item>
         <item name="labTabBackground">@drawable/lab_tab_select_light</item>
         <item name="labText">#ff182436</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:colorButtonNormal">?labSurfaceAlt</item>
+        <item name="android:panelColorBackground">?labSurfaceAlt</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:statusBarColor">?colorPrimaryDark</item>
+        <item name="android:navigationBarColor">?colorPrimaryDark</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="colorSurface">?labSurfaceAlt</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffb32638</item>
+        <item name="actionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
+            <item name="labError">#ffb32638</item>
     </style>
 <style name="EditorThemeMint" parent="@style/EditorThemeLight">
         <item name="android:textColorPrimary">#ff17382e</item>
@@ -612,6 +918,25 @@
         <item name="labSurfaceAlt">#ffffffff</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#ff17382e</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:colorButtonNormal">?labSurfaceAlt</item>
+        <item name="android:panelColorBackground">?labSurfaceAlt</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="colorSurface">?labSurfaceAlt</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffb32638</item>
+        <item name="actionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
+            <item name="labError">#ffb32638</item>
     </style>
 <style name="EditorThemeOcean" parent="@style/EditorThemeDark">
         <item name="android:textColorPrimary">#ffedf8fc</item>
@@ -649,6 +974,25 @@
         <item name="labSurfaceAlt">#ff1b303b</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#ffedf8fc</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:colorButtonNormal">?labSurfaceAlt</item>
+        <item name="android:panelColorBackground">?labSurfaceAlt</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="colorSurface">?labSurfaceAlt</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+        <item name="actionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeRose" parent="@style/EditorThemeDark">
         <item name="android:textColorPrimary">#fffbeff5</item>
@@ -686,6 +1030,25 @@
         <item name="labSurfaceAlt">#ff38232f</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#fffbeff5</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:colorButtonNormal">?labSurfaceAlt</item>
+        <item name="android:panelColorBackground">?labSurfaceAlt</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="colorSurface">?labSurfaceAlt</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+        <item name="actionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeSand" parent="@style/EditorThemeLight">
         <item name="android:textColorPrimary">#ff3a2a20</item>
@@ -723,6 +1086,25 @@
         <item name="labSurfaceAlt">#ffffffff</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#ff3a2a20</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:colorButtonNormal">?labSurfaceAlt</item>
+        <item name="android:panelColorBackground">?labSurfaceAlt</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="colorSurface">?labSurfaceAlt</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffb32638</item>
+        <item name="actionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
+            <item name="labError">#ffb32638</item>
     </style>
 <style name="EditorThemeViolet" parent="@style/EditorThemeDark">
         <item name="android:textColorPrimary">#fff4effb</item>
@@ -760,6 +1142,25 @@
         <item name="labSurfaceAlt">#ff292037</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#fff4effb</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:colorButtonNormal">?labSurfaceAlt</item>
+        <item name="android:panelColorBackground">?labSurfaceAlt</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="colorSurface">?labSurfaceAlt</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+        <item name="actionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeWine" parent="@style/EditorThemeDark">
         <item name="android:textColorPrimary">#fffcf0f2</item>
@@ -797,6 +1198,25 @@
         <item name="labSurfaceAlt">#ff342329</item>
         <item name="labTabBackground">@drawable/palette_tab</item>
         <item name="labText">#fffcf0f2</item>
+            <item name="android:colorBackground">?labSurface</item>
+        <item name="android:colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="android:colorForeground">?labText</item>
+        <item name="android:textColorHint">?labMuted</item>
+        <item name="android:colorControlNormal">?labMuted</item>
+        <item name="android:colorControlHighlight">?labPressed</item>
+        <item name="android:colorButtonNormal">?labSurfaceAlt</item>
+        <item name="android:panelColorBackground">?labSurfaceAlt</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="colorBackgroundFloating">?labSurfaceAlt</item>
+        <item name="colorSurface">?labSurfaceAlt</item>
+        <item name="colorOnSurface">?labText</item>
+        <item name="colorOnBackground">?labText</item>
+        <item name="colorControlNormal">?labMuted</item>
+        <item name="colorControlHighlight">?labPressed</item>
+        <item name="colorError">#ffff8793</item>
+        <item name="actionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
+            <item name="labError">#ffff8793</item>
     </style>
 <style name="LabButton" parent="@android:style/Widget.Button">
         <item name="android:textSize">13.0sp</item>

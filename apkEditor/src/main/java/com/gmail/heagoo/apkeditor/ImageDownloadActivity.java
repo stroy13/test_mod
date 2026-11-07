@@ -1,7 +1,7 @@
 package com.gmail.heagoo.apkeditor;
 
+import com.gmail.heagoo.common.ThemedActivity;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -33,7 +33,7 @@ import java.net.URLDecoder;
 import java.util.Arrays;
 
 
-public class ImageDownloadActivity extends Activity implements ProcessingDialog.ProcessingInterface {
+public class ImageDownloadActivity extends ThemedActivity implements ProcessingDialog.ProcessingInterface {
     final Handler handler = new Handler();
     private WebView webView;
     private String imageUrl;

@@ -1,14 +1,14 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#ffffffff"
+    android:background="?labSurface"
     android:orientation="vertical">
 
     <LinearLayout
         android:id="@+id/header_layout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:orientation="horizontal">
 
         <TextView
@@ -20,7 +20,7 @@
             android:layout_weight="1"
             android:singleLine="true"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="@color/lightblue" />
+            android:textColor="?labAccent" />
 
         <ImageView
             android:id="@+id/imageView_html"
@@ -42,7 +42,7 @@
             android:layout_height="40dip"
             android:layout_marginLeft="4dip"
             android:layout_marginRight="4dip"
-            android:src="@drawable/listfile" />
+            android:src="@drawable/listfile" android:tint="?labText" />
     </LinearLayout>
 
     <FrameLayout

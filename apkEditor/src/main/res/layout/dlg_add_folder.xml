@@ -8,7 +8,7 @@
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#fff5f5f5"
+        android:background="?labHeader"
         android:orientation="horizontal">
 
         <LinearLayout
@@ -31,7 +31,7 @@
                 android:id="@+id/divider1"
                 android:layout_width="match_parent"
                 android:layout_height="2dp"
-                android:background="#ff33b5e5" />
+                android:background="?labAccent" />
         </LinearLayout>
 
         <LinearLayout
@@ -54,7 +54,7 @@
                 android:id="@+id/divider2"
                 android:layout_width="match_parent"
                 android:layout_height="2dp"
-                android:background="#ff33b5e5"
+                android:background="?labAccent"
                 android:visibility="invisible" />
         </LinearLayout>
     </LinearLayout>
@@ -114,7 +114,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/content"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:orientation="horizontal">
 
         <Button

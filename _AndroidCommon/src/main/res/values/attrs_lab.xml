@@ -1,6 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <attr name="labAccent" format="color" />
+    <attr name="labError" format="color" />
     <attr name="labBorder" format="color" />
     <attr name="labCardBackground" format="reference" />
     <attr name="labDrawerBackground" format="color" />

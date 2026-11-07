@@ -8,7 +8,7 @@
         android:id="@+id/overview_layout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="@color/littleblue"
+        android:background="?labHeader"
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:orientation="horizontal">
@@ -31,7 +31,7 @@
             android:layout_gravity="center"
             android:padding="2.0dip"
             android:singleLine="true"
-            android:textColor="@color/lightblack"
+            android:textColor="?labText"
             android:textSize="16.0sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -40,7 +40,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dip"
         android:layout_weight="1"
-        android:background="#ffffffff"
+        android:background="?labSurface"
         android:paddingLeft="8dip"
         android:paddingRight="8dip">
 
@@ -59,7 +59,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:text="@string/launcher_icon"
-                    android:textColor="@color/lightblue"
+                    android:textColor="?labAccent"
                     android:textSize="14sp" />
 
                 <ImageView
@@ -76,7 +76,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dip"
                 android:text="@string/str_app_name"
-                android:textColor="@color/lightblue"
+                android:textColor="?labAccent"
                 android:textSize="14sp"></TextView>
 
             <EditText
@@ -91,7 +91,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dip"
                 android:text="@string/package_name"
-                android:textColor="@color/lightblue"
+                android:textColor="?labAccent"
                 android:textSize="14sp" />
 
             <EditText
@@ -112,7 +112,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/pkg_rename_notice"
-                    android:textColor="@color/lightblue"
+                    android:textColor="?labAccent"
                     android:textSize="12sp"
                     android:textStyle="italic" />
 
@@ -122,7 +122,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dip"
                     android:text="@string/package_rename_method"
-                    android:textColor="@color/lightblue"
+                    android:textColor="?labAccent"
                     android:textSize="14sp"
                     android:visibility="gone" />
 
@@ -139,7 +139,7 @@
                     android:layout_height="wrap_content"
                     android:checked="true"
                     android:text="@string/rename_in_resources"
-                    android:textColor="@color/lightblue"
+                    android:textColor="?labAccent"
                     android:textSize="14sp" />
 
                 <CheckBox
@@ -148,7 +148,7 @@
                     android:layout_height="wrap_content"
                     android:checked="false"
                     android:text="@string/rename_in_dex"
-                    android:textColor="@color/lightblue"
+                    android:textColor="?labAccent"
                     android:textSize="14sp" />
             </LinearLayout>
 
@@ -157,7 +157,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dip"
                 android:text="@string/install_location"
-                android:textColor="@color/lightblue"
+                android:textColor="?labAccent"
                 android:textSize="14sp" />
 
             <Spinner
@@ -171,7 +171,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dip"
                 android:text="@string/version_code"
-                android:textColor="@color/lightblue"
+                android:textColor="?labAccent"
                 android:textSize="14sp" />
 
             <EditText
@@ -187,7 +187,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dip"
                 android:text="@string/version_name"
-                android:textColor="@color/lightblue"
+                android:textColor="?labAccent"
                 android:textSize="14sp" />
 
             <EditText
@@ -203,7 +203,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dip"
                 android:text="@string/min_sdk_version"
-                android:textColor="@color/lightblue"
+                android:textColor="?labAccent"
                 android:textSize="14sp" />
 
             <EditText
@@ -219,7 +219,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dip"
                 android:text="@string/target_sdk_version"
-                android:textColor="@color/lightblue"
+                android:textColor="?labAccent"
                 android:textSize="14sp" />
 
             <EditText
@@ -235,7 +235,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dip"
                 android:text="@string/max_sdk_version"
-                android:textColor="@color/lightblue"
+                android:textColor="?labAccent"
                 android:textSize="14sp"
                 android:visibility="gone" />
 
@@ -252,7 +252,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/littleblue">
+        android:background="?labHeader">
 
         <Button
             android:id="@+id/btn_save"

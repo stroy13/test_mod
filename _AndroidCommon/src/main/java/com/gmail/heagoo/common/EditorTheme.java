@@ -1,44 +1,61 @@
 package com.gmail.heagoo.common;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.util.TypedValue;
 import android.preference.PreferenceManager;
+import java.util.Map;
 import java.util.WeakHashMap;
 
-/* loaded from: /tmp/apkx/classes7.dex */
+/** Applies the palette selected in settings before an activity inflates any view. */
 public final class EditorTheme {
-    private static final WeakHashMap<Activity, Integer> APPLIED = new WeakHashMap<>();
+    private static final Map<Activity, Integer> APPLIED = new WeakHashMap<>();
 
     private EditorTheme() {
     }
 
     public static int selected(Activity activity) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
         try {
-            int id = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(activity).getString("AppTheme", "0"));
-            if (ThemeRegistry.valid(id)) {
-                return id;
-            }
-            return 0;
-        } catch (Exception e) {
+            int id = Integer.parseInt(prefs.getString("AppTheme", "0"));
+            return ThemeRegistry.valid(id) ? id : 0;
+        } catch (RuntimeException invalidValue) {
             return 0;
         }
     }
 
     public static void apply(Activity activity) {
         int id = selected(activity);
-        String name = ThemeRegistry.styleName(id);
-        int res = activity.getResources().getIdentifier(name, "style", activity.getPackageName());
-        if (res != 0) {
-            activity.setTheme(res);
+        Resources resources = activity.getResources();
+        int style = resources.getIdentifier(ThemeRegistry.styleName(id), "style", activity.getPackageName());
+        if (style != 0) {
+            activity.setTheme(style);
         }
-        APPLIED.put(activity, Integer.valueOf(id));
+        synchronized (APPLIED) {
+            APPLIED.put(activity, id);
+        }
+    }
+
+    public static boolean needsRecreate(Activity activity) {
+        synchronized (APPLIED) {
+            Integer applied = APPLIED.get(activity);
+            return applied != null && applied.intValue() != selected(activity);
+        }
+    }
+
+    /** Dialog theme matching the activity palette (android:dialogTheme). */
+    public static int dialogStyle(Activity activity) {
+        TypedValue value = new TypedValue();
+        activity.getTheme().resolveAttribute(android.R.attr.dialogTheme, value, true);
+        return value.resourceId;
     }
 
     public static boolean isDark(int id) {
         return ThemeRegistry.isDark(id);
     }
 
-    public static boolean needsRecreate(Activity activity) {
-        Integer old = APPLIED.get(activity);
-        return (old == null || old.intValue() == selected(activity)) ? false : true;
+    public static boolean isDark(Activity activity) {
+        return ThemeRegistry.isDark(selected(activity));
     }
 }

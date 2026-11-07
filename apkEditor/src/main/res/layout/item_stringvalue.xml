@@ -13,7 +13,7 @@
         android:layout_margin="2.0dip"
         android:focusable="false"
         android:text="@string/app_name"
-        android:textColor="@color/lightblue" />
+        android:textColor="?labAccent" />
 
     <EditText
         android:id="@+id/string_value"

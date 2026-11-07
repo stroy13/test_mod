@@ -13,7 +13,7 @@
         android:padding="2dip"
         android:text="@string/notice_capital"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textColor="@color/apked_white" />
+        android:textColor="?labText" />
 
     <ScrollView
         android:layout_width="match_parent"
