@@ -1,0 +1,41 @@
+# --- Gradle / build outputs -------------------------------------------------
+.gradle/
+build/
+*/build/
+apkEditorPro/release/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# --- Local machine config (must not be committed) ---------------------------
+local.properties
+/local.properties
+*.properties.local
+
+# --- IDE --------------------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+out/
+
+# --- Signing material -------------------------------------------------------
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# --- Build artefacts --------------------------------------------------------
+*.apk
+*.aab
+*.ap_
+*.apks
+
+# --- OS / editor junk -------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.bak
+*.orig
+*.rej
+*~

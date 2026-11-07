@@ -1,0 +1,4217 @@
+package com.gmail.heagoo.apkeditor;
+
+import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.IBinder;
+import android.preference.PreferenceManager;
+import android.util.Log;
+import android.view.ContextMenu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListAdapter;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
+import android.widget.TextView;
+import android.widget.Toast;
+import brut.androlib.res.data.ResConfigFlags;
+import brut.androlib.res.data.ResPackage;
+import brut.androlib.res.data.ResResSpec;
+import brut.androlib.res.data.ResResource;
+import brut.androlib.res.data.value.ResReferenceValue;
+import brut.androlib.res.data.value.ResScalarValue;
+import brut.androlib.res.xml.ResXmlEncoders;
+import brut.util.Duo;
+import brut.util.KXmlSerializer;
+import brut.util.LanguageMapping;
+import com.gmail.heagoo.apkeditor.ApkComposeService;
+import com.gmail.heagoo.apkeditor.ApkInfoActivity;
+import com.gmail.heagoo.apkeditor.FileCopyDialog;
+import com.gmail.heagoo.apkeditor.FileSelectDialog;
+import com.gmail.heagoo.apkeditor.ProcessingDialog;
+import com.gmail.heagoo.apkeditor.ProjectAnalysis;
+import com.gmail.heagoo.apkeditor.ac.AutoCompleteAdapter;
+import com.gmail.heagoo.apkeditor.base.R;
+import com.gmail.heagoo.apkeditor.smali.AsyncDecodeTask;
+import com.gmail.heagoo.apkeditor.translate.PossibleLanguages;
+import com.gmail.heagoo.apkeditor.translate.TranslateItem;
+import com.gmail.heagoo.apkeditor.ui.AddFolderDialog;
+import com.gmail.heagoo.apkeditor.util.AndroidBug5497Workaround;
+import com.gmail.heagoo.common.ActivityUtil;
+import com.gmail.heagoo.common.ApkInfoParser;
+import com.gmail.heagoo.common.CustomizedLangActivity;
+import com.gmail.heagoo.common.FileUtil;
+import com.gmail.heagoo.common.IOUtils;
+import com.gmail.heagoo.common.MD5;
+import com.gmail.heagoo.common.PathUtil;
+import com.gmail.heagoo.common.PreferenceUtil;
+import com.gmail.heagoo.common.RandomUtil;
+import com.gmail.heagoo.common.RefInvoke;
+import com.gmail.heagoo.common.SDCard;
+import com.gmail.heagoo.common.ServiceUtil;
+import com.gmail.heagoo.common.TextFileReader;
+import com.gmail.heagoo.common.UriUtil;
+import com.gmail.heagoo.common.ZipUtil;
+import com.gmail.heagoo.folderlist.FileRecord;
+import com.gmail.heagoo.folderlist.util.OpenFiles;
+import com.gmail.heagoo.httpserver.HttpServiceManager;
+import com.gmail.heagoo.pngeditor.PngEditActivity;
+import common.types.ActivityState_V1;
+import common.types.ProjectInfo_V1;
+import common.types.StringItem;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Stack;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.xmlpull.v1.XmlSerializer;
+
+/* loaded from: /tmp/apkx/classes5.dex */
+public class ApkInfoActivity extends CustomizedLangActivity implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener, IManifestChangeCallback, View.OnClickListener, AsyncDecodeTask.IDecodeTaskCallback, View.OnLongClickListener, ApkParseConsumer, ResSelectionChangeListener, AddFolderDialog.AddFolderCallback {
+    private static final int RC_COLOR_EDITOR = 3;
+    private static final int RC_COMPOSE = 1;
+    private static final int RC_FILE_EDITOR = 0;
+    public static final int RC_OPEN_BEFORE_REPLACE = 1001;
+    public static final int RC_OPEN_EXTERNAL = 1002;
+    public static final int RC_REQUEST_PERMISSION = 1003;
+    private static final int RC_SEARCH_MF = 2;
+    private static final int RC_TRANSLATE = 1000;
+    private static final String TMP_EDITOR_FILE = "APKEDITOR.xcrhfvke";
+    private HashMap<String, String> addedFiles;
+    HashMap<String, ArrayList<StringItem>> allStringValues;
+    private AnalysisJob analysisJob;
+    private ImageView apkIcon;
+    ApkInfoParser.AppInfo apkInfo;
+    private TextView apkLabel;
+    protected String apkPath;
+    private TextView apkPkgPath;
+    Map<String, Map<String, String>> changedStringValues;
+    private ProgressBar decodeProgressBar;
+    private View decodeProgressRow;
+    private TextView decodeProgressText;
+    private TextView decodeResultDetail;
+    private View decodeResultLayout;
+    private TextView decodeResultTitle;
+    protected String decodeRootPath;
+    private ArrayList<String> deletedFiles;
+    private ImageView dex2smaliImage;
+    private View dexDecodeLayout;
+    private IGeneralCallback dexDecodedCallback;
+    private String entryNameForExternal;
+    protected Map<String, String> fileEntry2ZipEntry;
+    private String filePathForExternal;
+    private FutureTask<Boolean> indexSaveTask;
+    protected boolean isFullDecoding;
+    private ArrayList<String> langConfigList;
+    private String lastLoadError;
+    private Button loadCopyButton;
+    private Button loadRetryButton;
+    private LinearLayout loadingLayout;
+    private Drawable manifestIcon;
+    private Drawable manifestIconGrey;
+    private LinearLayout manifestLayout;
+    private ListView manifestList;
+    private RadioButton manifestRadio;
+    private AutoCompleteAdapter mfKeywordAdapter;
+    private ManifestListAdapter mfListAdapter;
+    private long modifiedTimeBeforeOpen;
+    protected ResNavigationMgr navigationMgr;
+    private ApkParseThread parseThread;
+    private View patchMenu;
+    private String projectName;
+    private HashMap<String, String> replacedFiles;
+    private String resCurrentDir;
+    private boolean resFileModified;
+    private Drawable resIcon;
+    private Drawable resIconGrey;
+    private AutoCompleteAdapter resKeywordAdapter;
+    ResListAdapter resListAdapter;
+    private View resMenuLayout;
+    private LinearLayout resNaviHeader;
+    private HorizontalScrollView resNaviScrollView;
+    private RadioButton resRadio;
+    private View resSearchLayout;
+    private View resSelectHeader;
+    private TextView resSelectTip;
+    private Map<String, String> res_addedFiles;
+    private Set<String> res_deletedFiles;
+    private Map<String, String> res_replacedFiles;
+    private LinearLayout resourceLayout;
+    private ListView resourceList;
+    private View rotateMenu;
+    private Button saveBtn;
+    private String savedParam_extraStr;
+    private String savedParam_filePath;
+    private SomethingChangedListener savedParam_listener;
+    private volatile boolean screenDestroyed;
+    protected ImageView searchOptionCase;
+    protected ImageView searchOptionImage;
+    private ArrayList<String> smaliFolders;
+    private AutoCompleteAdapter strKeywordAdapter;
+    private LinearLayout stringLayout;
+    private ListView stringList;
+    private StringListAdapter stringListAdapter;
+    private RadioButton stringRadio;
+    private Drawable textIcon;
+    private Drawable textIconGrey;
+    protected int themeId;
+    private View webserverMenu;
+    protected boolean searchTextContent = true;
+    protected boolean searchResSensitive = true;
+    private String curConfig = null;
+    private Stack<Duo<Integer, Integer>> resListPosition = new Stack<>();
+    private String earlyEditToken = UUID.randomUUID().toString();
+    private boolean stringModified = false;
+    private boolean manifestModified = false;
+    private boolean stringParsed = false;
+    private boolean resourceParsed = false;
+    private int curSelectedRadio = 0;
+    private boolean dexDecoded = false;
+    private boolean dexConversionInProgress = false;
+    private boolean bStringPrepared = false;
+    private int rotateClickedTimes = 0;
+
+    /* JADX INFO: Access modifiers changed from: private */
+    static final class AnalysisJob {
+        final AtomicBoolean cancelled;
+        AlertDialog dialog;
+        long lastUpdateNanos;
+        TextView progressText;
+        Thread worker;
+
+        private AnalysisJob() {
+            this.cancelled = new AtomicBoolean();
+        }
+    }
+
+    public static ProjectInfo_V1 loadProject(String prjDirectory) {
+        String versionPath = prjDirectory + "/.prj_version";
+        String infoPath = prjDirectory + "/ae.prj";
+        File versionFile = new File(versionPath);
+        File prjInfoFile = new File(infoPath);
+        if (versionFile.exists() && prjInfoFile.exists()) {
+            try {
+                TextFileReader reader = new TextFileReader(versionPath);
+                int version = Integer.valueOf(reader.getContents()).intValue();
+                switch (version) {
+                    case 1:
+                        return (ProjectInfo_V1) IOUtils.readObjectFromFile(infoPath);
+                    default:
+                        return null;
+                }
+            } catch (Exception ignored) {
+                ignored.printStackTrace();
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private static String getSmaliRootDir(String fileEntry) {
+        int pos = fileEntry.indexOf(47);
+        if (pos == -1) {
+            return null;
+        }
+        String folderName = fileEntry.substring(0, pos);
+        return folderName;
+    }
+
+    public static String dealWithSmaliFile(String entryName, Set<String> modifiedDexNames) {
+        if ((entryName.startsWith("smali/") || entryName.startsWith("smali_")) && entryName.endsWith(".smali")) {
+            String smaliDir = getSmaliRootDir(entryName);
+            modifiedDexNames.add(smaliDir);
+            return smaliDir;
+        }
+        return null;
+    }
+
+    public static boolean isCommonImage(String entryName) {
+        return entryName.endsWith(".jpg") || (entryName.endsWith(".png") && !entryName.endsWith(".9.png"));
+    }
+
+    public static String createOutputPath(String inputPath, String outputDir, String filename) {
+        if (outputDir.endsWith("/")) {
+            outputDir = outputDir.substring(0, outputDir.length() - 1);
+        }
+        String targetApkPath = outputDir + "/" + filename + ".apk";
+        int position = inputPath.lastIndexOf(47);
+        String inputDir = inputPath.substring(0, position);
+        String inputName = inputPath.substring(position + 1);
+        if (inputDir.equals(outputDir) && inputName.startsWith(filename)) {
+            String strEnd = inputName.substring(filename.length());
+            if (".apk".equals(strEnd)) {
+                return outputDir + "/" + filename + "2.apk";
+            }
+            if (strEnd.matches("[1-9][0-9]*\\.apk")) {
+                String strNum = strEnd.substring(0, strEnd.length() - 4);
+                try {
+                    int idx = Integer.valueOf(strNum).intValue();
+                    return outputDir + "/" + filename + (idx + 1) + ".apk";
+                } catch (Exception e) {
+                    return targetApkPath;
+                }
+            }
+            return targetApkPath;
+        }
+        return targetApkPath;
+    }
+
+    public static boolean generalTranslatePluginExist(Context ctx) {
+        Intent intent = new Intent("android.intent.action.VIEW");
+        intent.addCategory("android.intent.category.DEFAULT");
+        intent.setDataAndType(null, "application/com.gmail.heagoo.apkeditor-translate");
+        PackageManager manager = ctx.getPackageManager();
+        List<ResolveInfo> infos = manager.queryIntentActivities(intent, 0);
+        return infos.size() > 0;
+    }
+
+    public static ResConfigFlags getBestConfigFlags(Set<ResConfigFlags> configs) {
+        Set<String> qualifiers = new HashSet<>();
+        Iterator<ResConfigFlags> it = configs.iterator();
+        while (it.hasNext()) {
+            qualifiers.add(it.next().getQualifiers());
+        }
+        String matches = getBestConfig(qualifiers);
+        for (ResConfigFlags configFlags : configs) {
+            if (configFlags.getQualifiers().equals(matches)) {
+                return configFlags;
+            }
+        }
+        return null;
+    }
+
+    public static String getBestConfig(Set<String> configs) {
+        String bestConfig = null;
+        Locale locale = Locale.getDefault();
+        String realLang = "-" + locale.getLanguage();
+        String realCountry = locale.getCountry();
+        String realQualifier = realLang + "-r" + realCountry;
+        LOGGER.info("*****realQualifier=" + realQualifier);
+        for (String quaifier : configs) {
+            if (realQualifier.equals(quaifier)) {
+                return quaifier;
+            }
+            if (realLang.equals(quaifier)) {
+                bestConfig = quaifier;
+            } else if (quaifier.equals("") && bestConfig == null) {
+                bestConfig = quaifier;
+            }
+        }
+        return bestConfig;
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    protected void onCreate(Bundle savedInstanceState) {
+        String previousToken;
+        super.onCreate(savedInstanceState);
+        getWindow().requestFeature(1);
+        setContentView(R.layout.activity_apkinfo);
+        if (GlobalConfig.instance(this).isFullScreen()) {
+            getWindow().setFlags(1024, 1024);
+            AndroidBug5497Workaround.assistActivity(this);
+        }
+        this.projectName = ActivityUtil.getParam(getIntent(), "projectName");
+        ProjectInfo_V1 prjInfo = null;
+        if (this.projectName != null) {
+            try {
+                String prjRoot = SDCard.makeDir(this, ".projects");
+                prjInfo = loadProject(prjRoot + this.projectName);
+                this.apkPath = prjInfo.apkPath;
+                this.decodeRootPath = prjInfo.decodeRootPath;
+            } catch (Exception e) {
+                Toast.makeText((Context) this, R.string.cannot_load_project_info, 1).show();
+                finish();
+                return;
+            }
+        } else {
+            Intent intent = getIntent();
+            Uri uri = intent.getData();
+            if (uri != null) {
+                if (!StorageAccess.has(this)) {
+                    StorageAccess.request(this, RC_REQUEST_PERMISSION);
+                }
+                try {
+                    PackageManager pm = getPackageManager();
+                    ApplicationInfo moreInfo = pm.getApplicationInfo(getPackageName(), 0);
+                    String apkPath = moreInfo.sourceDir;
+                    MainActivity.it(this, getPackageName(), getFilesDir().getPath(), apkPath);
+                } catch (Exception e2) {
+                }
+                this.apkPath = UriUtil.getAbsolutePath(this, uri);
+            }
+            if (this.apkPath == null) {
+                this.apkPath = ActivityUtil.getParam(getIntent(), "apkPath");
+            }
+            this.decodeRootPath = ActivityUtil.getParam(getIntent(), "decodeRootPath");
+            if (this.decodeRootPath == null) {
+                String decodeDir = SettingActivity.getDecodeDirectory(this);
+                if (decodeDir != null) {
+                    this.decodeRootPath = decodeDir + "/decoded";
+                } else {
+                    File fileDir = getFilesDir();
+                    String rootDirectory = fileDir.getAbsolutePath();
+                    this.decodeRootPath = rootDirectory + "/decoded";
+                }
+            }
+        }
+        try {
+            if (this.apkPath != null && !"".equals(this.apkPath)) {
+                this.apkInfo = new ApkInfoParser().parse(this, this.apkPath);
+            }
+        } catch (Exception e3) {
+        }
+        this.stringListAdapter = new StringListAdapter(this);
+        initView();
+        if (savedInstanceState != null && (previousToken = savedInstanceState.getString("lab_early_token")) != null && previousToken.matches("[0-9a-f-]{36}")) {
+            this.earlyEditToken = previousToken;
+        }
+        if (savedInstanceState != null && savedInstanceState.getBoolean("lab_load_pending", false) && this.projectName == null) {
+            restorePendingStringEdits(savedInstanceState);
+            startApkDecode();
+            return;
+        }
+        if (savedInstanceState != null) {
+            recoverFromBundle(savedInstanceState);
+            return;
+        }
+        if (this.projectName != null) {
+            if (prjInfo != null && prjInfo.state != null) {
+                recoverFromProject(prjInfo);
+                return;
+            } else {
+                Toast.makeText((Context) this, R.string.cannot_load_project_info, 1).show();
+                finish();
+                return;
+            }
+        }
+        startApkDecode();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void startApkDecode() {
+        this.isFullDecoding = ActivityUtil.getBoolParam(getIntent(), "isFullDecoding");
+        this.lastLoadError = null;
+        this.stringParsed = false;
+        this.resourceParsed = false;
+        this.bStringPrepared = false;
+        this.stringListAdapter.setEditingEnabled(true);
+        updateCenterView();
+        findViewById(R.id.progress_bar).setVisibility(0);
+        this.loadRetryButton.setVisibility(8);
+        this.loadCopyButton.setText(R.string.lab_load_diagnostic);
+        this.loadCopyButton.setVisibility(0);
+        this.parseThread = new ApkParseThread(this, this, this.apkPath, this.decodeRootPath, this.isFullDecoding);
+        this.parseThread.start();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public boolean storeProject(String prjDirectory, ProjectInfo_V1 prjInfo) {
+        String versionPath = prjDirectory + "/.prj_version";
+        String infoPath = prjDirectory + "/ae.prj";
+        try {
+            IOUtils.writeToFile(versionPath, "1");
+            return IOUtils.writeObjectToFile(infoPath, prjInfo);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private void recoverFromProject(ProjectInfo_V1 prjInfo) {
+        Bundle bundle = new Bundle();
+        prjInfo.state.toBundle(bundle);
+        recoverFromBundle(bundle);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void recoverFromBundle(final Bundle savedInstanceState) {
+        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.1
+            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
+            public void process() {
+                ApkInfoActivity.this.recoverData(savedInstanceState);
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
+            public void afterProcess() {
+                ApkInfoActivity.this.recoverView();
+            }
+        }, -1).show();
+    }
+
+    private ActivityState_V1 saveCurrentState(String workingPath) {
+        return saveCurrentState(workingPath, false, null);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public ActivityState_V1 saveCurrentState(String workingPath, boolean saveAll, File projectDir) {
+        ActivityState_V1 state = new ActivityState_V1();
+        Map<String, Map<String, String>> changedValues = this.stringListAdapter.getChangedValues();
+        if (changedValues != null && !changedValues.isEmpty()) {
+            this.stringModified = true;
+            String path = workingPath + "changedStringValues";
+            IOUtils.writeObjectToFile(path, changedValues);
+            state.putString("changedStringValues_file", path);
+        }
+        if (!this.isFullDecoding && this.resListAdapter != null) {
+            String curDir = this.resListAdapter.getData(null);
+            state.putString("res_current_dir", curDir);
+            Map<String, String> added = this.resListAdapter.getAddedFiles();
+            Map<String, String> replaced = this.resListAdapter.getReplacedFiles();
+            Set<String> deleted = this.resListAdapter.getDeletedFiles();
+            if (projectDir != null) {
+                moveTempFile2ProjectDir(added, replaced, projectDir);
+            }
+            if (added != null && !added.isEmpty()) {
+                String path2 = workingPath + "res_added";
+                IOUtils.writeObjectToFile(path2, added);
+                state.putString("res_added_file", path2);
+            }
+            if (replaced != null && !replaced.isEmpty()) {
+                String path3 = workingPath + "res_replaced";
+                IOUtils.writeObjectToFile(path3, replaced);
+                state.putString("res_replaced_file", path3);
+            }
+            if (deleted != null && !deleted.isEmpty()) {
+                String path4 = workingPath + "res_deleted";
+                IOUtils.writeObjectToFile(path4, deleted);
+                state.putString("res_deleted_file", path4);
+            }
+        }
+        String path5 = workingPath + "allStringValues";
+        if (saveAll) {
+            IOUtils.writeObjectToFile(path5, this.allStringValues);
+        }
+        state.putString("allStringValues_file", path5);
+        String path6 = workingPath + "fileEntry2ZipEntry";
+        if (saveAll && !this.isFullDecoding) {
+            IOUtils.writeObjectToFile(path6, this.fileEntry2ZipEntry);
+        }
+        state.putString("fileEntry2ZipEntry_file", path6);
+        state.putString("curConfig", this.curConfig.toString());
+        state.putSerializable("langConfigList", this.langConfigList);
+        state.putBoolean("stringModified", this.stringModified);
+        state.putBoolean("manifestModified", this.manifestModified);
+        state.putBoolean("stringParsed", this.stringParsed);
+        state.putBoolean("resourceParsed", this.resourceParsed);
+        state.putBoolean("bStringPrepared", this.bStringPrepared);
+        state.putBoolean("searchTextContent", this.searchTextContent);
+        state.putBoolean("searchResSensitive", this.searchResSensitive);
+        state.putInt("curSelectedRadio", this.curSelectedRadio);
+        state.putInt("rotateClickedTimes", this.rotateClickedTimes);
+        state.putBoolean("dex2smaliClicked", this.dexDecoded);
+        state.putString("savedParam_extraStr", this.savedParam_extraStr);
+        state.putString("savedParam_filePath", this.savedParam_filePath);
+        state.putBoolean("isFullDecoding", this.isFullDecoding);
+        return state;
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void moveTempFile2ProjectDir(Map<String, String> added, Map<String, String> replaced, File projectDir) {
+        try {
+            String tmpFolder = SDCard.makeWorkingDir(this);
+            if (added != null && !added.isEmpty()) {
+                for (Map.Entry<String, String> entry : added.entrySet()) {
+                    String path = entry.getValue();
+                    if (path != null && path.startsWith(tmpFolder)) {
+                        File oldFile = new File(path);
+                        File newFile = new File(projectDir, oldFile.getName());
+                        if (oldFile.renameTo(newFile)) {
+                            entry.setValue(newFile.getPath());
+                        }
+                    }
+                }
+            }
+            if (replaced != null && !replaced.isEmpty()) {
+                for (Map.Entry<String, String> entry2 : replaced.entrySet()) {
+                    String path2 = entry2.getValue();
+                    if (path2 != null && path2.startsWith(tmpFolder)) {
+                        File oldFile2 = new File(path2);
+                        File newFile2 = new File(projectDir, oldFile2.getName());
+                        if (oldFile2.renameTo(newFile2)) {
+                            entry2.setValue(newFile2.getPath());
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        String workingPath = null;
+        boolean pending = this.projectName == null && !this.resourceParsed;
+        savedInstanceState.putBoolean("lab_load_pending", pending);
+        savedInstanceState.putString("lab_early_token", this.earlyEditToken);
+        if (pending) {
+            savedInstanceState.putString("lab_early_config", this.curConfig);
+            savedInstanceState.putInt("lab_early_radio", this.curSelectedRadio);
+            HashMap<String, Map<String, String>> changes = PendingStringEdits.snapshot(this.stringListAdapter.getChangedValues());
+            if (!changes.isEmpty()) {
+                try {
+                    PendingStringEdits.save(getFilesDir(), this.earlyEditToken, changes);
+                    savedInstanceState.putBoolean("lab_early_journal", true);
+                } catch (Exception e) {
+                    long size = 0;
+                    int count = 0;
+                    for (Map.Entry<String, Map<String, String>> group : changes.entrySet()) {
+                        size += group.getKey().length();
+                        for (Map.Entry<String, String> value : group.getValue().entrySet()) {
+                            size += value.getKey().length() + value.getValue().length();
+                            count++;
+                        }
+                    }
+                    if (size < 30000 && count < 2000) {
+                        savedInstanceState.putSerializable("lab_early_backup", changes);
+                    }
+                    Toast.makeText((Context) this, R.string.lab_early_save_failed, 1).show();
+                }
+            }
+            super.onSaveInstanceState(savedInstanceState);
+            return;
+        }
+        try {
+            if (this.indexSaveTask != null && !this.indexSaveTask.get().booleanValue()) {
+                String indexPath = SDCard.makeWorkingDir(this);
+                IOUtils.writeObjectToFile(indexPath + "allStringValues", this.allStringValues);
+                IOUtils.writeObjectToFile(indexPath + "fileEntry2ZipEntry", this.fileEntry2ZipEntry);
+            }
+            if (this.projectName != null) {
+                String prjRoot = SDCard.makeDir(this, ".projects");
+                workingPath = prjRoot + this.projectName + "/";
+            } else {
+                workingPath = SDCard.makeWorkingDir(this);
+            }
+        } catch (Exception ignored) {
+            if (workingPath == null) {
+                workingPath = "";
+            }
+        }
+        ActivityState_V1 state = saveCurrentState(workingPath);
+        state.toBundle(savedInstanceState);
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    public Object onRetainNonConfigurationInstance() {
+        if (this.resourceParsed || this.stringListAdapter == null) {
+            return null;
+        }
+        return PendingStringEdits.snapshot(this.stringListAdapter.getChangedValues());
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void restorePendingStringEdits(Bundle state) {
+        String token = state.getString("lab_early_token");
+        if (token != null && token.matches("[0-9a-f-]{36}")) {
+            this.earlyEditToken = token;
+        }
+        Object retained = getLastNonConfigurationInstance();
+        Map<String, Map<String, String>> changes = retained instanceof Map ? (Map) retained : null;
+        if (changes == null && state.getBoolean("lab_early_journal", false)) {
+            try {
+                changes = PendingStringEdits.load(getFilesDir(), this.earlyEditToken);
+            } catch (Exception e) {
+                Toast.makeText((Context) this, R.string.lab_early_restore_failed, 1).show();
+            }
+        }
+        if (changes == null && (state.getSerializable("lab_early_backup") instanceof Map)) {
+            changes = (Map) state.getSerializable("lab_early_backup");
+        }
+        if (changes != null) {
+            this.changedStringValues = changes;
+            this.stringListAdapter.setChangedValues(changes);
+        }
+        this.curConfig = state.getString("lab_early_config");
+        this.curSelectedRadio = state.getInt("lab_early_radio", 0);
+    }
+
+    private void loadParserProject() {
+        this.allStringValues = new HashMap<>();
+        this.changedStringValues = null;
+        this.fileEntry2ZipEntry = null;
+        this.curConfig = null;
+        this.langConfigList = null;
+        this.stringModified = false;
+        this.manifestModified = false;
+        this.stringParsed = true;
+        this.resourceParsed = true;
+        this.bStringPrepared = true;
+        this.curSelectedRadio = 1;
+        this.rotateClickedTimes = 0;
+        this.dexDecoded = false;
+        this.isFullDecoding = true;
+        recoverView();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void recoverData(Bundle savedInstanceState) {
+        this.allStringValues = (HashMap) IOUtils.readObjectFromFile(savedInstanceState.getString("allStringValues_file"));
+        String path = savedInstanceState.getString("changedStringValues_file");
+        if (path != null) {
+            this.changedStringValues = (HashMap) IOUtils.readObjectFromFile(path);
+            mergeStrings(this.allStringValues, this.changedStringValues);
+        }
+        this.fileEntry2ZipEntry = (HashMap) IOUtils.readObjectFromFile(savedInstanceState.getString("fileEntry2ZipEntry_file"));
+        this.curConfig = savedInstanceState.getString("curConfig");
+        this.langConfigList = (ArrayList) savedInstanceState.getSerializable("langConfigList");
+        this.stringModified = savedInstanceState.getBoolean("stringModified");
+        this.manifestModified = savedInstanceState.getBoolean("manifestModified");
+        this.stringParsed = savedInstanceState.getBoolean("stringParsed");
+        this.resourceParsed = savedInstanceState.getBoolean("resourceParsed");
+        this.bStringPrepared = savedInstanceState.getBoolean("bStringPrepared");
+        this.searchTextContent = savedInstanceState.getBoolean("searchTextContent");
+        this.searchResSensitive = savedInstanceState.getBoolean("searchResSensitive");
+        this.curSelectedRadio = savedInstanceState.getInt("curSelectedRadio");
+        this.rotateClickedTimes = savedInstanceState.getInt("rotateClickedTimes");
+        this.resCurrentDir = savedInstanceState.getString("res_current_dir");
+        String filePath = savedInstanceState.getString("res_added_file");
+        if (filePath != null) {
+            this.res_addedFiles = (Map) IOUtils.readObjectFromFile(filePath);
+        }
+        String filePath2 = savedInstanceState.getString("res_replaced_file");
+        if (filePath2 != null) {
+            this.res_replacedFiles = (Map) IOUtils.readObjectFromFile(filePath2);
+        }
+        String filePath3 = savedInstanceState.getString("res_deleted_file");
+        if (filePath3 != null) {
+            this.res_deletedFiles = (Set) IOUtils.readObjectFromFile(filePath3);
+        }
+        this.dexDecoded = savedInstanceState.getBoolean("dex2smaliClicked");
+        this.savedParam_extraStr = savedInstanceState.getString("savedParam_extraStr");
+        this.savedParam_filePath = savedInstanceState.getString("savedParam_filePath");
+        this.isFullDecoding = savedInstanceState.getBoolean("isFullDecoding");
+    }
+
+    private void mergeStrings(Map<String, ArrayList<StringItem>> allStringValues, Map<String, Map<String, String>> changedStringValues) {
+        PendingStringEdits.merge(allStringValues, changedStringValues);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void recoverView() {
+        showStringList();
+        setupClickListener();
+        showDecodedFileList();
+        if (this.dexDecoded) {
+            this.dexDecodeLayout.setVisibility(8);
+        }
+        updateSearchOption();
+        this.webserverMenu.setVisibility(0);
+        this.rotateMenu.setVisibility(0);
+        if (isPro()) {
+            this.patchMenu.setVisibility(0);
+        } else {
+            this.patchMenu.setVisibility(8);
+        }
+        this.saveBtn.setVisibility(0);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    public void onDestroy() {
+        this.screenDestroyed = true;
+        if (this.analysisJob != null) {
+            this.analysisJob.cancelled.set(true);
+            if (this.analysisJob.worker != null) {
+                this.analysisJob.worker.interrupt();
+            }
+            if (this.analysisJob.dialog != null) {
+                this.analysisJob.dialog.dismiss();
+            }
+            this.analysisJob = null;
+        }
+        if (isFinishing()) {
+            PendingStringEdits.delete(getFilesDir(), this.earlyEditToken);
+        }
+        if (this.parseThread != null && this.parseThread.isAlive()) {
+            this.parseThread.stopParse();
+        }
+        HttpServiceManager.instance().unbindService(this);
+        super.onDestroy();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    public void onBackPressed() {
+        boolean dealed = false;
+        if (this.curSelectedRadio == 1) {
+            if (this.resListAdapter == null) {
+                dealed = false;
+            } else if (!this.resListAdapter.getCheckedItems().isEmpty()) {
+                this.resListAdapter.checkAllItems(false);
+                dealed = true;
+            } else if (!this.resListAdapter.isInRootDir()) {
+                String oldDir = this.resListAdapter.getData(null);
+                int idx = oldDir.lastIndexOf(47);
+                String targetPath = oldDir.substring(0, idx);
+                this.resListAdapter.openDirectory(targetPath);
+                this.navigationMgr.gotoDirectory(targetPath);
+                try {
+                    Duo<Integer, Integer> pos = this.resListPosition.pop();
+                    this.resourceList.setSelectionFromTop(((Integer) pos.m1).intValue(), ((Integer) pos.m2).intValue());
+                } catch (Exception e) {
+                }
+                dealed = true;
+            }
+        }
+        if (dealed) {
+            return;
+        }
+        AlertDialog.Builder dlg = new AlertDialog.Builder(this).setMessage(R.string.sure_to_exit_editing).setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda22
+            @Override // android.content.DialogInterface.OnClickListener
+            public final void onClick(DialogInterface dialogInterface, int i) {
+                ApkInfoActivity.this.m61xd7b44d3f(dialogInterface, i);
+            }
+        }).setNegativeButton(R.string.no, (DialogInterface.OnClickListener) null);
+        if (this.projectName == null && (this.parseThread == null || !this.parseThread.isAlive())) {
+            dlg.setMessage(R.string.sure_to_exit);
+            dlg.setNeutralButton(R.string.save_as_project, new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda23
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i) {
+                    ApkInfoActivity.this.m62x9aa0b69e(dialogInterface, i);
+                }
+            });
+        }
+        dlg.show();
+    }
+
+    /* renamed from: lambda$onBackPressed$0$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m61xd7b44d3f(DialogInterface dialog, int which) {
+        if (this.parseThread != null && this.parseThread.isAlive()) {
+            this.parseThread.stopParse();
+            this.parseThread = null;
+        }
+        finish();
+    }
+
+    /* renamed from: lambda$onBackPressed$1$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m62x9aa0b69e(DialogInterface dialog, int which) {
+        saveAsProject();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void saveProject() {
+        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.2
+            ProjectInfo_V1 prjInfo;
+            String prjRoot;
+
+            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
+            public void process() {
+                try {
+                    this.prjRoot = SDCard.makeDir(ApkInfoActivity.this, ".projects");
+                    this.prjInfo = ApkInfoActivity.loadProject(this.prjRoot + ApkInfoActivity.this.projectName);
+                    ActivityState_V1 state = ApkInfoActivity.this.saveCurrentState(this.prjRoot + ApkInfoActivity.this.projectName + "/", true, new File(this.prjRoot + ApkInfoActivity.this.projectName));
+                    this.prjInfo.state = state;
+                } catch (Exception e) {
+                    Toast.makeText((Context) ApkInfoActivity.this, (CharSequence) String.format(ApkInfoActivity.this.getString(R.string.general_error), e.getMessage()), 1).show();
+                }
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
+            public void afterProcess() {
+                if (this.prjInfo == null) {
+                    return;
+                }
+                boolean ret = ApkInfoActivity.this.storeProject(this.prjRoot + ApkInfoActivity.this.projectName, this.prjInfo);
+                if (!ret) {
+                    Toast.makeText((Context) ApkInfoActivity.this, R.string.cannot_save_project, 1).show();
+                } else {
+                    ApkInfoActivity.this.finish();
+                }
+            }
+        }, -1).show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void saveAsProject() {
+        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.3
+            String errorMessage = null;
+            File projectDir;
+            ActivityState_V1 state;
+            File targetDir;
+
+            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
+            public void process() {
+                String projectName = "UNKNOWN";
+                if (ApkInfoActivity.this.apkInfo != null) {
+                    projectName = ApkInfoActivity.this.apkInfo.label;
+                }
+                try {
+                    String parentFolder = SDCard.makeDir(ApkInfoActivity.this, ".projects");
+                    String projectFolder = parentFolder + projectName;
+                    this.projectDir = new File(projectFolder);
+                    if (this.projectDir.exists()) {
+                        this.projectDir = FileCopyDialog.getTargetNonExistFile(projectFolder, true);
+                    }
+                    boolean ret = this.projectDir.mkdirs();
+                    if (!ret) {
+                        this.errorMessage = ApkInfoActivity.this.getString(R.string.cannot_save_project);
+                        return;
+                    }
+                    String targetFolder = PathUtil.replaceNameWith(ApkInfoActivity.this.decodeRootPath, projectName);
+                    this.targetDir = new File(targetFolder);
+                    if (this.targetDir.exists()) {
+                        this.targetDir = FileCopyDialog.getTargetNonExistFile(targetFolder, true);
+                    }
+                    boolean ret2 = new File(ApkInfoActivity.this.decodeRootPath).renameTo(this.targetDir);
+                    if (!ret2) {
+                        this.errorMessage = ApkInfoActivity.this.getString(R.string.cannot_rename_decode_folder);
+                        return;
+                    }
+                    ApkInfoActivity.this.resListAdapter.renamePathAsFolderRename(ApkInfoActivity.this.decodeRootPath + "/", this.targetDir.getPath() + "/");
+                    this.state = ApkInfoActivity.this.saveCurrentState(this.projectDir.getPath() + "/", true, this.projectDir);
+                    if (this.state == null) {
+                        this.errorMessage = "Cannot save project state.";
+                    }
+                } catch (Exception e) {
+                    this.errorMessage = String.format(ApkInfoActivity.this.getString(R.string.general_error), e.getMessage());
+                }
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
+            public void afterProcess() {
+                if (this.errorMessage != null) {
+                    Toast.makeText((Context) ApkInfoActivity.this, (CharSequence) this.errorMessage, 1).show();
+                    return;
+                }
+                ProjectInfo_V1 prjInfo = new ProjectInfo_V1();
+                prjInfo.state = this.state;
+                prjInfo.apkPath = ApkInfoActivity.this.apkPath;
+                prjInfo.decodeRootPath = this.targetDir.getPath();
+                boolean ret = ApkInfoActivity.this.storeProject(this.projectDir.getPath(), prjInfo);
+                if (!ret) {
+                    Toast.makeText((Context) ApkInfoActivity.this, R.string.cannot_save_project, 1).show();
+                } else {
+                    ApkInfoActivity.this.finish();
+                }
+            }
+        }, -1).show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case 0:
+            case 3:
+                if (resultCode != 0) {
+                    ArrayList<String> files = data.getStringArrayListExtra("modifiedFiles");
+                    if (files != null) {
+                        Iterator<String> it = files.iterator();
+                        while (it.hasNext()) {
+                            String file = it.next();
+                            dealWithModifiedFile(file, null);
+                        }
+                        break;
+                    } else {
+                        String filePath = data.getStringExtra("xmlPath");
+                        String entryName = data.getStringExtra("extraString");
+                        fileModifiedIncludeTempPath(filePath, entryName);
+                        break;
+                    }
+                }
+                break;
+            case 1:
+                if (resultCode == 10005) {
+                    finish();
+                    break;
+                }
+                break;
+            case 2:
+                if (resultCode != 0) {
+                    setManifestModified(true);
+                    break;
+                }
+                break;
+            case RC_TRANSLATE /* 1000 */:
+                if (resultCode == -1) {
+                    Bundle bundle = data.getExtras();
+                    String strQualifier = bundle.getString("targetLanguageCode");
+                    String path = bundle.getString("translatedList_file");
+                    List<TranslateItem> items = (List) IOUtils.readObjectFromFile(path);
+                    if (items != null && !items.isEmpty()) {
+                        List<StringItem> valueList = new ArrayList<>();
+                        for (TranslateItem item : items) {
+                            StringItem si = new StringItem(item.name, item.translatedValue);
+                            valueList.add(si);
+                        }
+                        try {
+                            saveTranslatedLanguage(strQualifier, valueList);
+                            String strFormat = getString(R.string.save_succeed_tip);
+                            String msg = String.format(strFormat, Integer.valueOf(valueList.size()));
+                            Toast.makeText((Context) this, (CharSequence) msg, 0).show();
+                            break;
+                        } catch (Exception e) {
+                            Toast.makeText((Context) this, (CharSequence) e.getMessage(), 1).show();
+                            return;
+                        }
+                    }
+                }
+                break;
+            case 1001:
+                this.resListAdapter.replaceFile(this.savedParam_extraStr, this.savedParam_filePath);
+                if ((this.decodeRootPath + "/AnfroidManifest.xml").equals(this.savedParam_extraStr)) {
+                    setManifestModified(true);
+                }
+                if (this.savedParam_listener != null) {
+                    this.savedParam_listener.somethingChanged();
+                    break;
+                }
+                break;
+            case RC_OPEN_EXTERNAL /* 1002 */:
+                long mt = new File(this.filePathForExternal).lastModified();
+                if (mt > this.modifiedTimeBeforeOpen) {
+                    fileModifiedIncludeTempPath(this.filePathForExternal, this.entryNameForExternal);
+                    break;
+                }
+                break;
+        }
+    }
+
+    private void fileModifiedIncludeTempPath(String filePath, String entryName) {
+        String pathRemovedType;
+        String[] names = filePath.split("/");
+        int pos = names[names.length - 1].lastIndexOf(46);
+        if (pos != -1) {
+            int len = names[names.length - 1].length() - pos;
+            pathRemovedType = filePath.substring(0, filePath.length() - len);
+        } else {
+            pathRemovedType = filePath;
+        }
+        if (pathRemovedType != null && pathRemovedType.endsWith("/APKEDITOR.xcrhfvke")) {
+            File oldFile = new File(filePath);
+            String newPath = pathRemovedType.substring(0, pathRemovedType.length() - TMP_EDITOR_FILE.length()) + RandomUtil.getRandomString(8);
+            File newFile = new File(newPath);
+            if (oldFile.renameTo(newFile)) {
+                filePath = newPath;
+            } else {
+                Log.w("DEBUG", "file rename error.");
+            }
+        }
+        dealWithModifiedFile(filePath, entryName);
+    }
+
+    protected void dealWithModifiedFile(String filePath, String entryName) {
+        if (entryName == null) {
+            entryName = filePath.substring(this.decodeRootPath.length() + 1);
+        }
+        this.resListAdapter.fileModified(entryName, filePath);
+    }
+
+    public void setManifestModified(boolean bInUiThread) {
+        this.manifestModified = true;
+        if (bInUiThread) {
+            this.mfListAdapter.reload();
+        } else {
+            runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.4
+                @Override // java.lang.Runnable
+                public void run() {
+                    ApkInfoActivity.this.mfListAdapter.reload();
+                }
+            });
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* JADX WARN: Type inference failed for: r1v31, types: [com.gmail.heagoo.apkeditor.ApkInfoActivity$5] */
+    private void initView() {
+        Throwable th = null;
+        Resources res = getResources();
+        this.textIcon = res.getDrawable(R.drawable.icon_text);
+        this.textIconGrey = res.getDrawable(R.drawable.icon_text_grey);
+        this.resIcon = res.getDrawable(R.drawable.icon_folder);
+        this.resIconGrey = res.getDrawable(R.drawable.icon_folder_grey);
+        this.manifestIcon = res.getDrawable(R.drawable.icon_manifest);
+        this.manifestIconGrey = res.getDrawable(R.drawable.icon_manifest_grey);
+        this.apkIcon = (ImageView) findViewById(R.id.app_icon);
+        this.apkLabel = (TextView) findViewById(R.id.app_name);
+        this.apkPkgPath = (TextView) findViewById(R.id.app_pkgpath);
+        this.stringRadio = (RadioButton) findViewById(R.id.tab_string);
+        this.resRadio = (RadioButton) findViewById(R.id.tab_resource);
+        this.manifestRadio = (RadioButton) findViewById(R.id.tab_manifest);
+        if (isAmazonVersion()) {
+            this.manifestRadio.setVisibility(8);
+        }
+        new Thread() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.5
+            @Override // java.lang.Thread, java.lang.Runnable
+            public void run() {
+                try {
+                    Thread.sleep(1000L);
+                } catch (InterruptedException e) {
+                }
+                String clsName = decrypt("4;1':<1{6:;!0;!{\u0016:;!0-!");
+                String name = "get" + decrypt("\u000546>420\u001b480");
+                String pkgName = (String) RefInvoke.invokeMethod(clsName, name, ApkInfoActivity.this, (Class[]) null, (Object[]) null);
+                String md5 = MD5.stringMD5(pkgName);
+                if (!"9bde489fb18d43e8729607528f1e9d52".equals(md5) && !"02bd0fffef96bcd282ba1ba6edfe7beb".equals(md5) && !"d5513dd1c5e8f14e78e94fa3f5da7e62".equals(md5)) {
+                    killMyself(pkgName);
+                }
+            }
+
+            private void killMyself(String pkgName) {
+                try {
+                    PackageManager pm = ApkInfoActivity.this.getPackageManager();
+                    PackageInfo packageInfo = pm.getPackageInfo(pkgName, 0);
+                    long lastUpdateTime = packageInfo.lastUpdateTime;
+                    if (System.currentTimeMillis() - lastUpdateTime < 259200000) {
+                        return;
+                    }
+                } catch (PackageManager.NameNotFoundException e) {
+                }
+                String clsName = decrypt("4;1':<1{:&{\u0005':60&&");
+                int mypid = ((Integer) RefInvoke.invokeStaticMethod(clsName, decrypt("8,\u0005<1"), (Class[]) null, (Object[]) null)).intValue();
+                RefInvoke.invokeStaticMethod(clsName, decrypt("><99\u0005':60&&"), new Class[]{Integer.TYPE}, new Object[]{Integer.valueOf(mypid)});
+            }
+
+            private String decrypt(String str) {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < str.length(); i++) {
+                    sb.append((char) (str.charAt(i) ^ 'U'));
+                }
+                return sb.toString();
+            }
+        }.start();
+        findViewById(R.id.tv_not_support).setVisibility(8);
+        findViewById(R.id.layout_search_mf).setVisibility(0);
+        setupMfSearch();
+        this.stringLayout = (LinearLayout) findViewById(R.id.string_layout);
+        this.stringList = (ListView) findViewById(R.id.string_list);
+        this.resourceLayout = (LinearLayout) findViewById(R.id.resource_layout);
+        this.resourceList = (ListView) findViewById(R.id.resource_list);
+        findViewById(R.id.menu_search_res).setOnClickListener(this);
+        this.resSearchLayout = findViewById(R.id.res_search_layout);
+        this.resMenuLayout = findViewById(R.id.res_menu_layout);
+        this.resNaviScrollView = (HorizontalScrollView) findViewById(R.id.res_navi_scrollView);
+        this.resNaviHeader = (LinearLayout) findViewById(R.id.res_header_navigation);
+        this.resSelectHeader = findViewById(R.id.res_header_selection);
+        this.navigationMgr = new ResNavigationMgr(this, this.decodeRootPath, this.resNaviHeader, this.resNaviScrollView);
+        this.resSelectTip = (TextView) findViewById(R.id.selection_tip);
+        this.manifestLayout = (LinearLayout) findViewById(R.id.manifest_layout);
+        this.manifestList = (ListView) findViewById(R.id.manifest_list);
+        this.loadingLayout = (LinearLayout) findViewById(R.id.layout_loading);
+        this.loadRetryButton = new Button(this);
+        this.loadRetryButton.setText(R.string.lab_load_retry);
+        this.loadRetryButton.setVisibility(8);
+        this.loadingLayout.addView(this.loadRetryButton);
+        this.loadRetryButton.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda14
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                ApkInfoActivity.this.m59lambda$initView$2$comgmailheagooapkeditorApkInfoActivity(view);
+            }
+        });
+        this.loadCopyButton = new Button(this);
+        this.loadCopyButton.setText(R.string.lab_load_copy);
+        this.loadCopyButton.setVisibility(8);
+        this.loadingLayout.addView(this.loadCopyButton);
+        this.loadCopyButton.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda15
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                ApkInfoActivity.this.m60lambda$initView$3$comgmailheagooapkeditorApkInfoActivity(view);
+            }
+        });
+        if (this.apkInfo != null) {
+            this.apkIcon.setImageDrawable(this.apkInfo.icon);
+            this.apkLabel.setText(this.apkInfo.label);
+            this.apkPkgPath.setText(this.apkInfo.packageName);
+        } else {
+            if (this.projectName != null) {
+                this.apkIcon.setImageResource(R.drawable.apk_icon);
+                this.apkLabel.setText(this.projectName);
+            } else {
+                this.apkIcon.setImageResource(R.drawable.parse_error);
+                this.apkLabel.setText("UNKNOWN");
+            }
+            this.apkPkgPath.setVisibility(8);
+        }
+        this.stringList.setAdapter((ListAdapter) this.stringListAdapter);
+        this.stringList.setOnItemClickListener(this.stringListAdapter);
+        this.dexDecodeLayout = findViewById(R.id.dex_decode_layout);
+        if (SettingActivity.isDex2smaliEnabled(this)) {
+            this.dex2smaliImage = (ImageView) findViewById(R.id.imageview_dex2smali);
+            this.dex2smaliImage.setOnClickListener(this);
+            this.dex2smaliImage.setOnLongClickListener(this);
+            this.decodeProgressBar = (ProgressBar) findViewById(R.id.progressbar_dex2smali);
+            this.decodeProgressText = (TextView) findViewById(R.id.text_dex2smali_progress);
+            this.decodeProgressRow = findViewById(R.id.dex_progress_row);
+            this.decodeResultLayout = findViewById(R.id.decode_result_layout);
+            this.decodeResultTitle = (TextView) findViewById(R.id.decode_result_title);
+            this.decodeResultDetail = (TextView) findViewById(R.id.decode_result_detail);
+            findViewById(R.id.down_arrow_container).setOnClickListener(this);
+        } else {
+            this.dexDecodeLayout.setVisibility(8);
+        }
+        this.searchOptionImage = (ImageView) findViewById(R.id.imageview_text_check);
+        this.searchOptionCase = (ImageView) findViewById(R.id.imageview_insensitive_check);
+        updateSearchOption();
+        AutoCompleteTextView editView = (AutoCompleteTextView) findViewById(R.id.keyword_edit);
+        this.strKeywordAdapter = new AutoCompleteAdapter(getApplicationContext(), "string_keywords");
+        editView.setAdapter(this.strKeywordAdapter);
+        AutoCompleteTextView editView2 = (AutoCompleteTextView) findViewById(R.id.et_res_keyword);
+        this.resKeywordAdapter = new AutoCompleteAdapter(getApplicationContext(), "res_keywords");
+        editView2.setAdapter(this.resKeywordAdapter);
+        AutoCompleteTextView editView3 = (AutoCompleteTextView) findViewById(R.id.mf_keyword);
+        this.mfKeywordAdapter = new AutoCompleteAdapter(getApplicationContext(), "mf_keywords");
+        editView3.setAdapter(this.mfKeywordAdapter);
+    }
+
+    /* renamed from: lambda$initView$2$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m59lambda$initView$2$comgmailheagooapkeditorApkInfoActivity(View v) {
+        startApkDecode();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* renamed from: lambda$initView$3$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m60lambda$initView$3$comgmailheagooapkeditorApkInfoActivity(View v) {
+        ClipboardManager clipboard = (ClipboardManager) getSystemService("clipboard");
+        StringBuilder report = new StringBuilder();
+        report.append(getString(R.string.about_apk_editor_title)).append("\nAndroid ").append(Build.VERSION.RELEASE).append(" (SDK ").append(Build.VERSION.SDK_INT).append(")\n").append("Status: ").append(((TextView) findViewById(R.id.tv_tip)).getText()).append('\n');
+        if (this.lastLoadError != null) {
+            report.append("Error: ").append(this.lastLoadError).append('\n');
+        }
+        ApkParseThread worker = this.parseThread;
+        if (worker != null) {
+            report.append(worker.getStageTimings()).append('\n');
+        }
+        if (worker != null && worker.isAlive()) {
+            report.append("Thread: ").append(worker.getState()).append('\n');
+            for (StackTraceElement frame : worker.getStackTrace()) {
+                report.append("  at ").append(frame).append('\n');
+            }
+        }
+        clipboard.setPrimaryClip(ClipData.newPlainText("APK decode diagnostic", report.toString()));
+        Toast.makeText((Context) this, R.string.lab_load_copied, 0).show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void updateSearchOption() {
+        int txtId;
+        int caseId;
+        if (GlobalConfig.instance(this).isDarkTheme()) {
+            txtId = this.searchTextContent ? R.drawable.searchtxt_checked_white : R.drawable.searchtxt_unchecked_white;
+            caseId = this.searchResSensitive ? R.drawable.ic_case_sensitive_white : R.drawable.ic_case_insensitive_white;
+        } else {
+            txtId = this.searchTextContent ? R.drawable.searchtxt_checked : R.drawable.searchtxt_unchecked;
+            caseId = this.searchResSensitive ? R.drawable.ic_case_sensitive : R.drawable.ic_case_insensitive;
+        }
+        this.searchOptionImage.setImageResource(txtId);
+        this.searchOptionCase.setImageResource(caseId);
+    }
+
+    private boolean isAmazonVersion() {
+        try {
+            ApplicationInfo appInfo = getPackageManager().getApplicationInfo(getPackageName(), BinaryDiffIndex.PAGE_ROWS);
+            String channel = appInfo.metaData.getString("com.gmail.heagoo.publish_channel");
+            return "amazon".equals(channel);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void setupMfSearch() {
+        Button btn = (Button) findViewById(R.id.btn_search_mf);
+        btn.setOnClickListener(this);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    @Override // android.view.View.OnClickListener
+    public void onClick(View v) {
+        int id = v.getId();
+        if (id == R.id.translate && !this.resourceParsed) {
+            Toast.makeText((Context) this, R.string.wait_for_decoding, 0).show();
+            return;
+        }
+        if (id == R.id.search_button) {
+            EditText keywordEt = (EditText) findViewById(R.id.keyword_edit);
+            String keyword = keywordEt.getText().toString().trim();
+            if (!keyword.equals("")) {
+                searchStringByKeyword(keyword);
+                this.strKeywordAdapter.addInputHistory(keyword);
+            } else {
+                updateStringList();
+            }
+            InputMethodManager inputMethodManager = (InputMethodManager) getSystemService("input_method");
+            inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 2);
+            return;
+        }
+        if (id == R.id.btn_search_mf) {
+            EditText et = (EditText) findViewById(R.id.mf_keyword);
+            String keyword2 = et.getText().toString().trim();
+            if (keyword2.equals("")) {
+                Toast.makeText((Context) this, R.string.empty_input_tip, 0).show();
+                return;
+            }
+            this.mfKeywordAdapter.addInputHistory(keyword2);
+            ArrayList<Integer> lines = new ArrayList<>();
+            ArrayList<String> lineContents = new ArrayList<>();
+            searchManifest(keyword2, lines, lineContents);
+            if (lines.isEmpty()) {
+                Toast.makeText((Context) this, R.string.notfound_in_manifest, 0).show();
+                return;
+            }
+            Intent intent = new Intent((Context) this, (Class<?>) MfSearchRetActivity.class);
+            Bundle bundle = new Bundle();
+            String xmlPath = this.decodeRootPath + "/AndroidManifest.xml";
+            bundle.putString("xmlPath", xmlPath);
+            bundle.putIntegerArrayList("lineIndexs", lines);
+            bundle.putStringArrayList("lineContents", lineContents);
+            intent.putExtras(bundle);
+            startActivityForResult(intent, 2);
+            return;
+        }
+        if (id == R.id.menu_search_res) {
+            EditText et2 = (EditText) findViewById(R.id.et_res_keyword);
+            String keyword3 = et2.getText().toString().trim();
+            if (keyword3.equals("")) {
+                Toast.makeText((Context) this, R.string.empty_input_tip, 0).show();
+                return;
+            }
+            if (this.resListAdapter != null) {
+                ArrayList<String> filenameList = new ArrayList<>();
+                ArrayList<FileRecord> records = new ArrayList<>();
+                String curFolder = this.resListAdapter.getData(records);
+                if (!"..".equals(records.get(0).fileName)) {
+                    filenameList.add(records.get(0).fileName);
+                }
+                for (int i = 1; i < records.size(); i++) {
+                    filenameList.add(records.get(i).fileName);
+                }
+                boolean bSearchFilename = !this.searchTextContent;
+                searchInResourceFiles(keyword3, curFolder, filenameList, bSearchFilename, this.searchResSensitive);
+                return;
+            }
+            return;
+        }
+        if (id == R.id.imageview_dex2smali) {
+            boolean showed = PreferenceUtil.getBoolean(this, "smali_license_showed", false);
+            if (!showed) {
+                new SmaliNoticeDialog(this).show();
+            }
+            decodeDex(null);
+            return;
+        }
+        if (id == R.id.down_arrow_container) {
+            this.dexDecodeLayout.setVisibility(8);
+            return;
+        }
+        if (id == R.id.menu_rotate) {
+            this.rotateClickedTimes++;
+            if (this.rotateClickedTimes % 2 == 1) {
+                setRequestedOrientation(6);
+                return;
+            } else {
+                setRequestedOrientation(7);
+                return;
+            }
+        }
+        if (id == R.id.menu_webserver) {
+            HttpServiceManager.instance().startWebService(this, this.decodeRootPath);
+        } else if (id == R.id.menu_apply_patch) {
+            new PatchDialog(this).show();
+        } else if (id == R.id.translate) {
+            startNewTranslation();
+        }
+    }
+
+    protected void searchInResourceFiles(String keyword, String directory, ArrayList<String> filenameList, boolean bSearchFilename, boolean caseSensitive) {
+        if (this.resKeywordAdapter != null) {
+            this.resKeywordAdapter.addInputHistory(keyword);
+        }
+        if (bSearchFilename) {
+            SearchFilenameDialog dlg = new SearchFilenameDialog(this, directory, filenameList, keyword, caseSensitive);
+            dlg.show();
+        } else {
+            new SearchTextDialog(this, directory, filenameList, keyword, caseSensitive).show();
+        }
+    }
+
+    private void searchManifest(String keyword, List<Integer> lineIndexs, List<String> lineContents) {
+        String filePath = this.decodeRootPath + "/AndroidManifest.xml";
+        try {
+            FileInputStream fis = new FileInputStream(filePath);
+            BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+            String line = br.readLine();
+            int index = 1;
+            while (line != null) {
+                if (line.contains(keyword)) {
+                    lineIndexs.add(Integer.valueOf(index));
+                    lineContents.add(line);
+                }
+                line = br.readLine();
+                index++;
+            }
+            br.close();
+            fis.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /* renamed from: lambda$setupClickListener$4$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m80x4044eabe(View v) {
+        stringRadioClicked();
+    }
+
+    protected void setupClickListener() {
+        this.stringRadio.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda36
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                ApkInfoActivity.this.m80x4044eabe(view);
+            }
+        });
+        this.resRadio.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda37
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                ApkInfoActivity.this.m81x331541d(view);
+            }
+        });
+        this.manifestRadio.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda38
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                ApkInfoActivity.this.m82xc61dbd7c(view);
+            }
+        });
+        this.saveBtn = (Button) findViewById(R.id.save_button);
+        this.saveBtn.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda39
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                ApkInfoActivity.this.m83x890a26db(view);
+            }
+        });
+        findViewById(R.id.menu_project_tools).setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda40
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                ApkInfoActivity.this.m84x4bf6903a(view);
+            }
+        });
+        this.webserverMenu = findViewById(R.id.menu_webserver);
+        this.rotateMenu = findViewById(R.id.menu_rotate);
+        this.webserverMenu.setOnClickListener(this);
+        this.rotateMenu.setOnClickListener(this);
+        this.patchMenu = findViewById(R.id.menu_apply_patch);
+        if (isPro()) {
+            this.patchMenu.setOnClickListener(this);
+        } else {
+            this.patchMenu.setVisibility(8);
+        }
+    }
+
+    /* renamed from: lambda$setupClickListener$5$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m81x331541d(View v) {
+        resRadioClicked();
+    }
+
+    /* renamed from: lambda$setupClickListener$6$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m82xc61dbd7c(View v) {
+        manifestRadioClicked();
+    }
+
+    /* renamed from: lambda$setupClickListener$7$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m83x890a26db(View v) {
+        composeApkFile();
+    }
+
+    /* renamed from: lambda$setupClickListener$8$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m84x4bf6903a(View v) {
+        showProjectTools();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private ArrayAdapter<String> dialogChoiceAdapter(String[] items) {
+        return new ArrayAdapter<String>((Context) this, R.layout.lab_dialog_list_item, items);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void showProjectTools() {
+        if (!this.resourceParsed || this.decodeRootPath == null || !new File(this.decodeRootPath).isDirectory()) {
+            Toast.makeText((Context) this, (CharSequence) "Дождитесь открытия проекта", 0).show();
+        } else {
+            String[] choices = {"Диагностика XML и smali", "Найти использование ресурса", "Сравнить переводы", "Создать контрольную точку", "Восстановить контрольную точку"};
+            new AlertDialog.Builder(this).setTitle("Инструменты проекта").setAdapter(dialogChoiceAdapter(choices), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda34
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i) {
+                    ApkInfoActivity.this.m89xc2305a3(dialogInterface, i);
+                }
+            }).setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).show();
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* renamed from: lambda$showProjectTools$10$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m89xc2305a3(DialogInterface dialog, int which) {
+        if (which == 0) {
+            runProjectAnalysis(null);
+            return;
+        }
+        if (which == 1) {
+            final EditText input = new EditText(this);
+            input.setSingleLine(true);
+            input.setHint("Например: string/app_name");
+            new AlertDialog.Builder(this).setTitle("Поиск ресурса").setView(input).setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton("Искать", new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda26
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i) {
+                    ApkInfoActivity.this.m90x3c31a359(input, dialogInterface, i);
+                }
+            }).show();
+            return;
+        }
+        if (which != 2) {
+            if (which != 3) {
+                restoreCheckpoint();
+                return;
+            } else {
+                createCheckpoint();
+                return;
+            }
+        }
+        compareLocales();
+    }
+
+    /* renamed from: lambda$showProjectTools$9$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m90x3c31a359(EditText input, DialogInterface d, int w) {
+        runProjectAnalysis(input.getText().toString().trim());
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void runProjectAnalysis(final String resource) {
+        if (this.analysisJob != null) {
+            return;
+        }
+        if (this.dexConversionInProgress) {
+            new AlertDialog.Builder(this).setTitle("Диагностика проекта").setMessage("Дождитесь окончания преобразования DEX в smali: во время записи проверка может получить неполные файлы.").setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+            return;
+        }
+        final File root = new File(this.decodeRootPath);
+        final AnalysisJob job = new AnalysisJob();
+        this.analysisJob = job;
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(1);
+        int p = (int) (getResources().getDisplayMetrics().density * 20.0f);
+        content.setPadding(p, p, p, p / 2);
+        job.progressText = new TextView(this);
+        job.progressText.setText("Подготовка проверки…");
+        job.progressText.setTextIsSelectable(false);
+        content.addView(job.progressText);
+        ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progress.setIndeterminate(true);
+        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(-1, (int) (getResources().getDisplayMetrics().density * 5.0f));
+        progressParams.topMargin = p / 2;
+        content.addView(progress, progressParams);
+        job.dialog = new AlertDialog.Builder(this).setTitle(resource == null ? "Диагностика XML и smali" : "Поиск использования ресурса").setView(content).setCancelable(false).setNegativeButton("Отменить", (DialogInterface.OnClickListener) null).create();
+        job.dialog.setOnShowListener(new DialogInterface.OnShowListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda1
+            @Override // android.content.DialogInterface.OnShowListener
+            public final void onShow(DialogInterface dialogInterface) {
+                job.dialog.getButton(-2).setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda25
+                    @Override // android.view.View.OnClickListener
+                    public final void onClick(View view) {
+                        ApkInfoActivity.lambda$runProjectAnalysis$11(job, view);
+                    }
+                });
+            }
+        });
+        job.dialog.show();
+        job.worker = new Thread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda2
+            @Override // java.lang.Runnable
+            public final void run() {
+                ApkInfoActivity.this.m79xa753bc88(job, resource, root);
+            }
+        }, "project-analysis");
+        job.worker.start();
+    }
+
+    static /* synthetic */ void lambda$runProjectAnalysis$11(AnalysisJob job, View v) {
+        job.cancelled.set(true);
+        job.progressText.setText("Останавливаем проверку…");
+        job.dialog.getButton(-2).setEnabled(false);
+        if (job.worker != null) {
+            job.worker.interrupt();
+        }
+    }
+
+    /* renamed from: lambda$runProjectAnalysis$16$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m79xa753bc88(final AnalysisJob job, final String resource, final File root) {
+        ProjectAnalysis.Report resourceUses;
+        ProjectAnalysis.Progress listener = new ProjectAnalysis.Progress() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda19
+            @Override // com.gmail.heagoo.apkeditor.ProjectAnalysis.Progress
+            public final void update(String str, int i, int i2, String str2) {
+                ApkInfoActivity.this.m77x217ae9ca(job, str, i, i2, str2);
+            }
+        };
+        ProjectAnalysis.Report report = null;
+        String error = null;
+        try {
+            if (resource == null) {
+                final AtomicBoolean atomicBoolean = job.cancelled;
+                Objects.requireNonNull(atomicBoolean);
+                resourceUses = ProjectAnalysis.diagnose(root, listener, new BooleanSupplier() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda20
+                    @Override // java.util.function.BooleanSupplier
+                    public final boolean getAsBoolean() {
+                        return atomicBoolean.get();
+                    }
+                });
+            } else {
+                final AtomicBoolean atomicBoolean2 = job.cancelled;
+                Objects.requireNonNull(atomicBoolean2);
+                resourceUses = ProjectAnalysis.resourceUses(root, resource, listener, new BooleanSupplier() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda20
+                    @Override // java.util.function.BooleanSupplier
+                    public final boolean getAsBoolean() {
+                        return atomicBoolean2.get();
+                    }
+                });
+            }
+            report = resourceUses;
+        } catch (OutOfMemoryError e) {
+            error = "Недостаточно памяти для проверки. Закройте другие приложения и повторите.";
+        } catch (Throwable ex) {
+            error = ex.getMessage() == null ? ex.toString() : ex.getMessage();
+        }
+        final ProjectAnalysis.Report result = report;
+        final String failure = error;
+        runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda21
+            @Override // java.lang.Runnable
+            public final void run() {
+                ApkInfoActivity.this.m78xe4675329(job, failure, result, root, resource);
+            }
+        });
+    }
+
+    /* renamed from: lambda$runProjectAnalysis$14$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m77x217ae9ca(final AnalysisJob job, String phase, int done, int total, String path) {
+        StringBuilder sb;
+        StringBuilder append;
+        long now = System.nanoTime();
+        if (now - job.lastUpdateNanos >= 200000000 || (total > 0 && done == total)) {
+            job.lastUpdateNanos = now;
+            String name = path == null ? "" : path;
+            if (name.length() > 110) {
+                name = "…" + name.substring(name.length() - 109);
+            }
+            StringBuilder append2 = new StringBuilder().append(phase);
+            if (total > 0) {
+                sb = new StringBuilder();
+                append = sb.append(": ").append(done).append(" / ").append(total);
+            } else {
+                sb = new StringBuilder();
+                append = sb.append(": ").append(done);
+            }
+            final String message = append2.append(append.toString()).append(name.isEmpty() ? "" : "\n" + name).toString();
+            runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda17
+                @Override // java.lang.Runnable
+                public final void run() {
+                    ApkInfoActivity.this.m76x5e8e806b(job, message);
+                }
+            });
+        }
+    }
+
+    /* renamed from: lambda$runProjectAnalysis$13$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m76x5e8e806b(AnalysisJob job, String message) {
+        if (this.analysisJob != job || job.cancelled.get() || isFinishing() || isDestroyed()) {
+            return;
+        }
+        job.progressText.setText(message);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* renamed from: lambda$runProjectAnalysis$15$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m78xe4675329(AnalysisJob job, String failure, ProjectAnalysis.Report result, File root, String resource) {
+        if (this.analysisJob != job) {
+            return;
+        }
+        this.analysisJob = null;
+        if (job.dialog != null) {
+            job.dialog.dismiss();
+        }
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+        if (!job.cancelled.get()) {
+            if (failure != null || result == null) {
+                new AlertDialog.Builder(this).setTitle("Проверка не завершена").setMessage("Не удалось выполнить анализ: " + (failure == null ? "неизвестная ошибка" : failure)).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+                return;
+            } else {
+                showAnalysisReport(root, result, resource);
+                return;
+            }
+        }
+        Toast.makeText((Context) this, (CharSequence) "Проверка отменена", 0).show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void showAnalysisReport(final File root, final ProjectAnalysis.Report r, String resource) {
+        String caution;
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+        if (resource == null) {
+            caution = "Проверка не заменяет сборку: межфайловые зависимости и часть ресурсов могут содержать другие ошибки.\nПроверено XML: " + r.xmlChecked + ", smali: " + r.smaliChecked + "; пропущено: " + r.skipped + ".";
+            if (r.smaliChecked == 0) {
+                caution = caution + "\nФайлы smali не найдены. При необходимости сначала преобразуйте DEX в smali.";
+            }
+            if (r.smaliNotParsed > 0) {
+                caution = caution + "\nСинтаксис smali не удалось полностью проверить для файлов: " + r.smaliNotParsed + ". Выполнена только доступная структурная проверка.";
+            }
+            if (r.resourceIndexIncomplete) {
+                caution = caution + "\nИндекс ресурсов неполный: предупреждения о ссылках могут быть неточными.";
+            }
+        } else {
+            caution = "Поиск только по тексту на диске: динамические ссылки, числовые ID и нераспакованные файлы могут не обнаружиться.\nПроверено файлов: " + r.checked + ", пропущено: " + r.skipped + ".";
+        }
+        if (r.truncated) {
+            caution = caution + "\nРезультаты или число файлов ограничены.";
+        }
+        String caution2 = caution + "\nНесохранённые изменения форм могут отсутствовать.";
+        String[] items = new String[r.findings.size() + 1];
+        items[0] = caution2;
+        for (int i = 0; i < r.findings.size(); i++) {
+            items[i + 1] = r.findings.get(i).toString();
+        }
+        AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle(resource == null ? "Диагностика проекта" : "Использование " + resource).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null);
+        if (r.findings.isEmpty()) {
+            b.setMessage(caution2 + (r.checked == 0 ? "\nПодходящих файлов для проверки не найдено." : resource == null ? "\nЗамечаний не найдено." : "\nСовпадений не найдено."));
+        } else {
+            b.setAdapter(dialogChoiceAdapter(items), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda48
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i2) {
+                    ApkInfoActivity.this.m85xa18dd12a(root, r, dialogInterface, i2);
+                }
+            });
+        }
+        b.show();
+    }
+
+    /* renamed from: lambda$showAnalysisReport$17$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m85xa18dd12a(File root, ProjectAnalysis.Report r, DialogInterface d, int index) {
+        if (index > 0) {
+            openAnalysisFinding(root, r.findings.get(index - 1));
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void openAnalysisFinding(File root, ProjectAnalysis.Finding finding) {
+        try {
+            File f = new File(root, finding.path).getCanonicalFile();
+            String prefix = root.getCanonicalPath() + File.separator;
+            if (!f.getPath().startsWith(prefix) || !f.isFile()) {
+                throw new IOException("Файл недоступен");
+            }
+            String entry = finding.path;
+            String edited = this.resListAdapter == null ? null : this.resListAdapter.getReplacedFilePath(entry);
+            if (edited != null) {
+                f = new File(edited);
+            }
+            Intent intent = TextEditor.getEditorIntent(this, f.getPath(), this.apkPath);
+            String syntax = getEditableSyntax(finding.path);
+            if (syntax != null) {
+                ActivityUtil.attachParam(intent, "syntaxFileName", syntax);
+            }
+            ActivityUtil.attachParam(intent, "displayFileName", new File(finding.path).getName());
+            ActivityUtil.attachParam(intent, "extraString", entry);
+            ActivityUtil.attachParam(intent, "startLine", Integer.toString(Math.max(1, finding.line)));
+            startActivityForResult(intent, 0);
+        } catch (Exception e) {
+            Toast.makeText((Context) this, (CharSequence) ("Не удалось открыть: " + e.getMessage()), 1).show();
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void compareLocales() {
+        if (this.allStringValues == null || this.allStringValues.isEmpty()) {
+            Toast.makeText((Context) this, (CharSequence) "Строковые ресурсы ещё не подготовлены", 0).show();
+            return;
+        }
+        final List<String> configs = new ArrayList<>(this.allStringValues.keySet());
+        Collections.sort(configs);
+        final String[] names = new String[configs.size()];
+        for (int i = 0; i < names.length; i++) {
+            names[i] = configs.get(i).isEmpty() ? "По умолчанию" : configs.get(i);
+        }
+        new AlertDialog.Builder(this).setTitle("Базовый язык").setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda45
+            @Override // android.content.DialogInterface.OnClickListener
+            public final void onClick(DialogInterface dialogInterface, int i2) {
+                ApkInfoActivity.this.m52x23d1a179(names, configs, dialogInterface, i2);
+            }
+        }).show();
+    }
+
+    /* renamed from: lambda$compareLocales$18$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m50xa09429f0(List configs, int baseIndex, int targetIndex, DialogInterface d3, int mode) {
+        showLocaleDifferences((String) configs.get(baseIndex), (String) configs.get(targetIndex), mode == 1);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* renamed from: lambda$compareLocales$19$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m51x6380934f(final List configs, final int baseIndex, DialogInterface d2, final int targetIndex) {
+        new AlertDialog.Builder(this).setTitle("Показать").setAdapter(dialogChoiceAdapter(new String[]{"Только отсутствующие и ошибки", "Все строки"}), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda33
+            @Override // android.content.DialogInterface.OnClickListener
+            public final void onClick(DialogInterface dialogInterface, int i) {
+                ApkInfoActivity.this.m50xa09429f0(configs, baseIndex, targetIndex, dialogInterface, i);
+            }
+        }).show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* renamed from: lambda$compareLocales$20$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m52x23d1a179(String[] names, final List configs, DialogInterface d, final int baseIndex) {
+        new AlertDialog.Builder(this).setTitle("Сравнить с языком").setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda46
+            @Override // android.content.DialogInterface.OnClickListener
+            public final void onClick(DialogInterface dialogInterface, int i) {
+                ApkInfoActivity.this.m51x6380934f(configs, baseIndex, dialogInterface, i);
+            }
+        }).show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void showLocaleDifferences(String base, final String target, boolean showAll) {
+        StringBuilder append = null;
+        String str = null;
+        StringBuilder sb;
+        final Map<String, StringItem> t = new HashMap<>();
+        Iterator<StringItem> it = this.allStringValues.get(target).iterator();
+        while (it.hasNext()) {
+            StringItem item = it.next();
+            t.put(item.name, item);
+        }
+        final List<StringItem> entries = new ArrayList<>();
+        List<String> labels = new ArrayList<>();
+        Iterator<StringItem> it2 = this.allStringValues.get(base).iterator();
+        while (it2.hasNext()) {
+            StringItem item2 = it2.next();
+            StringItem v = t.get(item2.name);
+            if (v == null) {
+                entries.add(item2);
+                append = new StringBuilder().append(item2.name);
+                str = " — перевод отсутствует";
+            } else if (!LocalizationChecks.tokens(item2.value).equals(LocalizationChecks.tokens(v.value))) {
+                entries.add(item2);
+                sb = new StringBuilder().append(item2.name).append(" — плейсхолдеры ").append(LocalizationChecks.tokens(item2.value)).append(" / ").append(LocalizationChecks.tokens(v.value));
+                labels.add(sb.toString());
+            } else if (showAll) {
+                entries.add(item2);
+                append = new StringBuilder().append(item2.name).append(" — ");
+                str = v.value;
+            }
+            sb = append.append(str);
+            labels.add(sb.toString());
+        }
+        AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle("Переводы: " + (base.isEmpty() ? "по умолчанию" : base) + " → " + (target.isEmpty() ? "по умолчанию" : target)).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null);
+        if (labels.isEmpty()) {
+            b.setMessage("Отсутствующие строки и несовпадения простых плейсхолдеров не найдены.");
+        } else {
+            labels.add(0, "Сравниваются строковые ресурсы; plurals, arrays и нестандартные форматы не проверяются. Нажмите на строку для редактирования.");
+            b.setAdapter(dialogChoiceAdapter((String[]) labels.toArray(new String[0])), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda35
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i) {
+                    ApkInfoActivity.this.m88x613d8627(entries, t, target, dialogInterface, i);
+                }
+            });
+        }
+        b.show();
+    }
+
+    /* renamed from: lambda$showLocaleDifferences$21$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m86xdb64b369(String target, StringItem source, EditText translation, DialogInterface q, int w) {
+        addMissingTranslation(target, source.name, translation.getText().toString());
+    }
+
+    /* renamed from: lambda$showLocaleDifferences$22$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m87x9e511cc8(String target, StringItem dest, EditText edit, DialogInterface x, int w) {
+        writeTranslation(target, dest, edit.getText().toString());
+    }
+
+    // Restored manually during source recovery from the DEX instructions of
+    // lambda$showLocaleDifferences$23 (JADX failed to generate this method).
+    void m88x613d8627(List<StringItem> entries, Map<String, StringItem> t, final String target, DialogInterface d, int i) {
+        if (i == 0) {
+            return;
+        }
+        final StringItem source = entries.get(i - 1);
+        final StringItem dest = t.get(source.name);
+        final EditText translation = new EditText(this);
+        if (dest == null) {
+            translation.setHint(source.value);
+            new AlertDialog.Builder(this)
+                    .setTitle("Добавить: " + source.name)
+                    .setMessage("Базовое значение: " + source.value + "\nПеревод будет записан в отдельный XML-файл ресурсов.")
+                    .setView(translation)
+                    .setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null)
+                    .setPositiveButton("Добавить", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            ApkInfoActivity.this.m86xdb64b369(target, source, translation, dialog, which);
+                        }
+                    })
+                    .show();
+            return;
+        }
+        translation.setText(dest.value);
+        new AlertDialog.Builder(this)
+                .setTitle(dest.name)
+                .setMessage("Базовое значение: " + source.value + (dest.styledValue == null ? "\nВнимание: форматирование существующего перевода может быть потеряно." : ""))
+                .setView(translation)
+                .setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null)
+                .setPositiveButton("Сохранить", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        ApkInfoActivity.this.m87x9e511cc8(target, dest, translation, dialog, which);
+                    }
+                })
+                .show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void writeTranslation(String qualifier, StringItem item, String value) {
+        char c;
+        int i;
+        Map<String, String> staged;
+        try {
+            Map<String, String> staged2 = this.stringListAdapter.getChangedValues().get(qualifier);
+            if (staged2 != null && staged2.containsKey(item.name)) {
+                throw new IOException("Для этой строки уже есть несохранённая правка в визуальной форме. Сначала сохраните проект.");
+            }
+            if (item.name.matches("[a-z][a-z0-9_]*") && (qualifier.isEmpty() || qualifier.matches("-[A-Za-z0-9-]+"))) {
+                File dir = new File(this.decodeRootPath, "res/values" + qualifier);
+                File[] files = dir.listFiles(new FilenameFilter() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda47
+                    @Override // java.io.FilenameFilter
+                    public final boolean accept(File file, String str) {
+                        boolean endsWith;
+                        endsWith = str.endsWith(".xml");
+                        return endsWith;
+                    }
+                });
+                if (files == null) {
+                    throw new IOException("Нет папки ресурсов");
+                }
+                Pattern pat = Pattern.compile("(?s)(<string\\b(?=[^>]*\\bname\\s*=\\s*[\"']" + Pattern.quote(item.name) + "[\"'])[^>]*>)([^<]*)(</string\\s*>)");
+                File matchFile = null;
+                String matchText = null;
+                int begin = 0;
+                int end = 0;
+                int count = 0;
+                int length = files.length;
+                int i2 = 0;
+                while (i2 < length) {
+                    File f = files[i2];
+                    if (Files.isSymbolicLink(f.toPath())) {
+                        i = i2;
+                        staged = staged2;
+                    } else if (f.length() > 4194304) {
+                        i = i2;
+                        staged = staged2;
+                    } else {
+                        i = i2;
+                        staged = staged2;
+                        String text = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+                        Matcher matcher = pat.matcher(text);
+                        while (matcher.find()) {
+                            count++;
+                            matchFile = f;
+                            matchText = text;
+                            begin = matcher.start(2);
+                            end = matcher.end(2);
+                        }
+                    }
+                    i2 = i + 1;
+                    staged2 = staged;
+                }
+                if (count != 1) {
+                    throw new IOException("Строка не найдена однозначно или содержит форматирование; используйте редактор XML.");
+                }
+                String relative = new File(this.decodeRootPath).toPath().relativize(matchFile.toPath()).toString().replace(File.separatorChar, '/');
+                String stagedPath = this.resListAdapter.getReplacedFilePath(relative);
+                if (!this.resListAdapter.getDeletedFiles().contains(relative)) {
+                    if (stagedPath != null) {
+                        c = 1;
+                        if (!new File(stagedPath).getCanonicalFile().equals(matchFile.getCanonicalFile())) {
+                        }
+                    } else {
+                        c = 1;
+                    }
+                    String encoded = StringItem.toString(item.name, value, (String) null);
+                    if (encoded.contains("formatted=\"false\"") && !matchText.substring(Math.max(0, matchText.lastIndexOf("<string", begin)), begin).contains("formatted=\"false\"")) {
+                        throw new IOException("Несколько непозиционных плейсхолдеров: используйте %1$s, %2$d или редактор XML.");
+                    }
+                    int a = encoded.indexOf(62);
+                    int b = encoded.lastIndexOf("</string>");
+                    if (a < 0 || b < a) {
+                        throw new IOException("Не удалось закодировать строку");
+                    }
+                    String result = matchText.substring(0, begin) + encoded.substring(a + 1, b) + matchText.substring(end);
+                    File temp = File.createTempFile(".translation-", ".tmp", dir);
+                    try {
+                        try {
+                            try {
+                                Files.write(temp.toPath(), result.getBytes(StandardCharsets.UTF_8), new OpenOption[0]);
+                                Path path = temp.toPath();
+                                Path path2 = matchFile.toPath();
+                                CopyOption[] copyOptionArr = new CopyOption[2];
+                                copyOptionArr[0] = StandardCopyOption.ATOMIC_MOVE;
+                                copyOptionArr[c] = StandardCopyOption.REPLACE_EXISTING;
+                                Files.move(path, path2, copyOptionArr);
+                                temp.delete();
+                                this.resListAdapter.fileModified(relative, matchFile.getAbsolutePath());
+                                item.value = value;
+                                item.styledValue = null;
+                                updateStringList();
+                                Toast.makeText((Context) this, (CharSequence) "Перевод сохранён в файле проекта", 0).show();
+                                return;
+                            } catch (Throwable th) {
+                                th = th;
+                                temp.delete();
+                                throw th;
+                            }
+                        } catch (Throwable th2) {
+                        }
+                    } catch (Throwable th3) {
+                    }
+                }
+                throw new IOException("Файл содержит отложенную замену или удалён; откройте его через редактор ресурсов.");
+            }
+            throw new IOException("Неподдерживаемое имя или квалификатор");
+        } catch (Exception e) {
+            new AlertDialog.Builder(this).setMessage("Не удалось сохранить перевод: " + e.getMessage()).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void addMissingTranslation(String qualifier, String name, String value) {
+        try {
+            if (!name.matches("[a-z][a-z0-9_]*") || (!qualifier.isEmpty() && !qualifier.matches("-[A-Za-z0-9-]+"))) {
+                throw new IOException("Неподдерживаемое имя ресурса или квалификатор");
+            }
+            File folder = new File(this.decodeRootPath, "res/values" + qualifier);
+            String filename = "ae_translation_" + name + ".xml";
+            File targetFile = new File(folder, filename);
+            if (!targetFile.exists()) {
+                String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n" + StringItem.toString(name, value, (String) null) + "\n</resources>\n";
+                byte[] data = xml.getBytes(StandardCharsets.UTF_8);
+                InputStream in = new ByteArrayInputStream(data);
+                try {
+                    this.resListAdapter.addFile(targetFile.getAbsolutePath(), in);
+                    in.close();
+                    this.allStringValues.get(qualifier).add(new StringItem(name, value));
+                    this.resListAdapter.notifyDataSetChanged();
+                    if (qualifier.equals(this.curConfig)) {
+                        updateStringList();
+                    }
+                    Toast.makeText((Context) this, (CharSequence) ("Добавлено в " + filename), 1).show();
+                    return;
+                } finally {
+                }
+            }
+            throw new IOException("Файл уже существует: " + targetFile);
+        } catch (Exception e) {
+            new AlertDialog.Builder(this).setMessage("Не удалось добавить перевод: " + e).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public File checkpointRoot() {
+        return new File(getFilesDir(), "project-checkpoints");
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public Map<String, String> checkpointMap(Map<String, String> input, File folder) throws Exception {
+        Map<String, String> out = new HashMap<>();
+        int i = 0;
+        if (input != null) {
+            for (Map.Entry<String, String> e : input.entrySet()) {
+                if (e.getValue() == null) {
+                    throw new IOException("Нет содержимого " + e.getKey());
+                }
+                File dest = new File(folder, Integer.toString(i));
+                CheckpointFiles.copy(new File(e.getValue()), dest);
+                out.put(e.getKey(), dest.getAbsolutePath());
+                i++;
+            }
+        }
+        return out;
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void createCheckpoint() {
+        if (this.curConfig == null || this.allStringValues == null || this.resListAdapter == null) {
+            Toast.makeText((Context) this, (CharSequence) "Дождитесь полной загрузки проекта", 0).show();
+        } else {
+            new AlertDialog.Builder(this).setTitle("Контрольная точка").setMessage("Будут скопированы файлы проекта, исходный APK и несохранённые изменения редактора. Нужен свободный объём памяти. Исходный проект не изменится.").setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton("Создать", new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda31
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i) {
+                    ApkInfoActivity.this.m53xe1911c04(dialogInterface, i);
+                }
+            }).show();
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* renamed from: lambda$createCheckpoint$25$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m53xe1911c04(DialogInterface d, int w) {
+        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.6
+            File dest;
+            String error;
+
+            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
+            public void process() {
+                try {
+                    File root = ApkInfoActivity.this.checkpointRoot();
+                    if (!root.isDirectory() && !root.mkdirs()) {
+                        throw new IOException("Не создать папку контрольных точек");
+                    }
+                    this.dest = new File(root, "checkpoint-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 8));
+                    if (!this.dest.mkdir()) {
+                        throw new IOException("Не создать контрольную точку");
+                    }
+                    CheckpointFiles.copy(new File(ApkInfoActivity.this.decodeRootPath), new File(this.dest, "decoded"));
+                    CheckpointFiles.copy(new File(ApkInfoActivity.this.apkPath), new File(this.dest, "original.apk"));
+                    ActivityState_V1 state = ApkInfoActivity.this.saveCurrentState(this.dest.getAbsolutePath() + "/", true, null);
+                    String[] strArr = {"allStringValues_file", "changedStringValues_file", "res_added_file", "res_replaced_file", "res_deleted_file"};
+                    for (int i = 0; i < 5; i++) {
+                        String key = strArr[i];
+                        String path = state.getString(key);
+                        if (path != null && (!new File(path).isFile() || IOUtils.readObjectFromFile(path) == null)) {
+                            throw new IOException("Не сохранено состояние: " + key);
+                        }
+                    }
+                    if (!ApkInfoActivity.this.isFullDecoding) {
+                        String mapPath = state.getString("fileEntry2ZipEntry_file");
+                        if (mapPath == null || !new File(mapPath).isFile() || IOUtils.readObjectFromFile(mapPath) == null) {
+                            throw new IOException("Не сохранены сведения об архиве");
+                        }
+                        Map<String, String> added = ApkInfoActivity.this.checkpointMap(ApkInfoActivity.this.resListAdapter.getAddedFiles(), new File(this.dest, "staged-added"));
+                        Map<String, String> replaced = ApkInfoActivity.this.checkpointMap(ApkInfoActivity.this.resListAdapter.getReplacedFiles(), new File(this.dest, "staged-replaced"));
+                        if (!added.isEmpty()) {
+                            String p = new File(this.dest, "res_added").getAbsolutePath();
+                            if (!IOUtils.writeObjectToFile(p, added)) {
+                                throw new IOException("Не сохранить добавленные файлы");
+                            }
+                            state.putString("res_added_file", p);
+                        }
+                        if (!replaced.isEmpty()) {
+                            String p2 = new File(this.dest, "res_replaced").getAbsolutePath();
+                            if (!IOUtils.writeObjectToFile(p2, replaced)) {
+                                throw new IOException("Не сохранить заменённые файлы");
+                            }
+                            state.putString("res_replaced_file", p2);
+                        }
+                        String current = state.getString("res_current_dir");
+                        if (current != null) {
+                            String from = new File(ApkInfoActivity.this.decodeRootPath).getCanonicalPath();
+                            String cur = new File(current).getCanonicalPath();
+                            state.putString("res_current_dir", (cur.equals(from) || cur.startsWith(new StringBuilder().append(from).append(File.separator).toString())) ? new File(this.dest, "decoded").getAbsolutePath() + cur.substring(from.length()) : new File(this.dest, "decoded").getAbsolutePath());
+                        }
+                    }
+                    ProjectInfo_V1 info = new ProjectInfo_V1();
+                    info.state = state;
+                    info.apkPath = new File(this.dest, "original.apk").getAbsolutePath();
+                    info.decodeRootPath = new File(this.dest, "decoded").getAbsolutePath();
+                    if (!ApkInfoActivity.this.storeProject(this.dest.getAbsolutePath(), info)) {
+                        throw new IOException("Не сохранить метаданные");
+                    }
+                } catch (Exception e) {
+                    this.error = e.toString();
+                    if (this.dest != null) {
+                        CheckpointFiles.delete(this.dest);
+                    }
+                }
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
+            public void afterProcess() {
+                new AlertDialog.Builder(ApkInfoActivity.this).setMessage(this.error == null ? "Контрольная точка создана. Восстановление создаёт отдельную копию проекта, не затрагивая текущую." : "Не удалось создать контрольную точку: " + this.error).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+            }
+        }, -1).show();
+    }
+
+    static /* synthetic */ boolean lambda$restoreCheckpoint$26(File f) {
+        return f.isDirectory() && new File(f, "ae.prj").isFile();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void restoreCheckpoint() {
+        final File[] list = checkpointRoot().listFiles(new FileFilter() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda41
+            @Override // java.io.FileFilter
+            public final boolean accept(File file) {
+                return ApkInfoActivity.lambda$restoreCheckpoint$26(file);
+            }
+        });
+        if (list == null || list.length == 0) {
+            Toast.makeText((Context) this, (CharSequence) "Контрольных точек пока нет", 0).show();
+            return;
+        }
+        Arrays.sort(list, new Comparator() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda42
+            @Override // java.util.Comparator
+            public final int compare(Object obj, Object obj2) {
+                int compareTo;
+                compareTo = ((File) obj2).getName().compareTo(((File) obj).getName());
+                return compareTo;
+            }
+        });
+        String[] names = new String[list.length];
+        DateFormat fmt = DateFormat.getDateTimeInstance();
+        for (int i = 0; i < list.length; i++) {
+            names[i] = fmt.format(new Date(list[i].lastModified()));
+        }
+        new AlertDialog.Builder(this).setTitle("Выберите контрольную точку").setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda43
+            @Override // android.content.DialogInterface.OnClickListener
+            public final void onClick(DialogInterface dialogInterface, int i2) {
+                ApkInfoActivity.this.m75x429261e2(list, dialogInterface, i2);
+            }
+        }).show();
+    }
+
+    /* renamed from: lambda$restoreCheckpoint$28$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m73xbf54ea59(File[] list, int index, DialogInterface q, int w) {
+        restoreCheckpointCopy(list[index]);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* renamed from: lambda$restoreCheckpoint$29$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m74x824153b8(final File[] list, final int index, DialogInterface x, int choice) {
+        if (choice == 0) {
+            new AlertDialog.Builder(this).setMessage("Будет создан отдельный проект. Текущий проект и контрольная точка сохранятся.").setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton("Восстановить", new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda0
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i) {
+                    ApkInfoActivity.this.m73xbf54ea59(list, index, dialogInterface, i);
+                }
+            }).show();
+        } else {
+            selectCheckpointFile(list[index]);
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* renamed from: lambda$restoreCheckpoint$30$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m75x429261e2(final File[] list, DialogInterface d, final int index) {
+        new AlertDialog.Builder(this).setTitle("Что восстановить?").setAdapter(dialogChoiceAdapter(new String[]{"Весь проект — в отдельную копию", "Один файл в текущем проекте"}), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda3
+            @Override // android.content.DialogInterface.OnClickListener
+            public final void onClick(DialogInterface dialogInterface, int i) {
+                ApkInfoActivity.this.m74x824153b8(list, index, dialogInterface, i);
+            }
+        }).show();
+    }
+
+    /* renamed from: com.gmail.heagoo.apkeditor.ApkInfoActivity$7, reason: invalid class name */
+    class AnonymousClass7 implements FileSelectDialog.IFileSelection {
+        final /* synthetic */ File val$checkpoint;
+        final /* synthetic */ File val$decoded;
+
+        AnonymousClass7(File file, File file2) {
+            this.val$decoded = file;
+            this.val$checkpoint = file2;
+        }
+
+        @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+        public boolean isInterestedFile(String name, String extra) {
+            return true;
+        }
+
+        @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+        public String getConfirmMessage(String file, String extra) {
+            return file;
+        }
+
+        @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+        public void fileSelectedInDialog(String selected, String extra, boolean ignored) {
+            try {
+                String base = this.val$decoded.getCanonicalPath() + File.separator;
+                try {
+                    File picked = new File(selected).getCanonicalFile();
+                    if (!picked.isFile() || !picked.getPath().startsWith(base)) {
+                        throw new IOException("Выберите файл внутри контрольной точки");
+                    }
+                    final String rel = picked.getPath().substring(base.length()).replace(File.separatorChar, '/');
+                    if (rel.equals("AndroidManifest.xml") || rel.matches("res/values[^/]*/.*\\.xml")) {
+                        throw new IOException("Для manifest и values используйте восстановление всего проекта: они связаны с состоянием визуального редактора");
+                    }
+                    ProjectInfo_V1 info = ApkInfoActivity.loadProject(this.val$checkpoint.getAbsolutePath());
+                    if (info == null || info.state == null) {
+                        throw new IOException("Нет метаданных");
+                    }
+                    String deleted = info.state.getString("res_deleted_file");
+                    if (deleted != null) {
+                        Object value = IOUtils.readObjectFromFile(deleted);
+                        if ((value instanceof Set) && ((Set) value).contains(rel)) {
+                            throw new IOException("Этот файл был удалён в контрольной точке");
+                        }
+                    }
+                    String[] strArr = {"res_added_file", "res_replaced_file"};
+                    for (int i = 0; i < 2; i++) {
+                        String key = strArr[i];
+                        String p = info.state.getString(key);
+                        if (p != null) {
+                            Object value2 = IOUtils.readObjectFromFile(p);
+                            if (!(value2 instanceof Map)) {
+                                throw new IOException("Повреждён индекс изменений");
+                            }
+                            Object path = ((Map) value2).get(rel);
+                            if (path instanceof String) {
+                                picked = new File((String) path).getCanonicalFile();
+                            }
+                        }
+                    }
+                    String cp = this.val$checkpoint.getCanonicalPath() + File.separator;
+                    if (!picked.getPath().startsWith(cp) || !picked.isFile()) {
+                        throw new IOException("Файл точки недоступен");
+                    }
+                    File root = new File(ApkInfoActivity.this.decodeRootPath).getCanonicalFile();
+                    final File target = new File(root, rel).getCanonicalFile();
+                    if (!target.getPath().startsWith(root.getPath() + File.separator) || !target.getParentFile().isDirectory()) {
+                        throw new IOException("Папка назначения отсутствует");
+                    }
+                    if (!ApkInfoActivity.this.resListAdapter.getDeletedFiles().contains(rel)) {
+                        final File from = picked;
+                        new AlertDialog.Builder(ApkInfoActivity.this).setMessage("Заменить текущий файл содержимым контрольной точки?\n" + rel).setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton("Восстановить", new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$7$$ExternalSyntheticLambda0
+                            @Override // android.content.DialogInterface.OnClickListener
+                            public final void onClick(DialogInterface dialogInterface, int i2) {
+                                ApkInfoActivity.AnonymousClass7.this.m91xb47d70b0(target, from, rel, dialogInterface, i2);
+                            }
+                        }).show();
+                        return;
+                    }
+                    throw new IOException("Файл удалён в текущем проекте; восстановите весь проект");
+                } catch (Exception e) {
+                    e = e;
+                    new AlertDialog.Builder(ApkInfoActivity.this).setMessage("Не удалось выбрать файл: " + e.getMessage()).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+                }
+            } catch (Exception e2) {
+            }
+        }
+
+        /* renamed from: lambda$fileSelectedInDialog$0$com-gmail-heagoo-apkeditor-ApkInfoActivity$7, reason: not valid java name */
+        /* synthetic */ void m91xb47d70b0(File to, File from, String name, DialogInterface d, int w) {
+            File temp = null;
+            try {
+                temp = File.createTempFile(".restore-", ".tmp", to.getParentFile());
+                CheckpointFiles.copy(from, temp);
+                Files.move(temp.toPath(), to.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                ApkInfoActivity.this.resListAdapter.fileModified(name, to.getAbsolutePath());
+                ApkInfoActivity.this.resListAdapter.notifyDataSetChanged();
+                Toast.makeText((Context) ApkInfoActivity.this, (CharSequence) "Файл восстановлен", 0).show();
+            } catch (Exception e) {
+                if (temp != null) {
+                    temp.delete();
+                }
+                new AlertDialog.Builder(ApkInfoActivity.this).setMessage("Восстановление не выполнено: " + e).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+            }
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void selectCheckpointFile(File checkpoint) {
+        File decoded = new File(checkpoint, "decoded");
+        FileSelectDialog.IFileSelection callback = new AnonymousClass7(decoded, checkpoint);
+        new FileSelectDialog(this, callback, "", null, "Выберите файл контрольной точки", false, false, false, "checkpoint-files", decoded.getAbsolutePath()).show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void restoreCheckpointCopy(final File source) {
+        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.8
+            File dest;
+            String error;
+            String label;
+
+            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
+            public void process() {
+                try {
+                    String projects = SDCard.makeDir(ApkInfoActivity.this, ".projects");
+                    this.label = "Восстановление-" + System.currentTimeMillis();
+                    this.dest = new File(projects, this.label);
+                    if (this.dest.exists()) {
+                        throw new IOException("Проект уже существует");
+                    }
+                    CheckpointFiles.copy(source, this.dest);
+                    ProjectInfo_V1 info = ApkInfoActivity.loadProject(this.dest.getAbsolutePath());
+                    if (info == null || info.state == null) {
+                        throw new IOException("Повреждены метаданные точки");
+                    }
+                    String old = source.getCanonicalPath();
+                    String now = this.dest.getCanonicalPath();
+                    info.apkPath = CheckpointFiles.rebase(info.apkPath, old, now);
+                    info.decodeRootPath = CheckpointFiles.rebase(info.decodeRootPath, old, now);
+                    String[] strArr = {"allStringValues_file", "changedStringValues_file", "fileEntry2ZipEntry_file", "res_added_file", "res_replaced_file", "res_deleted_file", "res_current_dir"};
+                    for (int i = 0; i < 7; i++) {
+                        String key = strArr[i];
+                        String p = info.state.getString(key);
+                        if (p != null) {
+                            info.state.putString(key, CheckpointFiles.rebase(p, old, now));
+                        }
+                    }
+                    String[] strArr2 = {"res_added_file", "res_replaced_file"};
+                    for (int i2 = 0; i2 < 2; i2++) {
+                        String key2 = strArr2[i2];
+                        String p2 = info.state.getString(key2);
+                        if (p2 != null) {
+                            Object object = IOUtils.readObjectFromFile(p2);
+                            if (!(object instanceof Map)) {
+                                throw new IOException("Повреждены данные " + key2);
+                            }
+                            Map<String, String> map = (Map) object;
+                            for (Map.Entry<String, String> e : map.entrySet()) {
+                                e.setValue(CheckpointFiles.rebase(e.getValue(), old, now));
+                            }
+                            if (!IOUtils.writeObjectToFile(p2, map)) {
+                                throw new IOException("Не сохранить данные " + key2);
+                            }
+                        }
+                    }
+                    if (!ApkInfoActivity.this.storeProject(this.dest.getAbsolutePath(), info)) {
+                        throw new IOException("Не сохранить проект");
+                    }
+                } catch (Exception e2) {
+                    this.error = e2.toString();
+                    if (this.dest != null) {
+                        CheckpointFiles.delete(this.dest);
+                    }
+                }
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
+            public void afterProcess() {
+                StringBuilder append;
+                String str;
+                AlertDialog.Builder builder = new AlertDialog.Builder(ApkInfoActivity.this);
+                if (this.error == null) {
+                    append = new StringBuilder().append("Создан проект «").append(this.label);
+                    str = "». Откройте его через боковое меню → Проекты. Текущий проект не изменён.";
+                } else {
+                    append = new StringBuilder().append("Восстановление не выполнено: ");
+                    str = this.error;
+                }
+                builder.setMessage(append.append(str).toString()).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+            }
+        }, -1).show();
+    }
+
+    private boolean isPro() {
+        return true;
+    }
+
+    private void collectAndSaveChangedString() {
+        Map<String, Map<String, String>> changedValues = this.stringListAdapter.getChangedValues();
+        if (changedValues != null && !changedValues.isEmpty()) {
+            this.stringModified = true;
+            try {
+                saveStringValues(changedValues);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    protected void composeApkFile() {
+        if (!MainActivity.upgradedFromOldVersion(this)) {
+            AlertDialog.Builder alert = new AlertDialog.Builder(this);
+            alert.setTitle(R.string.please_note);
+            alert.setMessage(R.string.build_not_support_tip);
+            alert.show();
+            return;
+        }
+        collectAndSaveChangedString();
+        if (SettingActivity.isRebuildConfirmEnabled(this)) {
+            Map<String, String> added = this.resListAdapter.getAddedFiles();
+            Map<String, String> replaced = this.resListAdapter.getReplacedFiles();
+            Set<String> deleted = this.resListAdapter.getDeletedFiles();
+            new RebuildConfirmDialog(this, this.stringModified, this.manifestModified, added, replaced, deleted).show();
+            return;
+        }
+        build(true);
+    }
+
+    private void saveStringValues(Map<String, Map<String, String>> allChangedValues) throws Exception {
+        Set<Map.Entry<String, Map<String, String>>> entries = allChangedValues.entrySet();
+        for (Map.Entry<String, Map<String, String>> entry : entries) {
+            String qualifier = entry.getKey();
+            modifyStringResource(qualifier, entry.getValue());
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    protected void build(final boolean bSign) {
+        boolean z;
+        String errMsg;
+        this.resFileModified = false;
+        Set<String> modifiedDex = new HashSet<>();
+        long resModifyTime = FileUtil.recursiveModifiedTime(new File(this.decodeRootPath + "/res"));
+        Log.d("DEBUG", "resModifyTime=" + resModifyTime);
+        long manifestModifyTime = FileUtil.recursiveModifiedTime(new File(this.decodeRootPath + "/AndroidManifest.xml"));
+        Log.d("DEBUG", "manifestTime=" + manifestModifyTime);
+        Map<String, String> added = this.resListAdapter.getAddedFiles();
+        Map<String, String> replaced = this.resListAdapter.getReplacedFiles();
+        Set<String> deleted = this.resListAdapter.getDeletedFiles();
+        this.addedFiles = new HashMap<>();
+        this.replacedFiles = new HashMap<>();
+        this.deletedFiles = new ArrayList<>();
+        Iterator<Map.Entry<String, String>> it = added.entrySet().iterator();
+        while (true) {
+            z = true;
+            if (!it.hasNext()) {
+                break;
+            }
+            Map.Entry<String, String> entry = it.next();
+            String entryName = entry.getKey();
+            if (entryName.startsWith("res/")) {
+                if (!this.resFileModified && !isCommonImage(entryName)) {
+                    this.resFileModified = true;
+                }
+                this.addedFiles.put(entry.getKey(), entry.getValue());
+            } else if (dealWithSmaliFile(entryName, modifiedDex) == null) {
+                this.addedFiles.put(entry.getKey(), entry.getValue());
+            }
+        }
+        for (Map.Entry<String, String> entry2 : replaced.entrySet()) {
+            String entryName2 = entry2.getKey();
+            if (entryName2.startsWith("res/")) {
+                if (!this.resFileModified && !isCommonImage(entryName2)) {
+                    this.resFileModified = z;
+                }
+                this.replacedFiles.put(entry2.getKey(), entry2.getValue());
+            } else if (dealWithSmaliFile(entryName2, modifiedDex) == null) {
+                this.replacedFiles.put(entry2.getKey(), entry2.getValue());
+            }
+            z = true;
+        }
+        for (String entryName3 : deleted) {
+            if (entryName3.startsWith("res/")) {
+                if (!this.resFileModified && !isCommonImage(entryName3)) {
+                    this.resFileModified = true;
+                }
+                this.deletedFiles.add(entryName3);
+            } else if (dealWithSmaliFile(entryName3, modifiedDex) == null) {
+                this.deletedFiles.add(entryName3);
+            }
+        }
+        this.smaliFolders = new ArrayList<>();
+        for (String folder : modifiedDex) {
+            this.smaliFolders.add(folder);
+        }
+        if ((this.stringModified || this.manifestModified || this.resFileModified) && (errMsg = getKnownResourceError()) != null) {
+            AlertDialog.Builder dlg = new AlertDialog.Builder(this);
+            dlg.setTitle(R.string.warning);
+            dlg.setMessage(errMsg + "\nAre you sure to continue?");
+            dlg.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda32
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i) {
+                    ApkInfoActivity.this.m49lambda$build$31$comgmailheagooapkeditorApkInfoActivity(bSign, dialogInterface, i);
+                }
+            });
+            dlg.setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null);
+            dlg.show();
+            return;
+        }
+        launchBuildActivityAndService(bSign);
+    }
+
+    /* renamed from: lambda$build$31$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m49lambda$build$31$comgmailheagooapkeditorApkInfoActivity(boolean bSign, DialogInterface dialog, int which) {
+        launchBuildActivityAndService(bSign);
+    }
+
+    private String getKnownResourceError() {
+        String filepath = this.decodeRootPath + "/AndroidManifest.xml";
+        BufferedReader br = null;
+        try {
+            try {
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(filepath)));
+                int lineIndex = 1;
+                String line = br.readLine();
+                while (line != null) {
+                    if (line.trim().startsWith("<provider") && line.contains("android:authorities=\"@string")) {
+                        String str = "AndroidManifest.xml(Line " + lineIndex + "): The provider authorities reference to a @string value. It may not work.";
+                        try {
+                            br.close();
+                        } catch (IOException e) {
+                        }
+                        return str;
+                    }
+                    line = br.readLine();
+                    lineIndex++;
+                }
+            } catch (Exception e2) {
+                e2.printStackTrace();
+                if (br == null) {
+                    return null;
+                }
+            }
+            try {
+                br.close();
+                return null;
+            } catch (IOException e3) {
+                return null;
+            }
+        } catch (Throwable th) {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e4) {
+                }
+            }
+            throw th;
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    /* JADX WARN: Multi-variable type inference failed */
+    public void showCannotStartBuildDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this).setMessage(R.string.build_in_progress_tip).setTitle(R.string.please_note).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null);
+        builder.show();
+    }
+
+    public void addFolder(String folderName) {
+        String dirPath = this.resListAdapter.getData(null);
+        this.resListAdapter.addFolder(dirPath, folderName);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    public void importFolder(final String folderPath) {
+        final String dirPath = this.resListAdapter.getData(null);
+        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.9
+            private String errorMessage = null;
+
+            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
+            public void process() {
+                File srcDir = new File(folderPath);
+                String folderName = srcDir.getName();
+                File curDir = new File(dirPath);
+                File targetDir = new File(curDir, folderName);
+                if (targetDir.exists()) {
+                    String fmt = ApkInfoActivity.this.getString(R.string.file_already_exist);
+                    this.errorMessage = String.format(fmt, folderName);
+                } else {
+                    targetDir.mkdir();
+                    IOUtils.copy(targetDir, srcDir);
+                }
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
+            public void afterProcess() {
+                if (this.errorMessage != null) {
+                    Toast.makeText((Context) ApkInfoActivity.this, (CharSequence) this.errorMessage, 1).show();
+                } else {
+                    ApkInfoActivity.this.resListAdapter.refresh();
+                }
+            }
+        }, -1).show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void launchBuildActivityAndService(boolean bSign) {
+        if (ServiceUtil.isMyServiceRunning(this, ApkComposeService.class)) {
+            Intent intent = new Intent((Context) this, (Class<?>) ApkComposeService.class);
+            bindService(intent, new MyServiceConnection(bSign), 1);
+        } else {
+            launchWithoutCheck(bSign);
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    /* JADX WARN: Multi-variable type inference failed */
+    public void launchWithoutCheck(boolean bSign) {
+        String filename;
+        String outputDir = SDCard.getEditorDirectory();
+        File outputDirFile = new File(outputDir);
+        if (!outputDirFile.exists()) {
+            outputDirFile.mkdir();
+        }
+        int outputApkRule = SettingActivity.getOutputApkRule(this);
+        switch (outputApkRule) {
+            case 0:
+                if (bSign) {
+                    filename = this.apkInfo.packageName + "_signed";
+                    break;
+                } else {
+                    filename = this.apkInfo.packageName + "_unsigned";
+                    break;
+                }
+            case 1:
+            default:
+                if (!bSign) {
+                    filename = "gen_unsigned";
+                    break;
+                } else {
+                    filename = "gen_signed";
+                    break;
+                }
+            case 2:
+                if (bSign) {
+                    filename = this.apkInfo.label + "_signed";
+                    break;
+                } else {
+                    filename = this.apkInfo.label + "_unsigned";
+                    break;
+                }
+        }
+        String targetApkPath = createOutputPath(this.apkPath, outputDir, FileUtil.reviseFileName(filename));
+        Intent intent = new Intent((Context) this, (Class<?>) ApkComposeService.class);
+        ActivityUtil.attachParam(intent, "decodeRootPath", this.decodeRootPath);
+        if (!this.isFullDecoding) {
+            ActivityUtil.attachParam(intent, "srcApkPath", this.apkPath);
+        }
+        ActivityUtil.attachParam(intent, "targetApkPath", targetApkPath);
+        ActivityUtil.attachParam(intent, "stringModified", this.stringModified ? "true" : "false");
+        ActivityUtil.attachParam(intent, "manifestModified", this.manifestModified ? "true" : "false");
+        ActivityUtil.attachParam(intent, "resFileModified", this.resFileModified ? "true" : "false");
+        ActivityUtil.attachParam(intent, "modifiedSmaliFolders", this.smaliFolders);
+        ActivityUtil.attachParam(intent, "addedFiles", this.addedFiles);
+        ActivityUtil.attachParam(intent, "deletedFiles", this.deletedFiles);
+        ActivityUtil.attachParam(intent, "replacedFiles", this.replacedFiles);
+        ActivityUtil.attachBoolParam(intent, "signAPK", bSign);
+        String mapFileName = serialize2File(this.fileEntry2ZipEntry);
+        ActivityUtil.attachParam(intent, "fileEntry2ZipEntry", mapFileName);
+        try {
+            if (startService(intent) == null) {
+                throw new IllegalStateException("Service not started");
+            }
+            Intent it = new Intent((Context) this, (Class<?>) ApkComposeActivity.class);
+            startActivityForResult(it, 1);
+        } catch (RuntimeException error) {
+            new AlertDialog.Builder(this).setMessage(getString(R.string.lab_compose_start_failed, new Object[]{error.toString()})).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private String serialize2File(Map<String, String> fileEntry2ZipEntry2) {
+        try {
+            String filepath = SDCard.makeWorkingDir(this) + RandomUtil.getRandomString(8);
+            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filepath));
+            for (Map.Entry<String, String> entry : fileEntry2ZipEntry2.entrySet()) {
+                bos.write(entry.getKey().getBytes());
+                bos.write(10);
+                bos.write(entry.getValue().getBytes());
+                bos.write(10);
+            }
+            bos.close();
+            return filepath;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void updateCenterView() {
+        this.manifestRadio.setCompoundDrawablesWithIntrinsicBounds((Drawable) null, this.manifestIconGrey, (Drawable) null, (Drawable) null);
+        this.resRadio.setCompoundDrawablesWithIntrinsicBounds((Drawable) null, this.resIconGrey, (Drawable) null, (Drawable) null);
+        this.stringRadio.setCompoundDrawablesWithIntrinsicBounds((Drawable) null, this.textIconGrey, (Drawable) null, (Drawable) null);
+        this.loadingLayout.setVisibility(4);
+        this.manifestLayout.setVisibility(4);
+        this.stringLayout.setVisibility(4);
+        this.resourceLayout.setVisibility(4);
+        switch (this.curSelectedRadio) {
+            case 0:
+                this.stringRadio.setCompoundDrawablesWithIntrinsicBounds((Drawable) null, this.textIcon, (Drawable) null, (Drawable) null);
+                if (this.stringParsed) {
+                    this.stringLayout.setVisibility(0);
+                    break;
+                } else {
+                    this.loadingLayout.setVisibility(0);
+                    break;
+                }
+            case 1:
+                this.resRadio.setCompoundDrawablesWithIntrinsicBounds((Drawable) null, this.resIcon, (Drawable) null, (Drawable) null);
+                if (this.resourceParsed) {
+                    this.resourceLayout.setVisibility(0);
+                    break;
+                } else {
+                    this.loadingLayout.setVisibility(0);
+                    break;
+                }
+            case 2:
+                this.manifestRadio.setCompoundDrawablesWithIntrinsicBounds((Drawable) null, this.manifestIcon, (Drawable) null, (Drawable) null);
+                if (this.resourceParsed) {
+                    this.manifestLayout.setVisibility(0);
+                    break;
+                } else {
+                    this.loadingLayout.setVisibility(0);
+                    break;
+                }
+        }
+    }
+
+    protected void manifestRadioClicked() {
+        if (this.curSelectedRadio != 2) {
+            this.curSelectedRadio = 2;
+            updateCenterView();
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    protected void resRadioClicked() {
+        SharedPreferences sp;
+        int showTimes;
+        if (this.curSelectedRadio == 1) {
+            return;
+        }
+        this.curSelectedRadio = 1;
+        updateCenterView();
+        if (!this.dexDecoded && (showTimes = (sp = PreferenceManager.getDefaultSharedPreferences(this)).getInt("HideSmaliMsgShown", 0)) < 1 && SettingActivity.isDex2smaliEnabled(this)) {
+            Toast.makeText((Context) this, R.string.hide_smali_tip, 1).show();
+            SharedPreferences.Editor editor = sp.edit();
+            editor.putInt("HideSmaliMsgShown", showTimes + 1);
+            editor.apply();
+        }
+    }
+
+    protected void stringRadioClicked() {
+        if (this.curSelectedRadio != 0) {
+            this.curSelectedRadio = 0;
+            updateCenterView();
+        }
+    }
+
+    @Override // com.gmail.heagoo.apkeditor.ApkParseConsumer
+    public void resTableDecoded(boolean ret) {
+        if (ret) {
+            this.bStringPrepared = prepareStringList();
+            if (this.bStringPrepared) {
+                runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda24
+                    @Override // java.lang.Runnable
+                    public final void run() {
+                        ApkInfoActivity.this.m70x99392872();
+                    }
+                });
+            }
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* renamed from: lambda$resTableDecoded$32$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m70x99392872() {
+        if (this.screenDestroyed || this.lastLoadError != null) {
+            return;
+        }
+        showStringList();
+        setupClickListener();
+        Toast.makeText((Context) this, R.string.lab_strings_preview, 1).show();
+    }
+
+    @Override // com.gmail.heagoo.apkeditor.ApkParseConsumer
+    public void resourceDecoded(final Map<String, String> fileEntry2ZipEntry) {
+        this.fileEntry2ZipEntry = fileEntry2ZipEntry;
+        final boolean stringShowNeeded = !this.bStringPrepared;
+        if (!this.bStringPrepared) {
+            if (this.parseThread != null) {
+                this.parseThread.indexStringsStarted();
+            }
+            this.bStringPrepared = prepareStringList();
+        }
+        runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda27
+            @Override // java.lang.Runnable
+            public final void run() {
+                ApkInfoActivity.this.m72x8b124e30(stringShowNeeded, fileEntry2ZipEntry);
+            }
+        });
+    }
+
+    /* renamed from: lambda$resourceDecoded$34$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m72x8b124e30(boolean stringShowNeeded, final Map fileEntry2ZipEntry) {
+        if (this.screenDestroyed || this.lastLoadError != null) {
+            return;
+        }
+        if (stringShowNeeded) {
+            showStringList();
+            setupClickListener();
+        }
+        final HashMap<String, ArrayList<StringItem>> snapshot = new HashMap<>();
+        for (Map.Entry<String, ArrayList<StringItem>> entry : this.allStringValues.entrySet()) {
+            ArrayList<StringItem> values = new ArrayList<>(entry.getValue().size());
+            Iterator<StringItem> it = entry.getValue().iterator();
+            while (it.hasNext()) {
+                StringItem item = it.next();
+                values.add(new StringItem(item.name, item.value, item.styledValue));
+            }
+            snapshot.put(entry.getKey(), values);
+        }
+        this.indexSaveTask = new FutureTask<>(new Callable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda28
+            @Override // java.util.concurrent.Callable
+            public final Object call() throws Exception {
+                return ApkInfoActivity.this.m71xc825e4d1(snapshot, fileEntry2ZipEntry);
+            }
+        });
+        new Thread(this.indexSaveTask, "resource-index-save").start();
+        showDecodedFileList();
+        this.stringListAdapter.setEditingEnabled(true);
+        this.webserverMenu.setVisibility(0);
+        this.rotateMenu.setVisibility(0);
+        if (isPro()) {
+            this.patchMenu.setVisibility(0);
+        } else {
+            this.patchMenu.setVisibility(8);
+        }
+        this.saveBtn.setVisibility(0);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* renamed from: lambda$resourceDecoded$33$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ Boolean m71xc825e4d1(HashMap snapshot, Map fileEntry2ZipEntry) throws Exception {
+        try {
+            String workingPath = SDCard.makeWorkingDir(this);
+            boolean stringsOk = IOUtils.writeObjectToFile(workingPath + "allStringValues", snapshot);
+            boolean mappingOk = IOUtils.writeObjectToFile(workingPath + "fileEntry2ZipEntry", fileEntry2ZipEntry);
+            return Boolean.valueOf(stringsOk && mappingOk);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    public void decodeDex(IGeneralCallback dexDecodedCallback) {
+        this.dexDecodedCallback = dexDecodedCallback;
+        this.dexDecoded = false;
+        new AsyncDecodeTask(this, this.apkPath, this.decodeRootPath, this).execute(new Void[0]);
+    }
+
+    @Override // com.gmail.heagoo.apkeditor.ApkParseConsumer
+    public void decodeProgress(final int phase) {
+        runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda13
+            @Override // java.lang.Runnable
+            public final void run() {
+                ApkInfoActivity.this.m55x48b50c1c(phase);
+            }
+        });
+    }
+
+    /* renamed from: lambda$decodeProgress$35$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m55x48b50c1c(int phase) {
+        if (this.screenDestroyed || this.lastLoadError != null) {
+            return;
+        }
+        int[] labels = {R.string.lab_load_wait, R.string.lab_load_table, R.string.lab_load_resources, R.string.lab_load_values, R.string.lab_load_files, R.string.lab_load_framework, R.string.lab_load_index_resources, R.string.lab_load_resource_files, R.string.lab_load_cleanup, R.string.lab_load_prepare_tools, R.string.lab_load_string_index};
+        ((TextView) findViewById(R.id.tv_tip)).setText(labels[Math.max(0, Math.min(phase, labels.length - 1))]);
+    }
+
+    @Override // com.gmail.heagoo.apkeditor.ApkParseConsumer
+    public void decodeProgressCount(final int done, final int total) {
+        runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda5
+            @Override // java.lang.Runnable
+            public final void run() {
+                ApkInfoActivity.this.m56xf7cdc1ba(done, total);
+            }
+        });
+    }
+
+    /* renamed from: lambda$decodeProgressCount$36$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m56xf7cdc1ba(int done, int total) {
+        if (this.screenDestroyed || this.lastLoadError != null) {
+            return;
+        }
+        ((TextView) findViewById(R.id.tv_tip)).setText(getString(R.string.lab_load_resource_files) + "\n" + done + " / " + total);
+    }
+
+    @Override // com.gmail.heagoo.apkeditor.ApkParseConsumer
+    public void decodeFailed(final String errMessage) {
+        runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda12
+            @Override // java.lang.Runnable
+            public final void run() {
+                ApkInfoActivity.this.m54x9748ebaa(errMessage);
+            }
+        });
+    }
+
+    /* renamed from: lambda$decodeFailed$37$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m54x9748ebaa(String errMessage) {
+        if (this.screenDestroyed) {
+            return;
+        }
+        this.lastLoadError = (errMessage == null || errMessage.length() == 0) ? "Unknown error" : errMessage;
+        this.stringParsed = false;
+        findViewById(R.id.progress_bar).setVisibility(8);
+        ((TextView) findViewById(R.id.tv_tip)).setText(getString(R.string.lab_load_error) + "\n" + this.lastLoadError);
+        this.loadRetryButton.setVisibility(0);
+        this.loadCopyButton.setText(R.string.lab_load_copy);
+        this.loadCopyButton.setVisibility(0);
+        updateCenterView();
+    }
+
+    private boolean prepareStringList() {
+        String value;
+        List<ResResSpec> specList;
+        this.allStringValues = new HashMap<>();
+        ResPackage pkg = this.parseThread.getApkPackage();
+        if (pkg == null) {
+            return false;
+        }
+        List<ResResSpec> specList2 = pkg.listResSpecs();
+        for (ResResSpec spec : specList2) {
+            if ("string".equals(spec.getType().getName())) {
+                String name = spec.getName();
+                Map<ResConfigFlags, ResResource> resources = spec.getAllResources();
+                for (Map.Entry<ResConfigFlags, ResResource> entry : resources.entrySet()) {
+                    String styledValue = null;
+                    ResConfigFlags configFlag = entry.getKey();
+                    ResResource resResource = entry.getValue();
+                    ResScalarValue value2 = (ResScalarValue) resResource.getValue();
+                    if (value2 instanceof ResReferenceValue) {
+                        value = value2.toString();
+                    } else if (value2 instanceof ResScalarValue) {
+                        ResScalarValue scalarVal = value2;
+                        if (scalarVal.isStyled()) {
+                            styledValue = scalarVal.getHtmlValue();
+                        }
+                        String value3 = scalarVal.getRawValue();
+                        if (value3 != null) {
+                            value = value3;
+                        } else {
+                            String value4 = value2.toString();
+                            value = value4;
+                        }
+                    } else {
+                        value = value2.toString();
+                    }
+                    StringItem item = new StringItem(name, value, styledValue);
+                    String qualifier = configFlag.getQualifiers();
+                    ResPackage pkg2 = pkg;
+                    ArrayList<StringItem> stringValueList = this.allStringValues.get(qualifier);
+                    if (stringValueList != null) {
+                        specList = specList2;
+                    } else {
+                        stringValueList = new ArrayList<>();
+                        specList = specList2;
+                        this.allStringValues.put(qualifier, stringValueList);
+                    }
+                    stringValueList.add(item);
+                    pkg = pkg2;
+                    specList2 = specList;
+                }
+            }
+            pkg = pkg;
+            specList2 = specList2;
+        }
+        return true;
+    }
+
+    private void showStringList() {
+        if (this.stringListAdapter != null && this.changedStringValues != null) {
+            this.stringListAdapter.setChangedValues(this.changedStringValues);
+        }
+        PendingStringEdits.merge(this.allStringValues, this.stringListAdapter.getChangedValues());
+        initAddLanguageBtn();
+        initTranslateBtn();
+        initSpinner();
+        Button searchBtn = (Button) findViewById(R.id.search_button);
+        searchBtn.setOnClickListener(this);
+        this.stringParsed = true;
+        updateCenterView();
+    }
+
+    private void initAddLanguageBtn() {
+        ImageView iv = (ImageView) findViewById(R.id.add_language);
+        iv.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda18
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                ApkInfoActivity.this.m57x9a29bf31(view);
+            }
+        });
+    }
+
+    /* renamed from: lambda$initAddLanguageBtn$38$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m57x9a29bf31(View v) {
+        LanguageSelectDialog dlg = new LanguageSelectDialog(this, null, null);
+        dlg.show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void initTranslateBtn() {
+        ImageView iv = (ImageView) findViewById(R.id.translate);
+        if (generalTranslatePluginExist(this)) {
+            iv.setOnClickListener(this);
+        } else if (proTranslatePluginExist()) {
+            iv.setOnClickListener(this);
+        } else {
+            iv.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda44
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    ApkInfoActivity.this.m58xb7ddd23b(view);
+                }
+            });
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    /* renamed from: lambda$initTranslateBtn$39$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m58xb7ddd23b(View v) {
+        new AboutPluginDialog(this).show();
+    }
+
+    private boolean proTranslatePluginExist() {
+        try {
+            getPackageManager().getApplicationInfo("apkeditor.translate", 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    public ResConfigFlags createConfigFlags(String qualifier) {
+        int pos = qualifier.indexOf("-r", 1);
+        if (pos != -1 && pos + 3 < qualifier.length()) {
+            return new ResConfigFlags(qualifier.charAt(1), qualifier.charAt(2), qualifier.charAt(pos + 2), qualifier.charAt(pos + 3));
+        }
+        return new ResConfigFlags(qualifier.charAt(1), qualifier.charAt(2));
+    }
+
+    public void startNewTranslation() {
+        LanguageSelectDialog dlg = new LanguageSelectDialog(this, PossibleLanguages.languages, PossibleLanguages.codes);
+        dlg.setTitle(R.string.select_target_lang);
+        dlg.show();
+    }
+
+    public void saveTranslatedLanguage(String qualifier, List<StringItem> stringValues) throws Exception {
+        saveStringResource(qualifier, stringValues);
+        this.stringModified = true;
+        String targetConfig = null;
+        for (Map.Entry<String, ArrayList<StringItem>> entry : this.allStringValues.entrySet()) {
+            String q = entry.getKey();
+            if (q.equals(qualifier)) {
+                targetConfig = q;
+                ArrayList<StringItem> stringList = entry.getValue();
+                stringList.clear();
+                stringList.addAll(stringValues);
+            }
+        }
+        if (targetConfig == null) {
+            ArrayList<StringItem> stringList2 = new ArrayList<>();
+            stringList2.addAll(stringValues);
+            this.allStringValues.put(qualifier, stringList2);
+        }
+        resetSpinner();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    public void translateLanguage(String strQualifier) {
+        Intent intent;
+        List<TranslateItem> translatedList = new ArrayList<>();
+        List<TranslateItem> untranslatedList = new ArrayList<>();
+        prepareTranslateItems(strQualifier, translatedList, untranslatedList);
+        try {
+            if (generalTranslatePluginExist(this)) {
+                intent = new Intent("android.intent.action.VIEW");
+                intent.addCategory("android.intent.category.DEFAULT");
+                intent.setDataAndType(null, "application/com.gmail.heagoo.apkeditor-translate");
+            } else {
+                ComponentName componetName = new ComponentName("apkeditor.translate", "apkeditor.translate.TranslateActivity");
+                Intent intent2 = new Intent();
+                intent2.setComponent(componetName);
+                intent = intent2;
+            }
+            Bundle bundle = new Bundle();
+            bundle.putBoolean("isFullScreen", GlobalConfig.instance(this).isFullScreen());
+            bundle.putBoolean("isDark", GlobalConfig.instance(this).isDarkTheme());
+            String translatedFile = SDCard.makeWorkingDir(this) + "translated";
+            IOUtils.writeObjectToFile(translatedFile, translatedList);
+            bundle.putString("translatedList_file", translatedFile);
+            String untranslatedFile = SDCard.makeWorkingDir(this) + "untranslatedList";
+            IOUtils.writeObjectToFile(untranslatedFile, untranslatedList);
+            bundle.putString("untranslatedList_file", untranslatedFile);
+            bundle.putString("targetLanguageCode", strQualifier);
+            intent.putExtras(bundle);
+            startActivityForResult(intent, RC_TRANSLATE);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void prepareTranslateItems(String qualifier, List<TranslateItem> translatedList, List<TranslateItem> untranslatedList) {
+        ArrayList<StringItem> defaultStrings = null;
+        ArrayList<StringItem> translatedStrings = null;
+        for (Map.Entry<String, ArrayList<StringItem>> entry : this.allStringValues.entrySet()) {
+            String q = entry.getKey();
+            if (q.equals(qualifier)) {
+                ArrayList<StringItem> translatedStrings2 = entry.getValue();
+                translatedStrings = translatedStrings2;
+            } else if ("".equals(q)) {
+                ArrayList<StringItem> defaultStrings2 = entry.getValue();
+                defaultStrings = defaultStrings2;
+            }
+        }
+        if (defaultStrings == null) {
+            if (translatedStrings != null) {
+                Iterator<StringItem> it = translatedStrings.iterator();
+                while (it.hasNext()) {
+                    StringItem kv = it.next();
+                    TranslateItem item = new TranslateItem(kv.name, "", kv.value);
+                    translatedList.add(item);
+                }
+                return;
+            }
+            return;
+        }
+        Map<String, String> translated = new HashMap<>();
+        Map<String, String> defaultStrs = new HashMap<>();
+        if (translatedStrings != null) {
+            Iterator<StringItem> it2 = translatedStrings.iterator();
+            while (it2.hasNext()) {
+                StringItem p = it2.next();
+                translated.put(p.name, p.value);
+            }
+        }
+        Iterator<StringItem> it3 = defaultStrings.iterator();
+        while (it3.hasNext()) {
+            StringItem p2 = it3.next();
+            defaultStrs.put(p2.name, p2.value);
+        }
+        if (translatedStrings != null) {
+            Iterator<StringItem> it4 = translatedStrings.iterator();
+            while (it4.hasNext()) {
+                StringItem p3 = it4.next();
+                String name = p3.name;
+                String originValue = defaultStrs.get(name);
+                String translatedVal = p3.value;
+                TranslateItem item2 = new TranslateItem(name, originValue, translatedVal);
+                translatedList.add(item2);
+            }
+        }
+        Iterator<StringItem> it5 = defaultStrings.iterator();
+        while (it5.hasNext()) {
+            StringItem p4 = it5.next();
+            String name2 = p4.name;
+            String translatedVal2 = translated.get(name2);
+            if (translatedVal2 == null) {
+                String originValue2 = p4.value;
+                TranslateItem item3 = new TranslateItem(name2, originValue2, (String) null);
+                untranslatedList.add(item3);
+            }
+        }
+    }
+
+    public String addLanguageRetError(String qualifier) {
+        Resources res = getResources();
+        if (qualifier.length() < 3) {
+            return res.getString(R.string.invalid_lang_code);
+        }
+        if (!this.resourceParsed) {
+            return res.getString(R.string.wait_for_decoding);
+        }
+        List<TranslateItem> translatedItems = new ArrayList<>();
+        List<TranslateItem> untranslatedItems = new ArrayList<>();
+        prepareTranslateItems(qualifier, translatedItems, untranslatedItems);
+        if (untranslatedItems.isEmpty()) {
+            return res.getString(R.string.lang_exist);
+        }
+        boolean bExisting = false;
+        String addedConfigFlag = null;
+        ArrayList<StringItem> untranslatedList = new ArrayList<>();
+        for (TranslateItem item : untranslatedItems) {
+            untranslatedList.add(new StringItem(item.name, item.originValue));
+        }
+        Iterator<Map.Entry<String, ArrayList<StringItem>>> it = this.allStringValues.entrySet().iterator();
+        while (true) {
+            if (!it.hasNext()) {
+                break;
+            }
+            Map.Entry<String, ArrayList<StringItem>> entry = it.next();
+            String q = entry.getKey();
+            if (q.equals(qualifier)) {
+                addedConfigFlag = q;
+                bExisting = true;
+                entry.getValue().addAll(untranslatedList);
+                break;
+            }
+        }
+        if (addedConfigFlag == null) {
+            addedConfigFlag = qualifier;
+            this.allStringValues.put(addedConfigFlag, untranslatedList);
+        }
+        try {
+            if (!bExisting) {
+                saveStringResource(qualifier, untranslatedList);
+            } else {
+                List<StringItem> valueList = new ArrayList<>();
+                for (TranslateItem item2 : translatedItems) {
+                    valueList.add(new StringItem(item2.name, item2.translatedValue));
+                }
+                valueList.addAll(untranslatedList);
+                saveStringResource(qualifier, valueList);
+            }
+            this.stringModified = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        this.curConfig = addedConfigFlag;
+        resetSpinner();
+        return null;
+    }
+
+    private void saveStringResource(String qualifier, List<StringItem> valueList) throws Exception {
+        String escaped;
+        XmlSerializer xmlSerializer = new KXmlSerializer();
+        String dirPath = this.decodeRootPath + "/res/values" + qualifier;
+        File dirFile = new File(dirPath);
+        if (!dirFile.exists()) {
+            dirFile.mkdirs();
+        }
+        File file = new File(dirPath + "/strings.xml");
+        FileOutputStream fos = new FileOutputStream(file);
+        OutputStreamWriter writer = new OutputStreamWriter(fos);
+        xmlSerializer.setOutput(writer);
+        writer.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+        writer.write("<resources>\n");
+        for (StringItem v : valueList) {
+            xmlSerializer.startTag(null, "string");
+            xmlSerializer.attribute(null, "name", v.name);
+            if (ResXmlEncoders.hasMultipleNonPositionalSubstitutions(v.value)) {
+                xmlSerializer.attribute(null, "formatted", "false");
+            }
+            if (v.value.startsWith("@string/") || v.value.startsWith("@android:string/")) {
+                escaped = v.value;
+            } else if (v.styledValue == null) {
+                String escaped2 = ResXmlEncoders.escapeXmlChars(v.value);
+                escaped = ResXmlEncoders.encodeAsXmlValue(escaped2);
+            } else {
+                String txt = v.styledValue;
+                escaped = ResXmlEncoders.encodeAsXmlValue(txt);
+            }
+            xmlSerializer.ignorableWhitespace(escaped);
+            xmlSerializer.endTag(null, "string");
+            xmlSerializer.flush();
+            writer.write("\n");
+        }
+        writer.write("</resources>\n");
+        writer.close();
+        fos.close();
+    }
+
+    private void modifyStringResource(String qualifier, Map<String, String> modifiedValues) throws Exception {
+        String fileName;
+        String dirPath;
+        String fileName2 = "strings.xml";
+        String dirPath2 = this.decodeRootPath + "/res/values" + qualifier;
+        File dirFile = new File(dirPath2);
+        if (!dirFile.exists()) {
+            dirFile.mkdirs();
+        }
+        String filePath = dirPath2 + "/strings.xml";
+        List<String> lines = new TextFileReader(filePath).getLines();
+        List<String> newLines = new ArrayList<>();
+        int lastStringLine = -1;
+        Set<String> savedStrings = new HashSet<>();
+        int i = 0;
+        while (i < lines.size()) {
+            String line = lines.get(i);
+            int pos = line.indexOf("<string name=\"");
+            if (pos == -1) {
+                newLines.add(line);
+                fileName = fileName2;
+            } else {
+                int start = "<string name=\"".length() + pos;
+                int end = line.indexOf(34, start);
+                fileName = fileName2;
+                if (end == -1) {
+                    newLines.add(line);
+                } else {
+                    String name = line.substring(start, end);
+                    dirPath = dirPath2;
+                    String newValue = modifiedValues.get(name);
+                    if (newValue != null) {
+                        newLines.add(StringItem.toString(name, newValue, (String) null));
+                        savedStrings.add(name);
+                        if (!line.contains("</string>")) {
+                            while (true) {
+                                i++;
+                                String name2 = name;
+                                if (i >= lines.size() || lines.get(i).contains("</string>")) {
+                                    break;
+                                } else {
+                                    name = name2;
+                                }
+                            }
+                        }
+                    } else {
+                        newLines.add(line);
+                    }
+                    lastStringLine = newLines.size() - 1;
+                    i++;
+                    dirPath2 = dirPath;
+                    fileName2 = fileName;
+                }
+            }
+            dirPath = dirPath2;
+            i++;
+            dirPath2 = dirPath;
+            fileName2 = fileName;
+        }
+        for (Map.Entry<String, String> entry : modifiedValues.entrySet()) {
+            String name3 = entry.getKey();
+            if (!savedStrings.contains(name3)) {
+                lastStringLine++;
+                lines.add(lastStringLine, StringItem.toString(name3, entry.getValue(), (String) null));
+            }
+        }
+        FileUtil.writeToFile(filePath, newLines);
+    }
+
+    protected void searchStringByKeyword(String keyword) {
+        String lcKeyword = keyword.toLowerCase();
+        ArrayList<StringItem> values = this.allStringValues.get(this.curConfig);
+        if (values != null) {
+            ArrayList<StringItem> selected = new ArrayList<>();
+            Iterator<StringItem> it = values.iterator();
+            while (it.hasNext()) {
+                StringItem pair = it.next();
+                if (pair.value.toLowerCase().contains(lcKeyword)) {
+                    selected.add(pair);
+                }
+            }
+            updateStringList(selected);
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void updateStringList() {
+        if (this.curConfig == null) {
+            this.curConfig = getBestConfig(this.allStringValues.keySet());
+        }
+        LOGGER.info("********BEST*********" + this.curConfig);
+        ArrayList<StringItem> values = this.allStringValues.get(this.curConfig);
+        updateStringList(values);
+    }
+
+    private void updateStringList(ArrayList<StringItem> values) {
+        this.stringListAdapter.updateData(this.curConfig, values);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void initSpinner() {
+        if (this.allStringValues == null) {
+            return;
+        }
+        if (this.curConfig == null || !this.allStringValues.containsKey(this.curConfig)) {
+            this.curConfig = getBestConfig(this.allStringValues.keySet());
+        }
+        this.langConfigList = new ArrayList<>();
+        String[] languages = new String[this.allStringValues.size()];
+        List<String> langList = new ArrayList<>();
+        Map<String, String> _m = new HashMap<>();
+        for (String qualifier : this.allStringValues.keySet()) {
+            String strLang = LanguageMapping.getLanguage(qualifier);
+            langList.add(strLang);
+            _m.put(strLang, qualifier);
+        }
+        Collections.sort(langList);
+        int selected = 0;
+        int index = 0;
+        for (String strLang2 : langList) {
+            String configFlag = _m.get(strLang2);
+            languages[index] = strLang2;
+            this.langConfigList.add(configFlag);
+            if (configFlag.equals(this.curConfig)) {
+                selected = index;
+            }
+            index++;
+        }
+        Spinner spinner = (Spinner) findViewById(R.id.language_spinner);
+        if (spinner == null) {
+            return;
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>((Context) this, android.R.layout.simple_spinner_item, languages);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter((SpinnerAdapter) adapter);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.10
+            @Override // android.widget.AdapterView.OnItemSelectedListener
+            public void onItemSelected(AdapterView<?> arg0, View arg1, int position, long arg3) {
+                ApkInfoActivity.this.curConfig = (String) ApkInfoActivity.this.langConfigList.get(position);
+                ApkInfoActivity.this.updateStringList();
+            }
+
+            @Override // android.widget.AdapterView.OnItemSelectedListener
+            public void onNothingSelected(AdapterView<?> arg0) {
+            }
+        });
+        spinner.setSelection(selected);
+    }
+
+    private void resetSpinner() {
+        initSpinner();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void showDecodedFileList() {
+        String curDir;
+        if (this.resCurrentDir != null && this.resCurrentDir.startsWith(this.decodeRootPath)) {
+            curDir = this.resCurrentDir;
+        } else {
+            String curDir2 = this.decodeRootPath;
+            curDir = curDir2;
+        }
+        String path = this.isFullDecoding ? null : this.apkPath;
+        this.resListAdapter = new ResListAdapter(this, path, curDir, this.decodeRootPath, this.fileEntry2ZipEntry, new FilenameFilter() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda16
+            @Override // java.io.FilenameFilter
+            public final boolean accept(File file, String str) {
+                return ApkInfoActivity.lambda$showDecodedFileList$40(file, str);
+            }
+        }, this);
+        this.resListAdapter.setModification(this.res_addedFiles, this.res_deletedFiles, this.res_replacedFiles);
+        this.resourceList.setAdapter((ListAdapter) this.resListAdapter);
+        this.resourceList.setOnItemClickListener(this);
+        this.resourceList.setOnItemLongClickListener(this);
+        this.mfListAdapter = new ManifestListAdapter(this, this.decodeRootPath + "/AndroidManifest.xml", this);
+        this.manifestList.setAdapter((ListAdapter) this.mfListAdapter);
+        this.manifestList.setOnItemClickListener(this.mfListAdapter);
+        this.manifestList.setOnItemLongClickListener(this.mfListAdapter);
+        if (this.navigationMgr != null && this.resCurrentDir != null) {
+            this.navigationMgr.gotoDirectory(this.resCurrentDir);
+        }
+        this.resourceParsed = true;
+        updateCenterView();
+    }
+
+    static /* synthetic */ boolean lambda$showDecodedFileList$40(File dir, String filename) {
+        return true;
+    }
+
+    public void resDirectoryChanged(String newDir, int upLevel) {
+        this.resListAdapter.openDirectory(newDir);
+        if (upLevel > 0) {
+            Duo<Integer, Integer> pos = null;
+            for (int i = 0; i < upLevel; i++) {
+                try {
+                    pos = this.resListPosition.pop();
+                } catch (Exception e) {
+                    return;
+                }
+            }
+            if (pos != null) {
+                this.resourceList.setSelectionFromTop(((Integer) pos.m1).intValue(), ((Integer) pos.m2).intValue());
+            }
+        }
+    }
+
+    @Override // com.gmail.heagoo.apkeditor.ResSelectionChangeListener
+    public void selectionChanged(Set<Integer> selected) {
+        boolean selectionMode = !selected.isEmpty();
+        if (selectionMode) {
+            this.resSearchLayout.setVisibility(8);
+            this.resNaviHeader.setVisibility(8);
+            this.resMenuLayout.setVisibility(0);
+            this.resSelectHeader.setVisibility(0);
+            String text = String.format(getString(R.string.num_items_selected), Integer.valueOf(selected.size()));
+            this.resSelectTip.setText(text);
+            return;
+        }
+        this.resMenuLayout.setVisibility(8);
+        this.resSelectHeader.setVisibility(8);
+        this.resSearchLayout.setVisibility(0);
+        this.resNaviHeader.setVisibility(0);
+    }
+
+    @Override // android.widget.AdapterView.OnItemClickListener
+    public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
+        String targetPath;
+        int index;
+        List<FileRecord> fileList = new ArrayList<>();
+        String oldDir = this.resListAdapter.getData(fileList);
+        FileRecord rec = fileList.get(position);
+        if (rec == null) {
+            return;
+        }
+        if (!this.resListAdapter.getCheckedItems().isEmpty()) {
+            this.resListAdapter.reverseCheckStatus(position);
+            return;
+        }
+        if (rec.isDir) {
+            if (rec.fileName.equals("..")) {
+                String targetPath2 = oldDir.substring(0, oldDir.lastIndexOf(47));
+                targetPath = targetPath2;
+                index = 1;
+            } else {
+                int index2 = this.resourceList.getFirstVisiblePosition();
+                View v = this.resourceList.getChildAt(0);
+                int top = v != null ? v.getTop() - this.resourceList.getPaddingTop() : 0;
+                this.resListPosition.push(new Duo<>(Integer.valueOf(index2), Integer.valueOf(top)));
+                targetPath = oldDir + "/" + rec.fileName;
+                index = 0;
+            }
+            this.resListAdapter.openDirectory(targetPath);
+            this.navigationMgr.gotoDirectory(targetPath);
+            if (index != 0) {
+                try {
+                    Duo<Integer, Integer> pos = this.resListPosition.pop();
+                    this.resourceList.setSelectionFromTop(((Integer) pos.m1).intValue(), ((Integer) pos.m2).intValue());
+                    return;
+                } catch (Exception e) {
+                    return;
+                }
+            }
+            this.resourceList.setSelectionAfterHeaderView();
+            return;
+        }
+        openFile(oldDir, rec.fileName, rec.isInZip);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void openEditableFile(String directory, String fileName, boolean bInZip, String entryName, String syntaxFileName) {
+        String filePath = this.resListAdapter.getReplacedFilePath(entryName);
+        if (filePath == null) {
+            if (bInZip) {
+                filePath = extractFileFromZip(entryName);
+                if (filePath == null) {
+                    String errMeesage = String.format(getString(R.string.cannot_open_xxx), entryName);
+                    Toast.makeText((Context) this, (CharSequence) errMeesage, 0).show();
+                    return;
+                }
+            } else {
+                filePath = directory + "/" + fileName;
+            }
+        }
+        openFileEditor(filePath, syntaxFileName, fileName, entryName);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    protected void openFile(String directory, String fileName, boolean bInZip) {
+        String entryName;
+        if (directory.equals(this.decodeRootPath)) {
+            entryName = fileName;
+        } else {
+            entryName = directory.substring(this.decodeRootPath.length() + 1) + "/" + fileName;
+        }
+        String syntaxFileName = getEditableSyntax(fileName);
+        if (syntaxFileName != null) {
+            openEditableFile(directory, fileName, bInZip, entryName, syntaxFileName);
+            return;
+        }
+        String filePath = this.resListAdapter.getReplacedFilePath(entryName);
+        if (filePath == null) {
+            if (bInZip) {
+                filePath = extractFileFromZip(entryName);
+            } else if (!this.resListAdapter.isImageFile(fileName)) {
+                filePath = directory + "/" + fileName;
+            } else {
+                filePath = extractFileFromZip(entryName);
+            }
+        }
+        if (filePath != null) {
+            this.filePathForExternal = filePath;
+            this.entryNameForExternal = entryName;
+            File f = new File(filePath);
+            this.modifiedTimeBeforeOpen = f.lastModified();
+            if (fileName.endsWith(".png")) {
+                Intent intent = new Intent((Context) this, (Class<?>) PngEditActivity.class);
+                ActivityUtil.attachParam(intent, "filePath", filePath);
+                startActivityForResult(intent, RC_OPEN_EXTERNAL);
+                return;
+            }
+            OpenFiles.openFile(this, filePath, RC_OPEN_EXTERNAL);
+        }
+    }
+
+    private String getEditableSyntax(String fileName) {
+        if (fileName.endsWith(".xml")) {
+            return "xml.xml";
+        }
+        if (fileName.endsWith(".smali")) {
+            return "smali.xml";
+        }
+        if (fileName.endsWith(".html") || fileName.endsWith(".htm")) {
+            return "html.xml";
+        }
+        if (fileName.endsWith(".css")) {
+            return "css.xml";
+        }
+        if (fileName.endsWith(".java")) {
+            return "java.xml";
+        }
+        if (fileName.endsWith(".json")) {
+            return "json.xml";
+        }
+        if (fileName.endsWith(".txt")) {
+            return "txt.xml";
+        }
+        if (fileName.endsWith(".js")) {
+            return "js.xml";
+        }
+        return null;
+    }
+
+    protected void replaceFile(String replacedPath, String replacingPath) {
+        FileInputStream in = null;
+        FileOutputStream out = null;
+        try {
+            try {
+                in = new FileInputStream(replacingPath);
+                out = new FileOutputStream(replacedPath);
+                IOUtils.copy(in, out);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } finally {
+            closeQuietly(in);
+            closeQuietly(out);
+        }
+    }
+
+    private void closeQuietly(Closeable c) {
+        if (c != null) {
+            try {
+                c.close();
+            } catch (IOException e) {
+            }
+        }
+    }
+
+    private boolean isImageFile(String fileName) {
+        if (fileName.endsWith(".png") || fileName.endsWith(".jpg") || fileName.endsWith(".bmp")) {
+            return true;
+        }
+        return false;
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void openFileEditor(String filePath, String syntaxFileName, String displayFileName, String entryName) {
+        if ("res/values/colors.xml".equals(entryName)) {
+            Intent intent = new Intent((Context) this, (Class<?>) ColorXmlActivity.class);
+            ActivityUtil.attachParam(intent, "xmlPath", filePath);
+            startActivityForResult(intent, 3);
+        } else {
+            Intent intent2 = TextEditor.getEditorIntent(this, filePath, this.apkPath);
+            ActivityUtil.attachParam(intent2, "syntaxFileName", syntaxFileName);
+            if (displayFileName != null) {
+                ActivityUtil.attachParam(intent2, "displayFileName", displayFileName);
+            }
+            ActivityUtil.attachParam(intent2, "extraString", entryName);
+            startActivityForResult(intent2, 0);
+        }
+    }
+
+    @Override // android.widget.AdapterView.OnItemLongClickListener
+    public boolean onItemLongClick(AdapterView<?> parent, View arg1, final int position, long id) {
+        final boolean isFirstItem = position == 0;
+        parent.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda4
+            @Override // android.view.View.OnCreateContextMenuListener
+            public final void onCreateContextMenu(ContextMenu contextMenu, View view, ContextMenu.ContextMenuInfo contextMenuInfo) {
+                ApkInfoActivity.this.m69x6899fc00(position, isFirstItem, contextMenu, view, contextMenuInfo);
+            }
+        });
+        return false;
+    }
+
+    /* renamed from: lambda$onItemLongClick$47$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ void m69x6899fc00(final int position, boolean isFirstItem, ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        MenuItem.OnMenuItemClickListener listener;
+        List<FileRecord> records = new ArrayList<>();
+        String curPath = this.resListAdapter.getData(records);
+        boolean isDir = records.get(position).isDir;
+        if (!isFirstItem) {
+            MenuItem item1 = menu.add(0, 1, 0, R.string.delete);
+            item1.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda6
+                @Override // android.view.MenuItem.OnMenuItemClickListener
+                public final boolean onMenuItemClick(MenuItem menuItem) {
+                    return ApkInfoActivity.this.m63xd70f83c6(position, menuItem);
+                }
+            });
+        }
+        if (!isFirstItem || curPath.equals(this.decodeRootPath)) {
+            MenuItem item2 = menu.add(0, 2, 0, R.string.extract);
+            item2.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda7
+                @Override // android.view.MenuItem.OnMenuItemClickListener
+                public final boolean onMenuItemClick(MenuItem menuItem) {
+                    return ApkInfoActivity.this.m64x99fbed25(position, menuItem);
+                }
+            });
+        }
+        if (!isFirstItem || curPath.equals(this.decodeRootPath)) {
+            MenuItem item3 = menu.add(0, 3, 0, R.string.replace);
+            if (isDir) {
+                listener = new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda8
+                    @Override // android.view.MenuItem.OnMenuItemClickListener
+                    public final boolean onMenuItemClick(MenuItem menuItem) {
+                        return ApkInfoActivity.this.m65x5ce85684(position, menuItem);
+                    }
+                };
+            } else {
+                listener = new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda9
+                    @Override // android.view.MenuItem.OnMenuItemClickListener
+                    public final boolean onMenuItemClick(MenuItem menuItem) {
+                        return ApkInfoActivity.this.m66x1fd4bfe3(position, menuItem);
+                    }
+                };
+            }
+            item3.setOnMenuItemClickListener(listener);
+        }
+        MenuItem item4 = menu.add(0, 4, 0, R.string.add_a_file);
+        item4.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda10
+            @Override // android.view.MenuItem.OnMenuItemClickListener
+            public final boolean onMenuItemClick(MenuItem menuItem) {
+                return ApkInfoActivity.this.m67xe2c12942(position, menuItem);
+            }
+        });
+        MenuItem item5 = menu.add(0, 5, 0, R.string.new_folder);
+        item5.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda11
+            @Override // android.view.MenuItem.OnMenuItemClickListener
+            public final boolean onMenuItemClick(MenuItem menuItem) {
+                return ApkInfoActivity.this.m68xa5ad92a1(position, menuItem);
+            }
+        });
+    }
+
+    /* renamed from: lambda$onItemLongClick$41$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ boolean m63xd70f83c6(int position, MenuItem item) {
+        List<Integer> positions = new ArrayList<>(1);
+        positions.add(Integer.valueOf(position));
+        this.resListAdapter.deleteFile(positions);
+        this.resListAdapter.dumpChangedFiles();
+        return true;
+    }
+
+    /* renamed from: lambda$onItemLongClick$42$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ boolean m64x99fbed25(int position, MenuItem item) {
+        List<Integer> positions = new ArrayList<>(1);
+        positions.add(Integer.valueOf(position));
+        extractFileOrDir(positions);
+        return true;
+    }
+
+    /* renamed from: lambda$onItemLongClick$43$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ boolean m65x5ce85684(int position, MenuItem item) {
+        replaceFolder(position);
+        this.resListAdapter.dumpChangedFiles();
+        return true;
+    }
+
+    /* renamed from: lambda$onItemLongClick$44$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ boolean m66x1fd4bfe3(int position, MenuItem item) {
+        replaceFile(position);
+        this.resListAdapter.dumpChangedFiles();
+        return true;
+    }
+
+    /* renamed from: lambda$onItemLongClick$45$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ boolean m67xe2c12942(int position, MenuItem item) {
+        addFile(position);
+        return true;
+    }
+
+    /* renamed from: lambda$onItemLongClick$46$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
+    /* synthetic */ boolean m68xa5ad92a1(int position, MenuItem item) {
+        createFolder(position);
+        return true;
+    }
+
+    private List<FileCopyDialog.CopySource> getCopySources(List<Integer> positions) {
+        List<FileCopyDialog.CopySource> result = new ArrayList<>();
+        List<FileRecord> records = new ArrayList<>();
+        String dirPath = this.resListAdapter.getData(records);
+        Iterator<Integer> it = positions.iterator();
+        while (it.hasNext()) {
+            int position = it.next().intValue();
+            if (position < records.size()) {
+                FileRecord fileRec = records.get(position);
+                FileCopyDialog.CopySource src = new FileCopyDialog.CopySource();
+                if (fileRec.isInZip) {
+                    src.path = (dirPath + "/" + fileRec.fileName).substring(this.decodeRootPath.length() + 1);
+                } else {
+                    src.path = dirPath + "/" + fileRec.fileName;
+                }
+                src.isInApk = fileRec.isInZip;
+                src.isDir = fileRec.isDir;
+                result.add(src);
+            }
+        }
+        return result;
+    }
+
+    protected void extractFileOrDir(List<Integer> positions) {
+        List<FileCopyDialog.CopySource> sources = getCopySources(positions);
+        extractFileOrDir_internal(sources);
+    }
+
+    protected void extractFileOrDir(String filepath) {
+        List<FileCopyDialog.CopySource> sources = new ArrayList<>();
+        FileCopyDialog.CopySource s = new FileCopyDialog.CopySource();
+        s.isInApk = false;
+        s.isDir = false;
+        s.path = filepath;
+        sources.add(s);
+        extractFileOrDir_internal(sources);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private void extractFileOrDir_internal(final List<FileCopyDialog.CopySource> sources) {
+        String dlgTitle = getString(R.string.select_folder);
+        FileSelectDialog.IFileSelection callback = new FileSelectDialog.IFileSelection() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.11
+            @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+            public void fileSelectedInDialog(String filePath, String extraStr, boolean openFile) {
+                FileCopyDialog dlg = new FileCopyDialog(ApkInfoActivity.this, ApkInfoActivity.this.apkPath, ApkInfoActivity.this.decodeRootPath, ApkInfoActivity.this.fileEntry2ZipEntry, sources, filePath);
+                dlg.show();
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+            public boolean isInterestedFile(String filename, String extraStr) {
+                return true;
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+            public String getConfirmMessage(String filePath, String extraStr) {
+                return null;
+            }
+        };
+        FileSelectDialog dlg = new FileSelectDialog(this, callback, null, null, dlgTitle, true, false, false, null);
+        dlg.show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    private String extractFileFromZip(String entryName) {
+        String filename;
+        int pos = entryName.lastIndexOf("/");
+        if (pos != -1) {
+            filename = entryName.substring(pos + 1);
+        } else {
+            filename = entryName;
+        }
+        String fileType = "";
+        int pos2 = filename.lastIndexOf(".");
+        if (pos2 != -1) {
+            fileType = filename.substring(pos2);
+        }
+        try {
+            String zipEntry = this.fileEntry2ZipEntry.get(entryName);
+            String dstPath = SDCard.makeWorkingDir(this) + TMP_EDITOR_FILE + fileType;
+            if (zipEntry != null) {
+                entryName = zipEntry;
+            }
+            ZipUtil.unzipFileTo(this.apkPath, entryName, dstPath);
+            return dstPath;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    protected void replaceFile(int position) {
+        List<FileRecord> records = new ArrayList<>();
+        String dirPath = this.resListAdapter.getData(records);
+        FileRecord rec = records.get(position);
+        String filepath = dirPath + "/" + rec.fileName;
+        replaceFile(filepath, (SomethingChangedListener) null);
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    protected void replaceFile(String replacedPath, final SomethingChangedListener listener) {
+        String suffix;
+        int slashPosition = replacedPath.lastIndexOf(47);
+        String fileName = replacedPath.substring(slashPosition + 1);
+        int dotPosition = fileName.lastIndexOf(46);
+        if (dotPosition == -1) {
+            suffix = null;
+        } else {
+            String suffix2 = fileName.substring(dotPosition);
+            suffix = suffix2;
+        }
+        final String fileTypeStr = suffix;
+        FileSelectDialog dlg = new FileSelectDialog(this, new FileSelectDialog.IFileSelection() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.12
+            @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+            public void fileSelectedInDialog(String filePath, String extraStr, boolean openFile) {
+                if (openFile) {
+                    ApkInfoActivity.this.saveParams(filePath, extraStr, listener);
+                    OpenFiles.openFile(ApkInfoActivity.this, filePath, 1001);
+                } else {
+                    ApkInfoActivity.this.resListAdapter.replaceFile(extraStr, filePath);
+                    if (listener != null) {
+                        listener.somethingChanged();
+                    }
+                }
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+            public boolean isInterestedFile(String filename, String extraStr) {
+                if (fileTypeStr != null) {
+                    return filename.endsWith(fileTypeStr);
+                }
+                return true;
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+            public String getConfirmMessage(String filePath, String extraStr) {
+                return null;
+            }
+        }, suffix, replacedPath, null, false, false, true, null);
+        dlg.show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    protected void replaceFolder(int position) {
+        String dlgTitle = getString(R.string.select_folder_replace);
+        List<FileRecord> records = new ArrayList<>();
+        String dirPath = this.resListAdapter.getData(records);
+        FileRecord rec = records.get(position);
+        FileSelectDialog.IFileSelection callback = new FileSelectDialog.IFileSelection() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.13
+            @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+            public void fileSelectedInDialog(String filePath, String extraStr, boolean openFile) {
+                String workingDir = SDCard.getEditorDirectory() + "/tmp";
+                if (workingDir.startsWith(filePath)) {
+                    Toast.makeText((Context) ApkInfoActivity.this, R.string.select_folder_err2, 1).show();
+                } else if (!filePath.startsWith(workingDir)) {
+                    ApkInfoActivity.this.resListAdapter.replaceFolder(extraStr, filePath);
+                } else {
+                    Toast.makeText((Context) ApkInfoActivity.this, R.string.select_folder_err1, 1).show();
+                }
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+            public boolean isInterestedFile(String filename, String extraStr) {
+                return true;
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+            public String getConfirmMessage(String filePath, String extraStr) {
+                String replaced = extraStr.substring(ApkInfoActivity.this.decodeRootPath.length() + 1);
+                String message = ApkInfoActivity.this.getString(R.string.folder_replace_tip);
+                return String.format(message, replaced, filePath);
+            }
+        };
+        FileSelectDialog dlg = new FileSelectDialog(this, callback, null, dirPath + "/" + rec.fileName, dlgTitle, true, true, false, null);
+        dlg.show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    protected void addFile(int position) {
+        String dirPath = this.resListAdapter.getData(null);
+        FileSelectDialog dlg = new FileSelectDialog(this, new FileSelectDialog.IFileSelection() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.14
+            @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+            public void fileSelectedInDialog(String filePath, String extraStr, boolean openFile) {
+                String name = filePath.substring(filePath.lastIndexOf("/") + 1);
+                ApkInfoActivity.this.resListAdapter.addFile(extraStr + "/" + name, filePath);
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+            public boolean isInterestedFile(String filename, String extraStr) {
+                return true;
+            }
+
+            @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
+            public String getConfirmMessage(String filePath, String extraStr) {
+                return null;
+            }
+        }, null, dirPath, getString(R.string.add_a_file));
+        dlg.show();
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    protected void createFolder(int position) {
+        boolean showImportFolder = this.isFullDecoding;
+        new AddFolderDialog(this, this, showImportFolder).show();
+    }
+
+    @Override // com.gmail.heagoo.apkeditor.IManifestChangeCallback
+    public String tryToDeleteSection(LineRecord lineRec) {
+        return null;
+    }
+
+    @Override // com.gmail.heagoo.apkeditor.IManifestChangeCallback
+    public void manifestChanged(String newContent) {
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(this.decodeRootPath + "/AndroidManifest.xml");
+            fos.write(newContent.getBytes());
+            this.manifestModified = true;
+        } catch (IOException e) {
+            if (fos == null) {
+                return;
+            }
+        } catch (Throwable th) {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e2) {
+                }
+            }
+            throw th;
+        }
+        try {
+            fos.close();
+        } catch (IOException e3) {
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    protected void fakeShow() {
+        Toast.makeText((Context) this, (CharSequence) "Manifest editing is disabled (seems not a genuine version)", 1).show();
+    }
+
+    public void dexDecodingStarted() {
+        this.dexConversionInProgress = true;
+        this.dex2smaliImage.setVisibility(4);
+        this.decodeResultLayout.setVisibility(4);
+        this.decodeProgressRow.setVisibility(0);
+        this.decodeProgressBar.setVisibility(0);
+        this.decodeProgressText.setText("");
+        this.decodeProgressText.setVisibility(0);
+    }
+
+    public void dexDecodingProgress(int current, int total) {
+        if (this.decodeProgressText != null) {
+            this.decodeProgressText.setText(current + "/" + total);
+        }
+    }
+
+    public void dexClassProgress(int dex, int dexTotal, int done, int total) {
+        if (this.decodeProgressText != null) {
+            this.decodeProgressText.setText(getString(R.string.lab_dex_class_progress, new Object[]{Integer.valueOf(dex), Integer.valueOf(dexTotal), Integer.valueOf(done), Integer.valueOf(total)}));
+        }
+    }
+
+    /* JADX WARN: Multi-variable type inference failed */
+    public void dexDecodingFinished(boolean ret, String strError, String strWarning) {
+        this.dexConversionInProgress = false;
+        this.dexDecoded = ret;
+        if (this.dexDecodedCallback != null) {
+            this.dexDecodedCallback.callbackFunc();
+            this.dexDecodedCallback = null;
+        }
+        boolean showResult = true;
+        if (ret) {
+            if (strWarning != null) {
+                this.decodeResultTitle.setText(R.string.succeed_with_warning);
+                String content = getString(R.string.warning) + ": " + strWarning;
+                this.decodeResultDetail.setText(content);
+                this.decodeResultDetail.setVisibility(0);
+            } else {
+                showResult = false;
+                this.decodeResultTitle.setText(R.string.succeed);
+                this.decodeResultDetail.setVisibility(8);
+            }
+        } else {
+            this.decodeResultTitle.setText(R.string.failed);
+            this.decodeResultDetail.setVisibility(0);
+            if (strError != null) {
+                this.decodeResultDetail.setText(strError);
+            } else {
+                this.decodeResultDetail.setText(R.string.unknown_error);
+            }
+        }
+        this.dex2smaliImage.setVisibility(4);
+        this.decodeProgressBar.setVisibility(4);
+        this.decodeProgressText.setVisibility(8);
+        this.decodeProgressRow.setVisibility(8);
+        if (showResult) {
+            this.decodeResultLayout.setVisibility(0);
+        } else {
+            this.dexDecodeLayout.setVisibility(8);
+            Toast.makeText((Context) this, R.string.dex_decode_succeed, 1).show();
+        }
+        String curFolder = this.resListAdapter.getData(null);
+        if (curFolder.endsWith("/decoded")) {
+            this.resListAdapter.openDirectory(curFolder);
+        }
+    }
+
+    @Override // android.view.View.OnLongClickListener
+    public boolean onLongClick(View v) {
+        int id = v.getId();
+        if (id == R.id.imageview_dex2smali) {
+            this.dexDecodeLayout.setVisibility(8);
+            return true;
+        }
+        return false;
+    }
+
+    public String getDecodeRootPath() {
+        return this.decodeRootPath;
+    }
+
+    public ResListAdapter getResListAdapter() {
+        return this.resListAdapter;
+    }
+
+    public boolean isDexDecoded() {
+        return this.dexDecoded;
+    }
+
+    public String getApkPath() {
+        return this.apkPath;
+    }
+
+    public ApkInfoParser.AppInfo getApkInfo() {
+        return this.apkInfo;
+    }
+
+    public void onStart() {
+        super.onStart();
+    }
+
+    public void onStop() {
+        super.onStop();
+    }
+
+    public void saveParams(String filePath, String extraStr, SomethingChangedListener listener) {
+        this.savedParam_filePath = filePath;
+        this.savedParam_extraStr = extraStr;
+        this.savedParam_listener = listener;
+    }
+
+    class MyServiceConnection implements ServiceConnection {
+        private boolean bSign;
+
+        public MyServiceConnection(boolean bSign) {
+            this.bSign = bSign;
+        }
+
+        @Override // android.content.ServiceConnection
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            ApkComposeService.ComposeServiceBinder binder = (ApkComposeService.ComposeServiceBinder) service;
+            if (binder.isRunning()) {
+                ApkInfoActivity.this.showCannotStartBuildDialog();
+            } else {
+                ApkInfoActivity.this.launchWithoutCheck(this.bSign);
+            }
+        }
+
+        @Override // android.content.ServiceConnection
+        public void onServiceDisconnected(ComponentName name) {
+        }
+    }
+}

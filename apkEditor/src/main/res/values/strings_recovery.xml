@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="file_browser_title">File browser</string>
+    <string name="file_search_hint">Search in this folder</string>
+    <string name="file_sort_button">↕ Sort</string>
+    <string name="file_storage_button">Change storage</string>
+    <string name="home_menu_description">Open navigation menu</string>
+    <string name="home_open_app_hint">Choose an installed application</string>
+    <string name="home_open_file_hint">Open an APK from device storage</string>
+    <string name="home_recent_empty">No recent files</string>
+    <string name="home_recent_empty_hint">Opened APK files will appear here.</string>
+    <string name="home_recent_title">Recent files</string>
+    <string name="home_start_title">Get started</string>
+    <string name="home_tagline">Open, edit and save APK files.</string>
+    <string name="odex_home_hint">Patch installed app cache · ROOT</string>
+    <string name="editor_back">Back</string>
+    <string name="patch_log_copy">Copy</string>
+    <string name="patch_log_last">Last log</string>
+    <string name="patch_log_share">Share</string>
+</resources>

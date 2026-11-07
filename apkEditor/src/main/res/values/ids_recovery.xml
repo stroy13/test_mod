@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="line_divider" />
+    <item type="id" name="odex_back" />
+    <item type="id" name="original_button" />
+</resources>

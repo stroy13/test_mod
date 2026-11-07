@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <attr name="labAccent" format="color" />
+    <attr name="labBorder" format="color" />
+    <attr name="labCardBackground" format="reference" />
+    <attr name="labDrawerBackground" format="color" />
+    <attr name="labHeader" format="color" />
+    <attr name="labHomeBackground" format="color" />
+    <attr name="labInputBackground" format="reference" />
+    <attr name="labMuted" format="color" />
+    <attr name="labPressed" format="color" />
+    <attr name="labSurface" format="color" />
+    <attr name="labSurfaceAlt" format="color" />
+    <attr name="labTabBackground" format="reference" />
+    <attr name="labText" format="color" />
+    <attr name="homeActionBackground" format="reference" />
+    <attr name="homeBannerBackground" format="reference|color" />
+    <attr name="homeFooterBackground" format="reference|color" />
+    <attr name="homeGroupBackground" format="reference|color" />
+</resources>

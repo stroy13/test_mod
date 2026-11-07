@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:background="@drawable/lab_dialog_surface" android:layout_width="fill_parent" android:layout_height="fill_parent" android:clipToOutline="true"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView android:textAppearance="?android:textAppearanceMedium" android:textColor="?labText" android:id="@id/tv_title" android:background="?labHeader" android:padding="8.0dip" android:focusable="false" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/notice_capital" />
+    <ScrollView android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_weight="1.0">
+        <TextView android:id="@id/content" android:layout_width="fill_parent" android:layout_height="wrap_content" />
+    </ScrollView>
+    <CheckBox android:id="@id/cb_show_once" android:layout_width="fill_parent" android:layout_height="wrap_content" android:checked="true" android:text="@string/donot_show_again" />
+    <Button android:id="@id/original_button" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/lab_license_original" />
+    <Button android:id="@id/close_button" android:layout_width="fill_parent" android:layout_height="wrap_content" android:minHeight="40.0dip" android:text="@string/close" />
+</LinearLayout>
