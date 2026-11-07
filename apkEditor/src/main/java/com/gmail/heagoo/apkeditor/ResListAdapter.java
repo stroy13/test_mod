@@ -25,7 +25,8 @@ import com.gmail.heagoo.common.RandomUtil;
 import com.gmail.heagoo.common.SDCard;
 import com.gmail.heagoo.common.StringUtil;
 import com.gmail.heagoo.folderlist.FileRecord;
-import com.gmail.heagoo.folderlist.FilenameComparator;
+import com.gmail.heagoo.folderlist.FileListSorter;
+import com.gmail.heagoo.folderlist.FileSort;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,6 +40,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +59,8 @@ public class ResListAdapter extends BaseAdapter implements CompoundButton.OnChec
     private String curPath;
     private Map<String, String> fileEntry2ZipEntry;
     List<FileRecord> fileList;
+    private int sortKey = FileSort.NAME;
+    private boolean sortDescending;
     private FilenameFilter filter;
     private WeakReference<ResSelectionChangeListener> listenerRef;
     private int resourceId;
@@ -137,13 +141,40 @@ public class ResListAdapter extends BaseAdapter implements CompoundButton.OnChec
 
     private void initListData(String path) {
         synchronized (this.fileList) {
+            this.checkedItems.clear();
             File dir = new File(path);
             if (!dir.exists()) {
                 listSubNodes(path);
             } else {
                 listSubFiles(path);
             }
+            sortFileList();
         }
+    }
+
+    private void sortFileList() {
+        Set<FileRecord> selected = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Integer position : this.checkedItems) {
+            if (position != null && position >= 0 && position < this.fileList.size()) {
+                selected.add(this.fileList.get(position));
+            }
+        }
+        FileListSorter.sort(this.fileList, sortKey, sortDescending, this.curPath);
+        this.checkedItems.clear();
+        if (!selected.isEmpty()) {
+            for (int i = 0; i < this.fileList.size(); i++) {
+                if (selected.contains(this.fileList.get(i))) this.checkedItems.add(i);
+            }
+        }
+    }
+
+    public void setSort(int key, boolean descending) {
+        synchronized (this.fileList) {
+            this.sortKey = FileSort.normalizeKey(key);
+            this.sortDescending = descending;
+            sortFileList();
+        }
+        notifyDataSetChanged();
     }
 
     private void listSubNodes(String path) {
@@ -161,7 +192,6 @@ public class ResListAdapter extends BaseAdapter implements CompoundButton.OnChec
                     fr.isInZip = true;
                     this.fileList.add(fr);
                 }
-                Collections.sort(this.fileList, new FilenameComparator());
             }
             FileRecord fr2 = new FileRecord();
             fr2.fileName = "..";
@@ -188,10 +218,6 @@ public class ResListAdapter extends BaseAdapter implements CompoundButton.OnChec
                 fr.isDir = f.isDirectory();
                 this.fileList.add(fr);
             }
-            try {
-                Collections.sort(this.fileList, new FilenameComparator());
-            } catch (Exception e) {
-            }
             if (!isRootDir) {
                 FileRecord fr2 = new FileRecord();
                 fr2.fileName = "..";
@@ -208,7 +234,6 @@ public class ResListAdapter extends BaseAdapter implements CompoundButton.OnChec
                         fr3.isInZip = true;
                         extraRecords.add(fr3);
                     }
-                    Collections.sort(extraRecords, new FilenameComparator());
                     this.fileList.addAll(extraRecords);
                 }
             }
@@ -328,8 +353,9 @@ public class ResListAdapter extends BaseAdapter implements CompoundButton.OnChec
             if (position != 0 || !rec.fileName.equals("..")) {
                 viewHolder.checkbox.setVisibility(0);
                 viewHolder.checkbox.setId(position);
-                viewHolder.checkbox.setOnCheckedChangeListener(this);
+                viewHolder.checkbox.setOnCheckedChangeListener(null);
                 viewHolder.checkbox.setChecked(this.checkedItems.contains(Integer.valueOf(position)));
+                viewHolder.checkbox.setOnCheckedChangeListener(this);
             } else {
                 viewHolder.checkbox.setVisibility(4);
             }
@@ -386,7 +412,10 @@ public class ResListAdapter extends BaseAdapter implements CompoundButton.OnChec
         if (this.rootPath.startsWith(targetPath) && !targetPath.equals(this.rootPath)) {
             return;
         }
-        initListData(targetPath);
+        synchronized (this.fileList) {
+            this.checkedItems.clear();
+            initListData(targetPath);
+        }
         notifyDataSetChanged();
     }
 
@@ -411,9 +440,10 @@ public class ResListAdapter extends BaseAdapter implements CompoundButton.OnChec
         synchronized (this.fileList) {
             if (this.curPath.equals(dirPath)) {
                 this.fileList.add(rec);
-                notifyDataSetChanged();
+                sortFileList();
             }
         }
+        notifyDataSetChanged();
     }
 
     public void addFile(String targetPath, String filePath) {

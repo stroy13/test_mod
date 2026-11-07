@@ -32,6 +32,7 @@ import com.gmail.heagoo.apkeditor.ProcessingDialog;
 import com.gmail.heagoo.apkeditor.base.R;
 import com.gmail.heagoo.apkeditor.se.SimpleEditActivity;
 import com.gmail.heagoo.common.ActivityUtil;
+import com.gmail.heagoo.common.AppListOrder;
 import com.gmail.heagoo.common.CustomizedLangActivity;
 import com.gmail.heagoo.common.Display;
 import com.gmail.heagoo.common.IOUtils;
@@ -57,6 +58,7 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
     private final int LAUNCH_ID = 4;
     private int appTypeIndex = 0;
     private int appOrderIndex = 0;
+    private int scanGeneration;
     private MyHandler handler = new MyHandler(this);
     private List<AppInfo> allApps = new ArrayList();
 
@@ -115,6 +117,7 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
 
     public void onResume() {
         super.onResume();
+        this.appOrderIndex = getOrderIndex(SettingActivity.getListOrder(this));
         reScanAppList();
     }
 
@@ -122,26 +125,21 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
         this.progressBar.setVisibility(8);
         this.appListView.setVisibility(0);
         AppListAdapter adapter = (AppListAdapter) this.appListView.getAdapter();
-        String[] orders = getResources().getStringArray(R.array.order_value);
-        String strOrder = this.appOrderIndex < orders.length ? orders[this.appOrderIndex] : "";
-        adapter.setAppList(apps, strOrder);
-        adapter.notifyDataSetChanged();
+        AppListOrder order = AppListOrder.fromIndex(this.appOrderIndex);
+        adapter.setAppList(apps, order.getPreferenceValue());
+        List<AppInfo> sorted = adapter.getAppList();
         synchronized (this.displayApps) {
             this.displayApps.clear();
-            this.displayApps.addAll(apps);
+            this.displayApps.addAll(sorted);
         }
+        adapter.notifyDataSetChanged();
         this.keywordEdit.setEnabled(true);
         this.searchBtn.setEnabled(true);
     }
 
     private int getOrderIndex(String strOrder) {
-        String[] orders = getResources().getStringArray(R.array.order_value);
-        for (int i = 0; i < orders.length; i++) {
-            if (strOrder.equals(orders[i])) {
-                return i;
-            }
-        }
-        return 0;
+        return AppListOrder.fromPreference(strOrder,
+                getResources().getStringArray(R.array.order_key)).ordinal();
     }
 
     /* JADX WARN: Multi-variable type inference failed */
@@ -175,21 +173,27 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
 
     /* JADX WARN: Type inference failed for: r0v0, types: [com.gmail.heagoo.apkeditor.UserAppActivity$1] */
     private void reScanAppList() {
+        final int generation = ++this.scanGeneration;
+        final int typeIndex = this.appTypeIndex;
+        this.allApps.clear();
         new Thread() {
             @Override
             public void run() {
                 List<AppInfo> appList = new ArrayList<>();
-                UserAppActivity.this.getAppList(appList);
-                UserAppActivity.this.handler.setAppList(appList);
-                UserAppActivity.this.handler.sendEmptyMessage(0);
+                UserAppActivity.this.getAppList(appList, typeIndex);
+                UserAppActivity.this.handler.obtainMessage(0, generation, 0, appList).sendToTarget();
             }
         }.start();
     }
 
     protected void getAppList(List<AppInfo> appList) {
+        getAppList(appList, this.appTypeIndex);
+    }
+
+    protected void getAppList(List<AppInfo> appList, int typeIndex) {
         PackageManager pm = getPackageManager();
         List<ApplicationInfo> appInfoList = pm.getInstalledApplications(0);
-        if (this.appTypeIndex == 0) {
+        if (typeIndex == 0) {
             for (ApplicationInfo ai : appInfoList) {
                 if ((ai.flags & 1) == 0) {
                     appList.add(AppInfo.create(pm, ai));
@@ -275,9 +279,9 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
             Resources res = getResources();
             groups.add(res.getString(R.string.user_apps));
             groups.add(res.getString(R.string.system_apps));
-            String[] strOrders = res.getStringArray(R.array.order_value);
-            for (String strOrder : strOrders) {
-                groups.add(strOrder);
+            String[] orderLabels = res.getStringArray(R.array.order_key);
+            for (String label : orderLabels) {
+                groups.add(label);
             }
             this.popListAdapter = new GroupAdapter(this, groups);
             lv_group.setAdapter((ListAdapter) this.popListAdapter);
@@ -314,10 +318,10 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
                 reScanAppList(1, this.appOrderIndex);
                 break;
             case 2:
-                reScanAppList(this.appTypeIndex, 0);
-                break;
             case 3:
-                reScanAppList(this.appTypeIndex, 1);
+                AppListOrder order = AppListOrder.fromIndex(position - 2);
+                SettingActivity.setListOrder(this, order.getPreferenceValue());
+                reScanAppList(this.appTypeIndex, order.ordinal());
                 break;
         }
         if (this.popupWindow != null) {
@@ -466,28 +470,24 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     private static class MyHandler extends Handler {
-        private WeakReference<UserAppActivity> activityRef;
-        private List<AppInfo> appList;
+        private final WeakReference<UserAppActivity> activityRef;
 
         public MyHandler(UserAppActivity activity) {
             this.activityRef = new WeakReference<>(activity);
         }
 
-        public void setAppList(List<AppInfo> appList) {
-            this.appList = appList;
-        }
-
         @Override
         public void handleMessage(Message msg) {
             UserAppActivity activity = this.activityRef.get();
-            if (activity == null) {
+            if (activity == null || activity.isFinishing() || msg.arg1 != activity.scanGeneration) {
+                return;
             }
-            switch (msg.what) {
-                case 0:
-                    activity.allApps.clear();
-                    activity.allApps.addAll(this.appList);
-                    activity.showAppList(this.appList);
-                    break;
+            if (msg.what == 0) {
+                @SuppressWarnings("unchecked")
+                List<AppInfo> apps = (List<AppInfo>) msg.obj;
+                activity.allApps.clear();
+                activity.allApps.addAll(apps);
+                activity.showAppList(apps);
             }
         }
     }

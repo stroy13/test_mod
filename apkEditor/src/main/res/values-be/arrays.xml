@@ -16,10 +16,6 @@
         <item>"Па назве дадатка "</item>
         <item>Па часе ўсталёўкі</item>
     </string-array>
-    <string-array name="order_value">
-        <item>"Па назве дадатка "</item>
-        <item>Па часе ўсталёўкі</item>
-    </string-array>
     <string-array name="signer_key">
         <item>testkey</item>
         <item>Ключ створаны ў APK Editor</item>

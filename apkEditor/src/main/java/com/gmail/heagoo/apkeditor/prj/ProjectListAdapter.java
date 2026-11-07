@@ -16,6 +16,7 @@ import com.gmail.heagoo.apkeditor.GlobalConfig;
 import com.gmail.heagoo.apkeditor.base.BuildConfig;
 import com.gmail.heagoo.apkeditor.base.R;
 import com.gmail.heagoo.common.ActivityUtil;
+import com.gmail.heagoo.common.NaturalOrderComparator;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -37,9 +38,16 @@ class ProjectListAdapter extends BaseAdapter
     ProjectListAdapter(ProjectListActivity activity, List<ItemInfo> items) {
         this.themeId = GlobalConfig.instance(activity).getThemeId();
         this.activityRef = new WeakReference<>(activity);
-        for (ItemInfo item : items) {
-            this.projectItems.add(item);
-        }
+        this.projectItems.addAll(items);
+        sortProjects(this.projectItems);
+    }
+
+    static void sortProjects(List<ItemInfo> items) {
+        NaturalOrderComparator names = new NaturalOrderComparator();
+        items.sort((a, b) -> {
+            int byTime = Long.compare(b.lastModified, a.lastModified);
+            return byTime != 0 ? byTime : names.compare(a.name, b.name);
+        });
     }
 
     int getProjectNum() {
@@ -100,6 +108,7 @@ class ProjectListAdapter extends BaseAdapter
                 this.projectItems.add(item);
             }
         }
+        sortProjects(this.projectItems);
     }
 
     @Override

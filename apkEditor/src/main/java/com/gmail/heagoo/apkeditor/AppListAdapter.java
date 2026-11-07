@@ -11,15 +11,14 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 import com.gmail.heagoo.apkeditor.base.R;
+import com.gmail.heagoo.common.AppListOrder;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 
 public class AppListAdapter extends BaseAdapter {
     private Context ctx;
-    private APPLIST_ORDER order;
+    private AppListOrder order = AppListOrder.BY_NAME;
     private PackageManager pm;
     private int themeId;
     public List<AppInfo> appList = new ArrayList();
@@ -30,11 +29,6 @@ public class AppListAdapter extends BaseAdapter {
         }
     };
 
-    private enum APPLIST_ORDER {
-        BY_NAME,
-        BY_INSTALL_TIME
-    }
-
     public AppListAdapter(Context ctx) {
         this.ctx = ctx;
         this.pm = ctx.getPackageManager();
@@ -42,43 +36,15 @@ public class AppListAdapter extends BaseAdapter {
     }
 
     public void setAppList(List<AppInfo> appList, String order) {
-        String[] orderConsts = this.ctx.getResources().getStringArray(R.array.order_value);
-        if (order.equals(orderConsts[0])) {
-            this.order = APPLIST_ORDER.BY_NAME;
-        } else if (order.equals(orderConsts[1])) {
-            this.order = APPLIST_ORDER.BY_INSTALL_TIME;
-        } else {
-            this.order = APPLIST_ORDER.BY_NAME;
-        }
-        sortAppList(appList);
+        String[] labels = this.ctx.getResources().getStringArray(R.array.order_key);
+        this.order = AppListOrder.fromPreference(order, labels);
+        List<AppInfo> sorted = new ArrayList<>(appList);
+        Collections.sort(sorted, this.order.comparator(
+                info -> info.appName, info -> info.firstInstallTime, info -> info.packagePath));
         synchronized (this.appList) {
             this.appList.clear();
-            this.appList.addAll(appList);
+            this.appList.addAll(sorted);
         }
-    }
-
-    private void sortAppList(List<AppInfo> appList) {
-        final Locale locale = Locale.getDefault();
-        Comparator<AppInfo> comparator = null;
-        switch (this.order) {
-            case BY_NAME:
-                comparator = new Comparator<AppInfo>() {
-                    @Override
-                    public int compare(AppInfo arg0, AppInfo arg1) {
-                        return arg0.appName.toLowerCase(locale).compareTo(arg1.appName.toLowerCase(locale));
-                    }
-                };
-                break;
-            case BY_INSTALL_TIME:
-                comparator = new Comparator<AppInfo>() {
-                    @Override
-                    public int compare(AppInfo arg0, AppInfo arg1) {
-                        return arg0.lastUpdateTime < arg1.lastUpdateTime ? 1 : -1;
-                    }
-                };
-                break;
-        }
-        Collections.sort(appList, comparator);
     }
 
     public List<AppInfo> getAppList() {

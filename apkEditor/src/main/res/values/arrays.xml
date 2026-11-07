@@ -6,9 +6,10 @@
         <item>By Install Time</item>
     </string-array>
 
+    <!-- Stable preference values; never translate these. -->
     <string-array name="order_value">
-        <item>By App Name</item>
-        <item>By Install Time</item>
+        <item>ByAlpha</item>
+        <item>ByInstallTime</item>
     </string-array>
 
     <string-array name="appicon_key">

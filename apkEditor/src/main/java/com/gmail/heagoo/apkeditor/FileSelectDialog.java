@@ -26,11 +26,9 @@ import com.gmail.heagoo.common.InputUtil;
 import com.gmail.heagoo.common.PathUtil;
 import com.gmail.heagoo.common.SDCard;
 import com.gmail.heagoo.folderlist.FileRecord;
-import com.gmail.heagoo.folderlist.FileSort;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class FileSelectDialog extends Dialog implements AdapterView.OnItemClickListener, View.OnClickListener, AdapterView.OnItemLongClickListener {
@@ -155,18 +153,7 @@ public class FileSelectDialog extends Dialog implements AdapterView.OnItemClickL
         SharedPreferences prefs = this.ctx.getSharedPreferences("config", 0);
         int key = prefs.getInt("file_sort_key", 0);
         boolean descending = prefs.getBoolean("file_sort_desc", false);
-        synchronized (this.fileListAdapter.fileList) {
-            String current = this.fileListAdapter.getData(null);
-            for (FileRecord record : this.fileListAdapter.fileList) {
-                if (!"..".equals(record.fileName)) {
-                    File file = new File(current, record.fileName);
-                    record.lastModified = file.lastModified();
-                    record.totalSize = record.isDir ? -1L : file.length();
-                }
-            }
-            Collections.sort(this.fileListAdapter.fileList, new FileSort(key, descending));
-        }
-        this.fileListAdapter.notifyDataSetChanged();
+        this.fileListAdapter.setSort(key, descending);
     }
 
     private void showFileSortDialog(final ListView listView) {

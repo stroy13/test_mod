@@ -23,8 +23,6 @@ import com.gmail.heagoo.common.SDCard;
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -165,11 +163,7 @@ public class ProjectListActivity extends ThemedActivity implements View.OnClickL
             }
         } while (false);
 
-        if (!items.isEmpty()) {
-            Comparator<ProjectListAdapter.ItemInfo> comparator =
-                    (arg0, arg1) -> arg0.lastModified < arg1.lastModified ? 1 : -1;
-            Collections.sort(items, comparator);
-        }
+        ProjectListAdapter.sortProjects(items);
 
         return items;
     }

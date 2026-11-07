@@ -86,10 +86,6 @@
         <item>Per nome app</item>
         <item>Per data installazione</item>
     </string-array>
-    <string-array name="order_value">
-        <item>Per nome app</item>
-        <item>Per data installazione</item>
-    </string-array>
     <string-array name="signer_key">
         <item>chiave di prova</item>
         <item>chiave creata da APK Editor</item>

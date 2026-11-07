@@ -4,8 +4,6 @@ import android.os.Bundle;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 public class ProjectListActivity2 extends ProjectListActivity {
@@ -44,11 +42,7 @@ public class ProjectListActivity2 extends ProjectListActivity {
             }
         } while (false);
 
-        if (!items.isEmpty()) {
-            Comparator<ProjectListAdapter.ItemInfo> comparator =
-                    (arg0, arg1) -> arg0.lastModified < arg1.lastModified ? 1 : -1;
-            Collections.sort(items, comparator);
-        }
+        ProjectListAdapter.sortProjects(items);
 
         return items;
     }

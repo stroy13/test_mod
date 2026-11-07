@@ -28,6 +28,7 @@ import com.gmail.heagoo.apklib.AXMLPrinter;
 import com.gmail.heagoo.common.ActivityUtil;
 import com.gmail.heagoo.common.IOUtils;
 import com.gmail.heagoo.common.ImageZoomer;
+import com.gmail.heagoo.common.NaturalOrderComparator;
 import com.gmail.heagoo.common.SDCard;
 import com.gmail.heagoo.imageviewlib.ViewZipImageActivity;
 
@@ -49,24 +50,10 @@ public class ZipFileListAdapter extends BaseAdapter implements
         OnItemClickListener, OnItemLongClickListener, OnClickListener,
         IFileSelection, ProcessingDialog.ProcessingInterface {
 
-    // Use to do the sorting
-    Comparator<FileInfo> comparator = new Comparator<FileInfo>() {
-        @Override
-        public int compare(FileInfo fi1, FileInfo fi2) {
-            if (fi1.isDir) {
-                if (fi2.isDir) {
-                    return fi1.filename.compareTo(fi2.filename);
-                } else {
-                    return -1;
-                }
-            } else {
-                if (fi2.isDir) {
-                    return 1;
-                } else {
-                    return fi1.filename.compareTo(fi2.filename);
-                }
-            }
-        }
+    private final NaturalOrderComparator names = new NaturalOrderComparator();
+    private final Comparator<FileInfo> comparator = (fi1, fi2) -> {
+        if (fi1.isDir != fi2.isDir) return fi1.isDir ? -1 : 1;
+        return names.compare(fi1.filename, fi2.filename);
     };
     private Activity ctx;
     private IDirChanged dirChangeIf;
@@ -111,9 +98,11 @@ public class ZipFileListAdapter extends BaseAdapter implements
         this.dir2Files = zipHelper.dir2Files;
         this.zipHelper = zipHelper;
 
-        // Sort the root dir
+        // Every directory uses the same natural order, not only the root.
+        for (List<FileInfo> files : dir2Files.values()) {
+            Collections.sort(files, comparator);
+        }
         curFileList = dir2Files.get(curDir);
-        Collections.sort(curFileList, comparator);
 
         this.layoutId = R.layout.item_zipfile;
         // sawsem theme

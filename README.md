@@ -4,7 +4,7 @@
 
 Восстановленное дерево исходников Android-приложения **APK Editor Plus**
 (`ru.apkeditor.plus`, база — versionCode **175** / versionName **1.10.0.175**;
-текущая сборка с исправлениями — **180** / **1.10.0.180**, см.
+текущая сборка с исправлениями — **181** / **1.10.0.181**, см.
 [`docs/CHANGELOG.md`](docs/CHANGELOG.md)).
 
 Проект собирается штатным Gradle: `:apkEditorPro:assembleDebug` →
@@ -20,7 +20,7 @@
 | Параметр | Значение |
 |---|---|
 | Package / applicationId | `ru.apkeditor.plus` |
-| versionCode / versionName | `180` / `1.10.0.180` (база 175 + исправления, см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
+| versionCode / versionName | `181` / `1.10.0.181` (база 175 + исправления, см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
 | minSdk / targetSdk / compileSdk | 26 / 37 / 37 |
 | Gradle / AGP | 9.8.2 / 9.5.1 |
 | JDK | 17 |

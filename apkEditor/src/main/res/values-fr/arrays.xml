@@ -4,10 +4,6 @@
         <item>Par nom</item>
         <item>"Par heure d'installation"</item>
     </string-array>
-    <string-array name="order_value">
-        <item>"Par nom d'application"</item>
-        <item>"Par heure d'installation"</item>
-    </string-array>
 
     <string-array name="compression_level_key">
         <item>0 (pas de compression)</item>

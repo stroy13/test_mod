@@ -87,10 +87,6 @@
         <item>Wg Nazwy Aplikacji</item>
         <item>Wg Czasu Instalacji</item>
     </string-array>
-    <string-array name="order_value">
-        <item>Wg Nazwy Aplikacji</item>
-        <item>Wg Czasu Instalacji</item>
-    </string-array>
     <string-array name="signer_key">
         <item>Testowy klucz</item>
         <item>Klucz stworzony przez APK Editor</item>

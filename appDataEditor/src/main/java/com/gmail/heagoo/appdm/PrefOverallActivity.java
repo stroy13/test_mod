@@ -679,9 +679,9 @@ public class PrefOverallActivity extends CustomizedLangActivity implements OnCli
                             public void process() throws Exception {
                                 List<FileRecord> subFiles = fileListAdapter
                                         .listFiles(dirPath, true);
-                                Collections.sort(subFiles,
-                                        new FilenameComparator());
                                 if (subFiles != null) {
+                                    Collections.sort(subFiles,
+                                            new FilenameComparator());
                                     fileListAdapter.updateList(dirPath,
                                             subFiles);
                                 }

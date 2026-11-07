@@ -14,6 +14,7 @@ import android.preference.PreferenceManager;
 import android.widget.Toast;
 import com.gmail.heagoo.apkeditor.ProcessingDialog;
 import com.gmail.heagoo.apkeditor.base.R;
+import com.gmail.heagoo.common.AppListOrder;
 import com.gmail.heagoo.common.CommandRunner;
 import com.gmail.heagoo.common.RandomUtil;
 import com.gmail.heagoo.common.SDCard;
@@ -45,13 +46,15 @@ public class SettingActivity extends ThemedPreferenceActivity implements Prefere
     public static String getListOrder(Context ctx) {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
         String order = sp.getString(appOrderKey, "");
-        String[] orders = ctx.getResources().getStringArray(R.array.order_value);
-        for (String str : orders) {
-            if (order.equals(str)) {
-                return order;
-            }
-        }
-        return orders[0];
+        String[] labels = ctx.getResources().getStringArray(R.array.order_key);
+        return AppListOrder.fromPreference(order, labels).getPreferenceValue();
+    }
+
+    public static void setListOrder(Context ctx, String value) {
+        AppListOrder order = AppListOrder.fromPreference(
+                value, ctx.getResources().getStringArray(R.array.order_key));
+        PreferenceManager.getDefaultSharedPreferences(ctx).edit()
+                .putString(appOrderKey, order.getPreferenceValue()).apply();
     }
 
     public static int getCompressionLevel(Context ctx) {
@@ -182,10 +185,10 @@ public class SettingActivity extends ThemedPreferenceActivity implements Prefere
         modePref.setOnPreferenceChangeListener(this);
         ListPreference orderPref = (ListPreference) manager.findPreference(appOrderKey);
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-        String defaultOrder = getResources().getStringArray(R.array.order_value)[0];
-        String order = sp.getString(appOrderKey, defaultOrder);
-        orderPref.setValue(order);
-        orderPref.setSummary(order);
+        AppListOrder order = AppListOrder.fromPreference(
+                sp.getString(appOrderKey, ""), getResources().getStringArray(R.array.order_key));
+        orderPref.setValue(order.getPreferenceValue());
+        orderPref.setSummary(orderPref.getEntries()[order.ordinal()]);
         orderPref.setOnPreferenceChangeListener(this);
         ListPreference compressLevelPref = (ListPreference) manager.findPreference(compressLevelKey);
         SharedPreferences sp2 = PreferenceManager.getDefaultSharedPreferences(this);
@@ -287,11 +290,11 @@ public class SettingActivity extends ThemedPreferenceActivity implements Prefere
     public boolean onPreferenceChange(Preference preference, Object newValue) {
         String key = preference.getKey();
         if (appOrderKey.equals(key)) {
-            String orderValue = (String) newValue;
-            SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-            editor.putString(appOrderKey, orderValue);
-            editor.apply();
-            preference.setSummary(orderValue);
+            setListOrder(this, (String) newValue);
+            AppListOrder order = AppListOrder.fromPreference(
+                    (String) newValue, getResources().getStringArray(R.array.order_key));
+            ((ListPreference) preference).setSummary(
+                    ((ListPreference) preference).getEntries()[order.ordinal()]);
         } else if ("AppTheme".equals(key)) {
             try {
                 String value = (String) newValue;

@@ -86,10 +86,6 @@
         <item>Name der App</item>
         <item>Installationsdatum</item>
     </string-array>
-    <string-array name="order_value">
-        <item>Name der App</item>
-        <item>Installationsdatum</item>
-    </string-array>
     <string-array name="signer_key">
         <item>Testschl&#252;ssel</item>
         <item>Schl&#252;ssel erstellt durch APK Editor</item>

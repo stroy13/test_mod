@@ -17,7 +17,6 @@ import com.gmail.heagoo.common.SDCard;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class FolderListAdapter extends BaseAdapter {
@@ -28,6 +27,8 @@ public class FolderListAdapter extends BaseAdapter {
     private String curPath;
     private IListItemProducer producer;
     private int themeId;
+    private int sortKey = FileSort.NAME;
+    private boolean sortDescending;
 
     public FolderListAdapter(Context ctx, String rootPath, String curPath, IListItemProducer producer) {
         this.ctx = ctx;
@@ -95,8 +96,6 @@ public class FolderListAdapter extends BaseAdapter {
                     fileList.add(fr);
                 }
 
-                Collections.sort(fileList, new FilenameComparator());
-
                 // In root directory, will not show parent folder
                 if (!path.equals(rootPath)) {
                     FileRecord fr = new FileRecord();
@@ -107,6 +106,7 @@ public class FolderListAdapter extends BaseAdapter {
                 }
 
                 curPath = path;
+                FileListSorter.sort(fileList, sortKey, sortDescending, curPath);
             }
             // Special case: in the parent path of SD card (like /storage/emulated/0)
             // As on some phones, we cannot access the directory like /storage/emulated
@@ -130,18 +130,23 @@ public class FolderListAdapter extends BaseAdapter {
                 }
 
                 curPath = path;
+                FileListSorter.sort(fileList, sortKey, sortDescending, curPath);
             }
         }
     }
 
     @Override
     public int getCount() {
-        return fileList.size();
+        synchronized (fileList) {
+            return fileList.size();
+        }
     }
 
     @Override
     public Object getItem(int position) {
-        return fileList.get(position);
+        synchronized (fileList) {
+            return fileList.get(position);
+        }
     }
 
     @Override
@@ -152,7 +157,7 @@ public class FolderListAdapter extends BaseAdapter {
     @SuppressLint("InflateParams")
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        FileRecord rec = fileList.get(position);
+        FileRecord rec = getItemData(position);
         ViewHolder viewHolder = null;
         if (convertView == null) {
 
@@ -227,6 +232,7 @@ public class FolderListAdapter extends BaseAdapter {
                     break;
                 }
             }
+            FileListSorter.sort(fileList, sortKey, sortDescending, curPath);
         }
         this.notifyDataSetChanged();
     }
@@ -251,9 +257,10 @@ public class FolderListAdapter extends BaseAdapter {
     }
 
     public void setSort(int key, boolean descending) {
-        // Added during source recovery (v175 API used by FileListActivity/FileSelectDialog).
         synchronized (fileList) {
-            java.util.Collections.sort(fileList, new FileSort(key, descending));
+            sortKey = FileSort.normalizeKey(key);
+            sortDescending = descending;
+            FileListSorter.sort(fileList, sortKey, sortDescending, curPath);
         }
         notifyDataSetChanged();
     }
