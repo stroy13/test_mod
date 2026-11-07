@@ -30,6 +30,11 @@ public class ResAttrDecoder {
 
     public String decode(int type, int value, String rawValue, int attrResId)
             throws AndrolibException {
+        if (mCurrentPackage == null) {
+            // No package available (nothing in the table matched): do not crash the
+            // whole file decode, just pass the raw value through.
+            return rawValue != null ? rawValue : "";
+        }
         ResScalarValue resValue = mCurrentPackage.getValueFactory().factory(
                 type, value, rawValue);
 
@@ -50,11 +55,17 @@ public class ResAttrDecoder {
 
     public String decodeManifestAttr(int attrResId) throws AndrolibException {
 
-        if (attrResId != 0) {
-            ResResSpec resResSpec = getCurrentPackage().getResTable().getResSpec(attrResId);
+        if (attrResId != 0 && mCurrentPackage != null) {
+            try {
+                ResResSpec resResSpec = mCurrentPackage.getResTable().getResSpec(attrResId);
 
-            if (resResSpec != null) {
-                return resResSpec.getName();
+                if (resResSpec != null) {
+                    return resResSpec.getName();
+                }
+            } catch (Exception e) {
+                // Spec is not in the table (e.g. the framework table could not be
+                // loaded); the caller falls back to a synthetic attribute name.
+                return null;
             }
         }
 
