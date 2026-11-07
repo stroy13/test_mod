@@ -85,6 +85,8 @@ public class ARSCDecoder {
     private int mResId;
     private int mTypeIdOffset = 0;
     private boolean[] mMissingResSpecs;
+    // Set once addMissingResSpecs() has handled the current type spec.
+    private boolean mMissingResSpecsDone;
     private HashMap<Integer, ResTypeSpec> mResTypeSpecs = new HashMap<>();
 
     private ARSCDecoder(InputStream arscStream, ResTable resTable, ResourceIdProvider idProvider, boolean storeFlagsOffsets, boolean keepBroken, boolean apkProtected) {
@@ -306,6 +308,7 @@ public class ARSCDecoder {
         mIn.skipBytes(entryCount * 4);
         mTypeSpec = new ResTypeSpec(mTypeNames.getString(id - 1), mResTable, mPkg, id, entryCount);
         mPkg.addType(mTypeSpec);
+        this.mMissingResSpecsDone = false;
         return mTypeSpec;
     }
 
@@ -712,6 +715,18 @@ public class ARSCDecoder {
     }
 
     private void addMissingResSpecs() throws AndrolibException {
+        // mMissingResSpecs is re-created for every TYPE chunk, i.e. for every
+        // configuration of the same type. The first chunk of a type already adds a
+        // dummy spec for every id that is missing anywhere in that type, so later
+        // chunks only repeated the scan (with a String concatenation and a fresh
+        // ResResSpec object per entry) and threw the result away. On Android 16 the
+        // framework resource table has tens of types with dozens of configurations
+        // each, which made loading the framework take minutes ("Decoding manifest
+        // and resources..." hang).
+        if (this.mMissingResSpecs == null || this.mMissingResSpecsDone) {
+            return;
+        }
+
         int resId = mResId & 0xffff0000;
 
         for (int i = 0; i < mMissingResSpecs.length; i++) {
@@ -719,25 +734,31 @@ public class ARSCDecoder {
                 continue;
             }
 
-            ResResSpec spec = new ResResSpec(new ResID(resId | i), "dummy_ae_" + Integer.toHexString(i), mPkg, mTypeSpec, false);
+            ResID id = new ResID(resId | i);
 
-            // If we already have this resID dont add it again.
-            if (!mPkg.hasResSpec(new ResID(resId | i))) {
-                mPkg.addResSpec(spec);
-                mTypeSpec.addResSpec(spec);
-
-                if (mType == null) {
-                    mType = mPkg.getOrCreateConfig(new ResConfigFlags());
-                }
-
-                ResValue value = new ResBoolValue(false, 0, null);
-                ResResource res = new ResResource(mType, spec, value);
-
-                mPkg.addResource(res);
-                mType.addResource(res);
-                spec.addResource(res);
+            // If we already have this resID dont add it again. Checked before the
+            // dummy spec is built, the string name was the hot spot of this loop.
+            if (mPkg.hasResSpec(id)) {
+                continue;
             }
+
+            ResResSpec spec = new ResResSpec(id, "dummy_ae_" + Integer.toHexString(i), mPkg, mTypeSpec, false);
+            mPkg.addResSpec(spec);
+            mTypeSpec.addResSpec(spec);
+
+            if (mType == null) {
+                mType = mPkg.getOrCreateConfig(new ResConfigFlags());
+            }
+
+            ResValue value = new ResBoolValue(false, 0, null);
+            ResResource res = new ResResource(mType, spec, value);
+
+            mPkg.addResource(res);
+            mType.addResource(res);
+            spec.addResource(res);
         }
+
+        this.mMissingResSpecsDone = true;
     }
 
     private void removeResSpec(ResResSpec spec) throws AndrolibException {

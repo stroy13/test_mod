@@ -1,6 +1,48 @@
 # Изменения
 
-## Не входит в релиз v1.10.0.175 — исправление «вечной» загрузки
+## 1.10.0.176 — разбор таблицы ресурсов framework (Android 16), versionCode 176
+
+Симптом: на Android 16 (SDK 36) экран так и остаётся на «Обработка манифеста и
+ресурсов…», в диагностике видно поток в состоянии RUNNABLE:
+
+```
+at java.lang.String.fillBytesLatin1(Native Method)
+at java.lang.AbstractStringBuilder.append
+at brut.androlib.res.decoder.ARSCDecoder.addMissingResSpecs(ARSCDecoder.java:722)
+at brut.androlib.res.decoder.ARSCDecoder.readTableTypeSpec(ARSCDecoder.java:289)
+at brut.androlib.res.decoder.ARSCDecoder.readTablePackage(ARSCDecoder.java:237)
+at brut.androlib.res.data.ResTable.loadFrameworkPkg(ResTable.java:207)
+```
+
+Это не дедлок, а квадратичная работа при загрузке системной таблицы ресурсов:
+
+- `ARSCDecoder.readTableType()` создаёт `mMissingResSpecs` заново для **каждого**
+  `TYPE`-чанка, то есть для каждой конфигурации одного и того же типа ресурса;
+- после каждого чанка вызывается `addMissingResSpecs()`, который перебирает весь
+  массив (`entryCount`, часто 65536) и для каждой «отсутствующей» записи **до**
+  проверки `hasResSpec()` успевал построить `ResResSpec` со склейкой строки
+  `"dummy_ae_" + hex` — то есть десятки миллионов лишних объектов и конкатенаций,
+  результат которых сразу выбрасывался;
+- на Android 16 у framework-таблицы десятки типов и десятки конфигураций на тип,
+  поэтому загрузка `framework-res` занимала минуты (в логе: `manifest: 31518 ms`,
+  `Android framework: 13812 ms` и процесс продолжался).
+
+Исправление в `ARSCDecoder`:
+
+1. проверка `mPkg.hasResSpec(id)` выполняется до создания dummy-спеки (убрана
+   конкатенация строки и аллокация на каждый промах);
+2. добавлен флаг `mMissingResSpecsDone`: для каждого типа ресурса достаточно одного
+   прохода — первый чанк типа уже создаёт dummy-спеки для всех отсутствующих id,
+   поэтому последующие конфигурации того же типа больше не сканируются
+   (флаг сбрасывается в `readSingleTableTypeSpec()`).
+
+Поведение не меняется (набор dummy-спек тот же), ускоряется загрузка и системной
+таблицы, и таблицы самого разбираемого APK.
+
+Заодно `versionCode`/`versionName` подняты до 176 / `1.10.0.176`, чтобы собранный
+APK было легко отличить от релизной сборки 175.
+
+## 1.10.0.175-fix — исправление «вечной» загрузки
 
 Симптом: при открытии APK экран навсегда остаётся на надписи «Обработка манифеста
 и ресурсов…» (индекс 2 в `ApkInfoActivity.decodeProgress`), спиннер крутится,

@@ -3,7 +3,9 @@
 [![build](https://github.com/stroy13/test_mod/actions/workflows/build.yml/badge.svg)](https://github.com/stroy13/test_mod/actions/workflows/build.yml)
 
 Восстановленное дерево исходников Android-приложения **APK Editor Plus**
-(`ru.apkeditor.plus`, versionCode **175**, versionName **1.10.0.175**).
+(`ru.apkeditor.plus`, база — versionCode **175** / versionName **1.10.0.175**;
+текущая сборка с исправлениями — **176** / **1.10.0.176**, см.
+[`docs/CHANGELOG.md`](docs/CHANGELOG.md)).
 
 Проект собирается штатным Gradle: `:apkEditorPro:assembleDebug` →
 `apkEditorPro/build/outputs/apk/debug/apkEditorPro-debug.apk`.
@@ -18,7 +20,7 @@
 | Параметр | Значение |
 |---|---|
 | Package / applicationId | `ru.apkeditor.plus` |
-| versionCode / versionName | `175` / `1.10.0.175` |
+| versionCode / versionName | `176` / `1.10.0.176` (база 175 + исправления, см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
 | minSdk / targetSdk / compileSdk | 26 / 37 / 37 |
 | Gradle / AGP | 9.8.2 / 9.5.1 |
 | JDK | 17 |
