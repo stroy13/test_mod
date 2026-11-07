@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@style/EditorThemeLight,@style/EditorThemeDark,@style/EditorThemeDarkAlt,@style/EditorThemeAmoled,@style/EditorThemeViolet,@style/EditorThemeOcean,@style/EditorThemeWine,@style/EditorThemeGraphite,@style/EditorThemeRose,@style/EditorThemeIce,@style/EditorThemeMint,@style/EditorThemeSand" />

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:orientation="vertical" android:background="@drawable/lab_dialog_surface" android:layout_width="fill_parent" android:layout_height="fill_parent" android:clipToOutline="true"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:orientation="horizontal" android:id="@id/header" android:background="?labSurfaceAlt" android:layout_width="fill_parent" android:layout_height="wrap_content">
+        <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="4.0dip" android:layout_marginTop="4.0dip" android:layout_marginRight="4.0dip">
+            <TextView android:textSize="16.0sp" android:id="@id/tv_new_folder" android:padding="4.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/new_folder" />
+            <View android:id="@id/divider1" android:background="?labAccent" android:layout_width="fill_parent" android:layout_height="2.0dip" />
+        </LinearLayout>
+        <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="4.0dip" android:layout_marginTop="4.0dip" android:layout_marginRight="4.0dip">
+            <TextView android:textSize="16.0sp" android:id="@id/tv_import_folder" android:padding="4.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/import_folder" />
+            <View android:id="@id/divider2" android:background="?labAccent" android:visibility="invisible" android:layout_width="fill_parent" android:layout_height="2.0dip" />
+        </LinearLayout>
+    </LinearLayout>
+    <FrameLayout android:id="@id/content" android:padding="4.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_below="@id/header">
+        <LinearLayout android:layout_gravity="center_vertical" android:orientation="vertical" android:id="@id/layout_new" android:layout_width="fill_parent" android:layout_height="wrap_content">
+            <TextView android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/pls_input_foldername" />
+            <EditText android:id="@id/et_folder_name" android:layout_width="fill_parent" android:layout_height="wrap_content" />
+        </LinearLayout>
+        <LinearLayout android:layout_gravity="center_vertical" android:orientation="vertical" android:id="@id/layout_import" android:visibility="invisible" android:layout_width="fill_parent" android:layout_height="wrap_content">
+            <TextView android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/folder_path" />
+            <EditText android:id="@id/et_folder_path" android:layout_width="fill_parent" android:layout_height="wrap_content" />
+            <Button android:id="@id/btn_browse" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="..." />
+        </LinearLayout>
+    </FrameLayout>
+    <LinearLayout android:orientation="horizontal" android:background="?labHeader" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_below="@id/content">
+        <Button android:id="@id/btn_cancel" android:layout_width="0.0dip" android:layout_height="wrap_content" android:layout_marginLeft="4.0dip" android:layout_marginTop="4.0dip" android:layout_marginBottom="4.0dip" android:text="@android:string/cancel" android:layout_weight="1.0" />
+        <Button android:id="@id/btn_confirm" android:layout_width="0.0dip" android:layout_height="wrap_content" android:layout_margin="4.0dip" android:text="@android:string/ok" android:layout_weight="1.0" />
+    </LinearLayout>
+</RelativeLayout>

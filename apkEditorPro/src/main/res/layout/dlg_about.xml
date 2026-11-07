@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView android:background="@drawable/lab_dialog_surface" android:layout_width="fill_parent" android:layout_height="wrap_content" android:fillViewport="false" android:clipToOutline="true"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:paddingLeft="18.0dip" android:paddingTop="20.0dip" android:paddingRight="18.0dip" android:paddingBottom="16.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content">
+        <ImageView android:id="@id/icon" android:layout_width="52.0dip" android:layout_height="52.0dip" android:contentDescription="@null" />
+        <TextView android:textSize="19.0sp" android:textStyle="bold" android:textColor="?labText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12.0dip" android:text="@string/about_apk_editor_title" />
+        <TextView android:textSize="13.0sp" android:textColor="?labMuted" android:id="@id/tv_version" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dip" />
+        <TextView android:textSize="13.0sp" android:textColor="?labText" android:gravity="center_horizontal" android:id="@id/tv_dep_version" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10.0dip" />
+        <Button android:textSize="14.0sp" android:textColor="?labAccent" android:id="@id/btn_get_pro" android:background="?labCardBackground" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12.0dip" android:text="APK Editor Pro" />
+        <TextView android:textColor="?labText" android:id="@id/textView3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dip" android:text="@string/why_get_pro" />
+        <TextView android:textColor="?labText" android:id="@id/textView2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="12.0dip" android:text="@string/pro_promote" />
+        <TextView android:textSize="12.0sp" android:textColor="?labMuted" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6.0dip" android:text="Copyright 2023 timscriptov" />
+        <Button android:id="@id/telegram" android:layout_width="fill_parent" android:layout_height="48.0dip" android:layout_marginTop="16.0dip" android:text="Telegram" />
+        <Button android:id="@id/btn_close" android:layout_width="fill_parent" android:layout_height="48.0dip" android:layout_marginTop="8.0dip" android:text="@string/close" />
+    </LinearLayout>
+</ScrollView>

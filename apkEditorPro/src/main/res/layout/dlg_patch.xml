@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:background="@drawable/lab_dialog_surface" android:layout_width="fill_parent" android:layout_height="fill_parent" android:clipToOutline="true"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="?labText" android:gravity="center_vertical" android:id="@id/title" android:background="?labHeader" android:paddingLeft="12.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:minHeight="40.0dip" android:text="@string/patch_capital" android:layout_alignParentLeft="true" android:layout_alignParentTop="true" android:layout_alignParentRight="true" />
+    <LinearLayout android:orientation="horizontal" android:id="@id/bottom_layout" android:paddingLeft="8.0dip" android:paddingTop="4.0dip" android:paddingRight="8.0dip" android:paddingBottom="8.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:baselineAligned="false" android:layout_alignParentLeft="true" android:layout_alignParentRight="true" android:layout_alignParentBottom="true">
+        <Button android:id="@id/btn_select_apply" android:layout_width="0.0dip" android:layout_height="48.0dip" android:text="@string/select_patch" android:layout_weight="1.0" style="@style/LabPatchActionButton" />
+        <Button android:id="@id/btn_patch_preview" android:layout_width="0.0dip" android:layout_height="48.0dip" android:text="Проверить" android:layout_weight="1.0" android:layout_marginStart="6.0dip" style="@style/LabPatchActionButton" />
+        <Button android:id="@id/btn_close" android:layout_width="0.0dip" android:layout_height="48.0dip" android:text="@string/close" android:layout_weight="1.0" android:layout_marginStart="6.0dip" style="@style/LabPatchActionButton" />
+    </LinearLayout>
+    <LinearLayout android:gravity="center_vertical" android:orientation="vertical" android:id="@id/patchinfo_layout" android:background="?labInputBackground" android:padding="8.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginLeft="4.0dip" android:layout_marginRight="4.0dip" android:layout_marginBottom="4.0dip" android:layout_above="@id/bottom_layout" android:layout_alignParentLeft="true" android:layout_alignParentRight="true">
+        <TextView android:textSize="12.0sp" android:textColor="?labMuted" android:id="@id/tv_curpatch" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/current_patch" />
+        <TextView android:textSize="13.0sp" android:textColor="?labText" android:ellipsize="middle" android:id="@id/tv_patch_path" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="2.0dip" android:text="@string/no_patch_selected" android:singleLine="true" />
+    </LinearLayout>
+    <TextView android:textSize="12.0sp" android:textColor="?labAccent" android:id="@id/tv_save_patches" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_margin="4.0dip" android:text="@string/save_patch_example" android:layout_above="@id/patchinfo_layout" android:layout_alignParentLeft="true" android:layout_alignParentRight="true" />
+    <LinearLayout android:orientation="vertical" android:id="@id/patch_log_toolbar" android:paddingLeft="8.0dip" android:paddingTop="6.0dip" android:paddingRight="8.0dip" android:paddingBottom="6.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_below="@id/title">
+        <TextView android:textSize="13.0sp" android:textStyle="bold" android:textColor="?labText" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/patch_log_label" />
+        <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="4.0dip" android:baselineAligned="false">
+            <Button android:textSize="11.0sp" android:id="@id/btn_patch_log_last" android:paddingLeft="2.0dip" android:paddingRight="2.0dip" android:layout_width="0.0dip" android:layout_height="38.0dip" android:minWidth="0.0dip" android:minHeight="0.0dip" android:text="@string/patch_log_last" android:layout_weight="1.0" style="@style/LabPatchToolbarButton" />
+            <Button android:textSize="11.0sp" android:id="@id/btn_patch_log_copy" android:paddingLeft="2.0dip" android:paddingRight="2.0dip" android:layout_width="0.0dip" android:layout_height="38.0dip" android:layout_marginLeft="4.0dip" android:minWidth="0.0dip" android:minHeight="0.0dip" android:text="@string/patch_log_copy" android:layout_weight="1.0" style="@style/LabPatchToolbarButton" />
+            <Button android:textSize="11.0sp" android:id="@id/btn_patch_log_share" android:paddingLeft="2.0dip" android:paddingRight="2.0dip" android:layout_width="0.0dip" android:layout_height="38.0dip" android:layout_marginLeft="4.0dip" android:minWidth="0.0dip" android:minHeight="0.0dip" android:text="@string/patch_log_share" android:layout_weight="1.0" style="@style/LabPatchToolbarButton" />
+        </LinearLayout>
+    </LinearLayout>
+    <FrameLayout android:background="?labSurface" android:layout_width="fill_parent" android:layout_height="fill_parent" android:layout_above="@id/tv_save_patches" android:layout_below="@id/patch_log_toolbar" android:layout_alignParentLeft="true" android:layout_alignParentRight="true">
+        <WebView android:id="@id/web_instructions" android:layout_width="fill_parent" android:layout_height="fill_parent" android:layout_marginLeft="4.0dip" android:layout_marginRight="4.0dip" />
+        <ScrollView android:id="@id/log_layout" android:visibility="gone" android:layout_width="fill_parent" android:layout_height="fill_parent" android:fillViewport="true">
+            <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content">
+                <TextView android:textSize="12.0sp" android:textColor="?labText" android:id="@id/tv_patchlog" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginLeft="4.0dip" android:layout_marginRight="4.0dip" />
+            </LinearLayout>
+        </ScrollView>
+    </FrameLayout>
+</RelativeLayout>

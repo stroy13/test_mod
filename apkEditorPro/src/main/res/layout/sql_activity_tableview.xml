@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:id="@id/rootLayout" android:background="?labSurface" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ScrollView android:scrollbars="horizontal|vertical" android:layout_width="fill_parent" android:layout_height="0.0dip" android:fillViewport="true" android:layout_weight="1.0">
+        <HorizontalScrollView android:scrollbars="horizontal|vertical" android:layout_width="fill_parent" android:layout_height="wrap_content" android:fillViewport="true">
+            <TableLayout android:id="@id/valueTable" android:layout_width="wrap_content" android:layout_height="fill_parent" android:stretchColumns="*" />
+        </HorizontalScrollView>
+    </ScrollView>
+    <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content">
+        <Button android:id="@id/button_prepage" android:visibility="gone" android:layout_width="0.0dip" android:layout_height="wrap_content" android:text="@string/pre_page" android:layout_weight="0.5" style="@style/button" />
+        <Button android:id="@id/button_nextpage" android:layout_width="0.0dip" android:layout_height="wrap_content" android:text="@string/next_page" android:layout_weight="0.5" style="@style/button" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:background="?labSurface" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:orientation="horizontal" android:background="?labHeader" android:layout_width="fill_parent" android:layout_height="wrap_content">
+        <ImageView android:id="@id/imageView1" android:layout_width="32.0dip" android:layout_height="32.0dip" android:layout_margin="4.0dip" android:src="@drawable/sql_database_icon" />
+        <TextView android:textAppearance="?android:textAppearanceMedium" android:textColor="?labAccent" android:layout_gravity="center" android:id="@id/title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8.0dip" />
+    </LinearLayout>
+    <ListView android:id="@id/tableList" android:background="?labSurface" android:layout_width="fill_parent" android:layout_height="0.0dip" android:cacheColorHint="#00000000" android:groupIndicator="@null" android:layout_weight="1.0" />
+</LinearLayout>

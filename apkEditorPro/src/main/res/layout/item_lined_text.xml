@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:id="@id/lined_root" android:layout_width="fill_parent" android:layout_height="wrap_content" android:baselineAligned="false"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView android:textSize="13.0sp" android:typeface="monospace" android:gravity="center|right|top" android:id="@id/line_num" android:paddingLeft="2.0dip" android:paddingTop="4.0dip" android:paddingRight="6.0dip" android:paddingBottom="4.0dip" android:layout_width="wrap_content" android:layout_height="fill_parent" android:minWidth="40.0dip" />
+    <View android:id="@id/line_divider" android:layout_width="1.0px" android:layout_height="fill_parent" />
+    <com.gmail.heagoo.apkeditor.ui.EditTextRememberCursor android:textSize="13.0sp" android:typeface="monospace" android:id="@id/text" android:background="@null" android:paddingLeft="8.0dip" android:paddingTop="4.0dip" android:paddingRight="8.0dip" android:paddingBottom="4.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:lineSpacingMultiplier="1.16" android:imeOptions="flagNoExtractUi" />
+</LinearLayout>

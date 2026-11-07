@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:background="@drawable/lab_dialog_surface" android:layout_width="fill_parent" android:layout_height="wrap_content" android:clipToOutline="true"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView android:textAppearance="?android:textAppearanceMedium" android:textColor="?labText" android:id="@id/tv_head" android:background="?labHeader" android:padding="12.0dip" android:focusable="false" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/auto_translation" android:layout_alignParentLeft="true" android:layout_alignParentTop="true" />
+    <View android:id="@id/head_line" android:background="?labBorder" android:layout_width="fill_parent" android:layout_height="1.0dip" android:layout_below="@id/tv_head" />
+    <LinearLayout android:orientation="horizontal" android:id="@id/bottom_layout" android:padding="4.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:baselineAligned="false" android:layout_alignParentBottom="true">
+        <FrameLayout android:layout_width="0.0dip" android:layout_height="wrap_content" android:layout_weight="0.5">
+            <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/translating_layout" android:layout_width="fill_parent" android:layout_height="fill_parent">
+                <ProgressBar android:id="@id/progressBar1" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                <TextView android:textColor="?labAccent" android:gravity="center" android:id="@id/translating_msg" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/translating" />
+            </LinearLayout>
+            <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/translated_layout" android:visibility="gone" android:layout_width="fill_parent" android:layout_height="fill_parent">
+                <TextView android:textColor="?labAccent" android:gravity="center" android:id="@id/translated_msg" android:layout_width="fill_parent" android:layout_height="wrap_content" />
+                <TextView android:textStyle="bold|italic" android:textColor="?labAccent" android:gravity="center" android:id="@id/tv_retranslate" android:padding="4.0dip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/retranslate" />
+            </LinearLayout>
+        </FrameLayout>
+        <LinearLayout android:gravity="center" android:orientation="horizontal" android:layout_width="0.0dip" android:layout_height="fill_parent" android:layout_weight="0.5">
+            <Button android:id="@id/btn_stop_or_save" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="72.0dip" android:text="@string/stop" />
+            <Button android:id="@id/btn_hide" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="72.0dip" android:text="@string/hide" />
+        </LinearLayout>
+    </LinearLayout>
+    <View android:id="@id/tail_line" android:background="?labBorder" android:layout_width="fill_parent" android:layout_height="1.0dip" android:layout_above="@id/bottom_layout" />
+    <ScrollView android:layout_width="fill_parent" android:layout_height="fill_parent" android:fillViewport="true" android:layout_above="@id/tail_line" android:layout_below="@id/head_line">
+        <LinearLayout android:orientation="vertical" android:id="@id/strings_layout" android:layout_width="fill_parent" android:layout_height="wrap_content" />
+    </ScrollView>
+</RelativeLayout>

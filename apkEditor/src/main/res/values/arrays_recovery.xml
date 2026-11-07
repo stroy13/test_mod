@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string-array name="file_sort_options">
+        <item>Name: A to Z</item>
+        <item>Name: Z to A</item>
+        <item>Modified: oldest first</item>
+        <item>Modified: newest first</item>
+        <item>Size: smallest first</item>
+        <item>Size: largest first</item>
+        <item>Type: A to Z</item>
+        <item>Type: Z to A</item>
+    </string-array>
+</resources>

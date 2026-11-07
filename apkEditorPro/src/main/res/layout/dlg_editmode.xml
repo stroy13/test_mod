@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:background="@drawable/lab_dialog_surface" android:layout_width="fill_parent" android:layout_height="fill_parent" android:clipToOutline="true"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView android:textSize="15.0sp" android:textColor="?labText" android:gravity="center_vertical" android:id="@id/full_edit" android:background="?labCardBackground" android:paddingLeft="12.0dip" android:layout_width="fill_parent" android:layout_height="46.0dip" android:text="@string/full_edit" android:singleLine="true" />
+    <View android:background="#ff555555" android:layout_width="fill_parent" android:layout_height="1.0px" />
+    <TextView android:textSize="15.0sp" android:textColor="?labText" android:gravity="center_vertical" android:id="@id/simple_edit" android:background="?labCardBackground" android:paddingLeft="12.0dip" android:layout_width="fill_parent" android:layout_height="46.0dip" android:text="@string/simple_edit" android:singleLine="true" />
+    <View android:background="#ff555555" android:layout_width="fill_parent" android:layout_height="1.0px" />
+    <TextView android:textSize="15.0sp" android:textColor="?labText" android:gravity="center_vertical" android:id="@id/common_edit" android:background="?labCardBackground" android:paddingLeft="12.0dip" android:layout_width="fill_parent" android:layout_height="46.0dip" android:text="@string/common_edit" android:singleLine="true" />
+    <LinearLayout android:orientation="vertical" android:id="@id/xml_edit_layout" android:layout_width="fill_parent" android:layout_height="wrap_content">
+        <View android:background="#ff555555" android:layout_width="fill_parent" android:layout_height="1.0px" />
+        <TextView android:textSize="15.0sp" android:textColor="?labText" android:gravity="center_vertical" android:id="@id/xml_edit" android:background="?labCardBackground" android:paddingLeft="12.0dip" android:layout_width="fill_parent" android:layout_height="46.0dip" android:text="@string/xml_file_edit" android:singleLine="true" />
+    </LinearLayout>
+    <View android:id="@id/data_edit_divide" android:background="#ff555555" android:visibility="gone" android:layout_width="fill_parent" android:layout_height="1.0px" />
+    <TextView android:textSize="15.0sp" android:textColor="?labText" android:gravity="center_vertical" android:id="@id/data_edit" android:background="?labCardBackground" android:paddingLeft="12.0dip" android:visibility="gone" android:layout_width="fill_parent" android:layout_height="46.0dip" android:text="@string/edit_data_root" android:singleLine="true" />
+</LinearLayout>

@@ -1,0 +1,514 @@
+package com.gmail.heagoo.apkeditor;
+
+import android.content.Context;
+import android.os.Build;
+import android.preference.PreferenceManager;
+import android.util.Log;
+import com.gmail.heagoo.apkeditor.base.R;
+import com.gmail.heagoo.apkeditor.ce.IApkMaking;
+import com.gmail.heagoo.apkeditor.ce.IDescriptionUpdate;
+import com.gmail.heagoo.apkeditor.smali.ISmaliAssembleCallback;
+import com.gmail.heagoo.apkeditor.util.Aapt2Pipeline;
+import com.gmail.heagoo.apkeditor.util.SignHelper;
+import com.gmail.heagoo.apkeditor.util.ToolFramework;
+import com.gmail.heagoo.apkeditor.util.ZipEngine;
+import com.gmail.heagoo.common.CommandRunner;
+import com.gmail.heagoo.common.FileUtil;
+import com.gmail.heagoo.common.ITaskCallback;
+import com.gmail.heagoo.common.SDCard;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BooleanSupplier;
+
+/* loaded from: /tmp/apkx/classes5.dex */
+public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssembleCallback {
+    private String aaptPath;
+    private String androidJarPath;
+    private boolean bSignApk;
+    private String binRootPath;
+    private Context ctx;
+    private String decodedFilePath;
+    private String errMessage;
+    private IApkMaking extraMaker;
+    private String resourceApkPath;
+    private ITaskCallback.TaskStepInfo stepInfo;
+    private boolean succeed;
+    private String targetApkPath;
+    private ITaskCallback taskCallback;
+    private Map<String, String> builtDexFiles = new HashMap();
+    private List<String> modifiedSmaliFolders = new ArrayList();
+    private long lastUpdateAssembleTime = 0;
+    private boolean stopFlag = false;
+
+    public ApkComposeThreadNew(Context ctx, String decodedFilePath, String apkPath) {
+        this.ctx = ctx;
+        File fileDir = ctx.getFilesDir();
+        String rootDirectory = fileDir.getAbsolutePath();
+        this.binRootPath = rootDirectory + "/bin";
+        this.aaptPath = ApkComposeThread.getNativeAaptPath(ctx);
+        this.androidJarPath = this.binRootPath + "/android.jar";
+        this.decodedFilePath = decodedFilePath;
+        this.targetApkPath = apkPath;
+        this.resourceApkPath = decodedFilePath + "/build/resource.apk";
+        LOGGER.info("aaptPath: " + this.aaptPath);
+        LOGGER.info("androidJarPath: " + this.androidJarPath);
+        LOGGER.info("decodedFilePath: " + this.decodedFilePath);
+        this.stepInfo = new ITaskCallback.TaskStepInfo();
+    }
+
+    @Override // com.gmail.heagoo.apkeditor.ComposeThread
+    public void setModification(boolean strModified, boolean manifestModified, boolean resFileModified, List<String> modifiedSmaliFolders, Map<String, String> addedFiles, Map<String, String> replacedFiles, Set<String> deletedFiles, Map<String, String> fileEntry2ZipEntry, boolean bSignApk) {
+        this.bSignApk = bSignApk;
+    }
+
+    /* JADX WARN: Code restructure failed: missing block: B:36:0x009a, code lost:
+    
+        if (composeResource() == false) goto L66;
+     */
+    /* JADX WARN: Code restructure failed: missing block: B:51:0x011a, code lost:
+    
+        if (r6 == false) goto L47;
+     */
+    /* JADX WARN: Code restructure failed: missing block: B:69:0x0152, code lost:
+    
+        if (signApk() == false) goto L66;
+     */
+    /* JADX WARN: Removed duplicated region for block: B:22:0x0199  */
+    /* JADX WARN: Removed duplicated region for block: B:29:? A[RETURN, SYNTHETIC] */
+    @Override // java.lang.Thread, java.lang.Runnable
+    /*
+        Code decompiled incorrectly, please refer to instructions dump.
+    */
+    public void run() {
+        System.currentTimeMillis();
+        File buildDir = new File(this.decodedFilePath + "/build");
+        if (!buildDir.exists()) {
+            buildDir.mkdir();
+        }
+        boolean rebuildResource = needRebuildResource();
+        checkSmaliModification();
+        this.stepInfo.stepTotal = 0;
+        if (rebuildResource) {
+            this.stepInfo.stepTotal++;
+        }
+        this.stepInfo.stepTotal++;
+        if (this.modifiedSmaliFolders != null && !this.modifiedSmaliFolders.isEmpty()) {
+            this.stepInfo.stepTotal += this.modifiedSmaliFolders.size();
+        }
+        if (this.bSignApk) {
+            this.stepInfo.stepTotal++;
+        }
+        this.stepInfo.stepTotal++;
+        if (rebuildResource) {
+            if (this.stopFlag) {
+                this.errMessage = "User request to stop";
+            } else {
+                setNextStep(this.ctx.getString(R.string.compose));
+                if (prepare()) {
+                    if (this.stopFlag) {
+                        this.errMessage = "User request to stop";
+                    }
+                }
+            }
+            if (this.stopFlag) {
+                if (this.succeed) {
+                    this.taskCallback.taskSucceed();
+                    return;
+                } else {
+                    this.taskCallback.taskFailed(this.errMessage);
+                    return;
+                }
+            }
+            return;
+        }
+        this.builtDexFiles.clear();
+        if (this.modifiedSmaliFolders != null && !this.modifiedSmaliFolders.isEmpty()) {
+            boolean assembleError = false;
+            Iterator<String> it = this.modifiedSmaliFolders.iterator();
+            while (true) {
+                if (!it.hasNext()) {
+                    break;
+                }
+                String smaliFolder = it.next();
+                String smaliPath = this.decodedFilePath + "/" + smaliFolder;
+                String dexName = getDexNameBySmaliFolder(smaliFolder);
+                setNextStep(this.ctx.getString(R.string.assemble_dex_file) + ": " + dexName);
+                try {
+                    assembleSmali(smaliPath, dexName);
+                    if (this.stopFlag) {
+                        this.errMessage = "User request to stop";
+                        assembleError = true;
+                        break;
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    this.errMessage = e.getMessage();
+                    assembleError = true;
+                }
+            }
+        }
+        boolean assembleError2 = this.stopFlag;
+        if (assembleError2) {
+            this.errMessage = "User request to stop";
+        } else {
+            setNextStep(this.ctx.getString(R.string.merge));
+            try {
+                System.currentTimeMillis();
+                mergeApk();
+                if (this.bSignApk) {
+                    if (this.stopFlag) {
+                        this.errMessage = "User request to stop";
+                    } else {
+                        setNextStep(this.ctx.getString(R.string.sign));
+                    }
+                }
+                if (this.stopFlag) {
+                    this.errMessage = "User request to stop";
+                } else {
+                    setNextStep(this.ctx.getString(R.string.cleanup));
+                    cleanup();
+                    this.succeed = true;
+                }
+            } catch (Exception e2) {
+                e2.printStackTrace();
+                this.errMessage = this.ctx.getString(R.string.merge) + ": " + e2.getMessage();
+            }
+        }
+        if (this.stopFlag) {
+        }
+    }
+
+    private long getLastModifyTime(File file) {
+        if (file.exists()) {
+            return file.lastModified();
+        }
+        return 0L;
+    }
+
+    private void checkSmaliModification() {
+        File decodeDir;
+        File decodeDir2 = new File(this.decodedFilePath);
+        File[] files = decodeDir2.listFiles();
+        int length = files.length;
+        int i = 0;
+        while (i < length) {
+            File f = files[i];
+            if (!f.isDirectory()) {
+                decodeDir = decodeDir2;
+            } else {
+                String dirName = f.getName();
+                if (dirName.equals("smali") || dirName.startsWith("smali_")) {
+                    String dexName = getDexNameBySmaliFolder(dirName);
+                    long dexTime1 = getLastModifyTime(new File(this.decodedFilePath + "/" + dexName));
+                    long dexTime2 = getLastModifyTime(new File(this.decodedFilePath + "/build/" + dexName));
+                    long dexTime = dexTime2 > dexTime1 ? dexTime2 : dexTime1;
+                    long smaliTime = FileUtil.recursiveModifiedTime(f);
+                    if (smaliTime <= dexTime) {
+                        decodeDir = decodeDir2;
+                    } else {
+                        decodeDir = decodeDir2;
+                        this.modifiedSmaliFolders.add(dirName);
+                    }
+                } else {
+                    decodeDir = decodeDir2;
+                }
+            }
+            i++;
+            decodeDir2 = decodeDir;
+        }
+    }
+
+    private String getDexNameBySmaliFolder(String smaliFolder) {
+        if ("smali".equals(smaliFolder)) {
+            return "classes.dex";
+        }
+        if (smaliFolder.startsWith("smali_")) {
+            return smaliFolder.substring("smali_".length()) + ".dex";
+        }
+        return smaliFolder + ".dex";
+    }
+
+    private void setNextStep(String description) {
+        this.stepInfo.stepIndex++;
+        this.stepInfo.stepDescription = description;
+        this.taskCallback.setTaskStepInfo(this.stepInfo);
+    }
+
+    private void assembleSmali(String smaliFilePath, String dexFileName) throws Throwable {
+        File decodeDir = new File(this.decodedFilePath);
+        File buildDir = new File(decodeDir, "build");
+        if (!buildDir.exists()) {
+            buildDir.mkdir();
+        }
+        File dexFile = new File(buildDir, dexFileName);
+        String dexFilePath = dexFile.getPath();
+        try {
+            long start = System.currentTimeMillis();
+            Class<?> obj_class = Class.forName("com.gmail.heagoo.apkeditor.pro.DexEncoder");
+            Method method = obj_class.getMethod("smali2Dex", String.class, String.class, ISmaliAssembleCallback.class);
+            method.invoke(null, smaliFilePath, dexFilePath, this);
+            Log.i("DEBUG", "Encode time=" + (System.currentTimeMillis() - start));
+            this.builtDexFiles.put(dexFileName, dexFilePath);
+        } catch (InvocationTargetException e) {
+            throw e.getTargetException();
+        }
+    }
+
+    private void cleanup() {
+        try {
+            ProjectCleanup.deleteAll(new File(SDCard.getEditorDirectory(), "tmp"), new BooleanSupplier() { // from class: com.gmail.heagoo.apkeditor.ApkComposeThreadNew$$ExternalSyntheticLambda0
+                @Override // java.util.function.BooleanSupplier
+                public final boolean getAsBoolean() {
+                    return ApkComposeThreadNew.lambda$cleanup$0();
+                }
+            });
+        } catch (Exception e) {
+        }
+    }
+
+    static /* synthetic */ boolean lambda$cleanup$0() {
+        return false;
+    }
+
+    private void mergeApk() throws IOException {
+        char c;
+        Map<String, String> extraReplaces = new HashMap<>();
+        if (this.extraMaker != null) {
+            try {
+                this.extraMaker.prepareReplaces(this.ctx, this.resourceApkPath, extraReplaces, new IDescriptionUpdate() { // from class: com.gmail.heagoo.apkeditor.ApkComposeThreadNew.1
+                    public void updateDescription(String strDesc) {
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        Map<String, String> filesToAdd = new HashMap<>();
+        File assetsDir = new File(this.decodedFilePath + "/assets");
+        if (assetsDir.exists()) {
+            collectFiles(filesToAdd, assetsDir, "assets/");
+        }
+        File libDir = new File(this.decodedFilePath + "/lib");
+        if (libDir.exists()) {
+            collectFiles(filesToAdd, libDir, "lib/");
+        }
+        File libsDir = new File(this.decodedFilePath + "/libs");
+        if (libsDir.exists()) {
+            collectFiles(filesToAdd, libsDir, "libs/");
+        }
+        File kotlinDir = new File(this.decodedFilePath + "/kotlin");
+        if (kotlinDir.exists()) {
+            collectFiles(filesToAdd, kotlinDir, "kotlin/");
+        }
+        File unknownDir = new File(this.decodedFilePath + "/unknown");
+        if (unknownDir.exists()) {
+            collectFiles(filesToAdd, unknownDir, "");
+        }
+        collectDexFiles(filesToAdd);
+        StringBuilder sb = new StringBuilder();
+        Iterator<Map.Entry<String, String>> it = filesToAdd.entrySet().iterator();
+        int addLen = 0;
+        while (true) {
+            c = '\n';
+            if (!it.hasNext()) {
+                break;
+            }
+            Map.Entry<String, String> entry = it.next();
+            String key = entry.getKey();
+            String value = entry.getValue();
+            sb.append(key);
+            sb.append('\n');
+            sb.append(value);
+            sb.append('\n');
+            addLen += key.getBytes().length + value.getBytes().length + 2;
+        }
+        StringBuilder sb2 = new StringBuilder();
+        int replaceLen = 0;
+        for (Map.Entry<String, String> entry2 : extraReplaces.entrySet()) {
+            String key2 = entry2.getKey();
+            String value2 = entry2.getValue();
+            sb2.append(key2);
+            sb2.append(c);
+            sb2.append(value2);
+            sb2.append(c);
+            replaceLen += key2.getBytes().length + value2.getBytes().length + 2;
+            filesToAdd = filesToAdd;
+            c = '\n';
+        }
+        ZipEngine.modify(this.ctx, this.targetApkPath, this.resourceApkPath, sb.toString(), addLen, "", 0, sb2.toString(), replaceLen);
+    }
+
+    private void collectDexFiles(Map<String, String> filesToAdd) {
+        filesToAdd.putAll(this.builtDexFiles);
+        File decodeDir = new File(this.decodedFilePath);
+        File[] files = decodeDir.listFiles();
+        for (File f : files) {
+            String name = f.getName();
+            if (f.isFile() && name.endsWith(".dex") && !this.builtDexFiles.containsKey(name)) {
+                File dex = new File(this.decodedFilePath + "/build/" + name);
+                if (dex.isFile() && dex.exists()) {
+                    filesToAdd.put(name, dex.getPath());
+                } else {
+                    filesToAdd.put(name, f.getPath());
+                }
+            }
+        }
+    }
+
+    private void collectFiles(Map<String, String> relPath2AbsPath, File dir, String relPath) {
+        File[] files = dir.listFiles();
+        for (File f : files) {
+            if (f.isFile()) {
+                relPath2AbsPath.put(relPath + f.getName(), f.getPath());
+            } else if (f.isDirectory()) {
+                collectFiles(relPath2AbsPath, f, relPath + f.getName() + "/");
+            }
+        }
+    }
+
+    private boolean needRebuildResource() {
+        File apkFile = new File(this.resourceApkPath);
+        if (!apkFile.isFile() || !apkFile.exists()) {
+            return true;
+        }
+        long resModifyTime = FileUtil.recursiveModifiedTime(new File[]{new File(this.decodedFilePath + "/res"), new File(this.decodedFilePath + "/AndroidManifest.xml")});
+        long apkTime = apkFile.lastModified();
+        if (apkTime <= resModifyTime) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean signApk() {
+        String signedPath = this.targetApkPath + ".signed";
+        try {
+            Map<String, String> emptyMap = new HashMap<>();
+            Set<String> emptySet = new HashSet<>();
+            SignHelper.sign(this.ctx, this.targetApkPath, signedPath, emptyMap, emptyMap, emptySet);
+            File targetFile = new File(this.targetApkPath);
+            targetFile.delete();
+            if (!new File(signedPath).renameTo(targetFile)) {
+                throw new IOException("Cannot move signed APK");
+            }
+            File signedSide = new File(signedPath + ".idsig");
+            File finalSide = new File(this.targetApkPath + ".idsig");
+            if (finalSide.exists() && !finalSide.delete()) {
+                throw new IOException("Cannot remove old signature");
+            }
+            if (!signedSide.exists() || signedSide.renameTo(finalSide)) {
+                return true;
+            }
+            throw new IOException("Cannot move v4 signature");
+        } catch (Exception e) {
+            String strHeader = this.ctx.getResources().getString(R.string.sign_error);
+            this.errMessage = strHeader + e.getMessage();
+            return false;
+        }
+    }
+
+    private boolean composeResource() {
+        try {
+            String selectedFramework = ToolFramework.selected(this.ctx, this.androidJarPath);
+            String aaptChoice = PreferenceManager.getDefaultSharedPreferences(this.ctx).getString("AaptVersion", "legacy");
+            if ("aapt2".equals(aaptChoice) || "aapt2-37".equals(aaptChoice)) {
+                try {
+                    boolean newest = "aapt2-37".equals(aaptChoice);
+                    if (Build.VERSION.SDK_INT < (newest ? 30 : 28)) {
+                        throw new IOException(newest ? "AAPT2 37 requires Android 11 or newer" : "AAPT2 requires Android 9 or newer; select the original AAPT on Android 8.");
+                    }
+                    String aapt2 = new File(this.ctx.getApplicationInfo().nativeLibraryDir, newest ? "libaapt2_37.so" : "libaapt2_exec.so").getAbsolutePath();
+                    Aapt2Pipeline.build(aapt2, selectedFramework, this.decodedFilePath + "/res", this.decodedFilePath + "/AndroidManifest.xml", this.resourceApkPath);
+                    return true;
+                } catch (Exception e) {
+                    this.errMessage = e.getMessage();
+                    return false;
+                }
+            }
+            String selectedAapt = this.aaptPath;
+            if ("aaptz-2022".equals(aaptChoice)) {
+                File z = new File(this.ctx.getApplicationInfo().nativeLibraryDir, "libaaptz_exec.so");
+                if (!z.isFile()) {
+                    this.errMessage = "AAPTz доступен только в ARM32-сборке приложения. Выберите другой AAPT.";
+                    return false;
+                }
+                selectedAapt = z.getAbsolutePath();
+            }
+            boolean noVersionVectorOption = ApkComposeThread.getNoVersionVectorOption(this.ctx, selectedAapt);
+            List<String> paramList = new ArrayList<>();
+            paramList.add(selectedAapt);
+            paramList.add("package");
+            paramList.add("-f");
+            paramList.add("-I");
+            paramList.add(selectedFramework);
+            paramList.add("-S");
+            paramList.add(this.decodedFilePath + "/res");
+            paramList.add("-M");
+            paramList.add(this.decodedFilePath + "/AndroidManifest.xml");
+            paramList.add("-F");
+            paramList.add(this.resourceApkPath);
+            if (noVersionVectorOption) {
+                paramList.add("--no-version-vectors");
+            }
+            System.currentTimeMillis();
+            CommandRunner cr = new CommandRunner();
+            boolean ret = cr.runCommand(paramList.toArray(new String[paramList.size()]), (String[]) null, (String) null, 300000, true);
+            LOGGER.info("stdout: " + cr.getStdOut() + ", ret=" + ret);
+            if (ret) {
+                return true;
+            }
+            LOGGER.info("stderr: " + cr.getStdError());
+            this.errMessage = cr.getStdError();
+            return false;
+        } catch (Exception e2) {
+            this.errMessage = e2.getMessage();
+            return false;
+        }
+    }
+
+    private boolean prepare() {
+        try {
+            return ApkComposeThread.prepare(this.ctx, this.aaptPath, this.binRootPath);
+        } catch (Exception e) {
+            this.errMessage = e.getMessage();
+            return false;
+        }
+    }
+
+    @Override // com.gmail.heagoo.apkeditor.ComposeThread
+    public void setTaskCallback(ITaskCallback taskCallback) {
+        this.taskCallback = taskCallback;
+    }
+
+    public void updateAssembledFiles(int assembledFiles, int totalFiles) {
+        long curTime = System.currentTimeMillis();
+        if (curTime > this.lastUpdateAssembleTime + 500) {
+            String fmt = this.ctx.getString(R.string.assemble_dex_detail);
+            this.stepInfo.stepDescription = String.format(fmt, Integer.valueOf(assembledFiles), Integer.valueOf(totalFiles));
+            this.taskCallback.setTaskStepInfo(this.stepInfo);
+        }
+    }
+
+    @Override // com.gmail.heagoo.apkeditor.ComposeThread
+    public void stopRunning() {
+        this.stopFlag = true;
+        interrupt();
+    }
+
+    @Override // com.gmail.heagoo.apkeditor.ComposeThread
+    public void setExtraMaker(IApkMaking extraMaker) {
+        this.extraMaker = extraMaker;
+    }
+
+    public String getErrMessage() {
+        return this.errMessage;
+    }
+}
