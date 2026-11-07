@@ -50,6 +50,12 @@ jobs:
             [ -z "$msg" ] && msg=$(tail -n 30 /tmp/test.log | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error title=Unit tests failed::$msg"
             tail -n 60 /tmp/test.log
+            for report in apkEditor/build/test-results/testDebugUnitTest/TEST-*.xml apkEditorPro/build/test-results/testDebugUnitTest/TEST-*.xml; do
+              if [ -f "$report" ]; then
+                echo "--- $report"
+                cat "$report"
+              fi
+            done
             exit $code
           fi
           tail -n 15 /tmp/test.log
@@ -76,7 +82,7 @@ jobs:
           {
             echo '### Диагностика сборки'
             echo '```'
-            for f in /tmp/installed.log /tmp/sdk.log /tmp/test.log /tmp/build.log; do
+            for f in /tmp/installed.log /tmp/sdk.log /tmp/test.log /tmp/build.log apkEditorPro/build/test-results/testDebugUnitTest/TEST-*.xml; do
               if [ -f "$f" ]; then
                 echo "--- $f"
                 tail -c 6000 "$f" | tr -d '\r'
