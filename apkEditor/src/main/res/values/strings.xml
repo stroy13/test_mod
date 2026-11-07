@@ -598,6 +598,7 @@ Note: this is the original historical text; this edition does support signing."<
     <string name="lab_load_resource_files">Decoding resource files</string>
     
     <string name="lab_load_resources">Decoding manifest and resources…</string>
+    <string name="lab_load_stalled">APK decoding stalled: no progress for %1$d s (stage %2$d)</string>
     
     <string name="lab_load_retry">Retry</string>
     

@@ -84,6 +84,16 @@ public class ApkDecoderMine implements XmlDecoder.IReferenceDecoder, AXMLParser.
         }
     }
 
+    /**
+     * Reports how many resources are already decoded. Used both for the on-screen
+     * "N / M" counter and as a liveness signal for the decode watchdog.
+     */
+    private void progressCount(int done, int total) {
+        if (this.progressListener != null) {
+            this.progressListener.onCount(done, total);
+        }
+    }
+
     public ApkDecoderMine(ResTable resTable, byte[] dummyPng, byte[] dummyJpg, byte[] dummy9Png) {
         boolean z = false;
         this.resTable = resTable;
@@ -438,12 +448,22 @@ public class ApkDecoderMine implements XmlDecoder.IReferenceDecoder, AXMLParser.
             }
 
             LOGGER.info("Decoding file-resources...");
-            for (ResResource res : pkg.listFiles()) {
+            Collection<ResResource> fileResources = pkg.listFiles();
+            int total = fileResources.size();
+            int done = 0;
+            for (ResResource res : fileResources) {
                 if (stopRunning) {
                     break;
                 }
 
                 decode(res, inDir, outDir);
+                done++;
+                if ((done & 7) == 0 || done == total) {
+                    progressCount(done, total);
+                }
+            }
+            if (total > 0) {
+                progressCount(done, total);
             }
         }
     }
@@ -600,6 +620,8 @@ public class ApkDecoderMine implements XmlDecoder.IReferenceDecoder, AXMLParser.
         for (ResPackage pkg : packages) {
             if (!apkDecoderMine.stopRunning) {
                 Collection<ResValuesFile> files = pkg.listValuesFiles();
+                int valueTotal = files.size();
+                int valueDone = 0;
                 for (ResValuesFile valueFile : files) {
                     if (apkDecoderMine.stopRunning) {
                         break;
@@ -639,9 +661,16 @@ public class ApkDecoderMine implements XmlDecoder.IReferenceDecoder, AXMLParser.
                     fos.close();
                     apkDecoderMine = this;
                     file = outDir;
+                    valueDone++;
+                    if ((valueDone & 3) == 0 || valueDone == valueTotal) {
+                        progressCount(valueDone, valueTotal);
+                    }
                 }
                 apkDecoderMine = this;
                 file = outDir;
+                if (valueTotal > 0) {
+                    progressCount(valueDone, valueTotal);
+                }
             } else {
                 return;
             }
