@@ -528,6 +528,7 @@ APK Editor предназначен для пользователей Android, �
     <string name="lab_load_resource_files">Обработка файлов ресурсов</string>
     
     <string name="lab_load_resources">Обработка манифеста и ресурсов…</string>
+    <string name="lab_load_stalled">Разбор APK завис: нет прогресса %1$d с (стадия %2$d)</string>
     
     <string name="lab_load_retry">Повторить</string>
     

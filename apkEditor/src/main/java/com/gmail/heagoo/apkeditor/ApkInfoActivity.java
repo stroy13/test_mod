@@ -233,6 +233,8 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     private boolean dexConversionInProgress = false;
     private boolean bStringPrepared = false;
     private int rotateClickedTimes = 0;
+    // Last decode phase reported by ApkParseThread, -1 when nothing was reported yet.
+    private int lastLoadPhase = -1;
 
     /* JADX INFO: Access modifiers changed from: private */
     static final class AnalysisJob {
@@ -457,6 +459,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.stringParsed = false;
         this.resourceParsed = false;
         this.bStringPrepared = false;
+        this.lastLoadPhase = -1;
         this.stringListAdapter.setEditingEnabled(true);
         updateCenterView();
         findViewById(R.id.progress_bar).setVisibility(0);
@@ -2817,7 +2820,12 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     @Override // com.gmail.heagoo.apkeditor.ApkParseConsumer
     public void resTableDecoded(boolean ret) {
         if (ret) {
-            this.bStringPrepared = prepareStringList();
+            try {
+                this.bStringPrepared = prepareStringList();
+            } catch (Throwable t) {
+                t.printStackTrace();
+                this.bStringPrepared = false;
+            }
             if (this.bStringPrepared) {
                 runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda24
                     @Override // java.lang.Runnable
@@ -2848,7 +2856,13 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             if (this.parseThread != null) {
                 this.parseThread.indexStringsStarted();
             }
-            this.bStringPrepared = prepareStringList();
+            try {
+                this.bStringPrepared = prepareStringList();
+            } catch (Throwable t) {
+                // A single broken string entry must not kill the whole decode.
+                t.printStackTrace();
+                this.bStringPrepared = false;
+            }
         }
         runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda27
             @Override // java.lang.Runnable
@@ -2932,8 +2946,14 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (this.screenDestroyed || this.lastLoadError != null) {
             return;
         }
-        int[] labels = {R.string.lab_load_wait, R.string.lab_load_table, R.string.lab_load_resources, R.string.lab_load_values, R.string.lab_load_files, R.string.lab_load_framework, R.string.lab_load_index_resources, R.string.lab_load_resource_files, R.string.lab_load_cleanup, R.string.lab_load_prepare_tools, R.string.lab_load_string_index};
-        ((TextView) findViewById(R.id.tv_tip)).setText(labels[Math.max(0, Math.min(phase, labels.length - 1))]);
+        this.lastLoadPhase = phase;
+        ((TextView) findViewById(R.id.tv_tip)).setText(loadPhaseLabel(phase));
+    }
+
+    private static final int[] LOAD_PHASE_LABELS = {R.string.lab_load_wait, R.string.lab_load_table, R.string.lab_load_resources, R.string.lab_load_values, R.string.lab_load_files, R.string.lab_load_framework, R.string.lab_load_index_resources, R.string.lab_load_resource_files, R.string.lab_load_cleanup, R.string.lab_load_prepare_tools, R.string.lab_load_string_index};
+
+    private int loadPhaseLabel(int phase) {
+        return LOAD_PHASE_LABELS[Math.max(0, Math.min(phase, LOAD_PHASE_LABELS.length - 1))];
     }
 
     @Override // com.gmail.heagoo.apkeditor.ApkParseConsumer
@@ -2951,7 +2971,12 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (this.screenDestroyed || this.lastLoadError != null) {
             return;
         }
-        ((TextView) findViewById(R.id.tv_tip)).setText(getString(R.string.lab_load_resource_files) + "\n" + done + " / " + total);
+        // Keep the current stage caption and append the counter, so the loading
+        // screen visibly moves instead of looking frozen.
+        String caption = this.lastLoadPhase >= 0
+                ? getString(loadPhaseLabel(this.lastLoadPhase))
+                : getString(R.string.lab_load_resource_files);
+        ((TextView) findViewById(R.id.tv_tip)).setText(caption + "\n" + done + " / " + total);
     }
 
     @Override // com.gmail.heagoo.apkeditor.ApkParseConsumer
@@ -2996,23 +3021,28 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                     String styledValue = null;
                     ResConfigFlags configFlag = entry.getKey();
                     ResResource resResource = entry.getValue();
-                    ResScalarValue value2 = (ResScalarValue) resResource.getValue();
-                    if (value2 instanceof ResReferenceValue) {
-                        value = value2.toString();
-                    } else if (value2 instanceof ResScalarValue) {
-                        ResScalarValue scalarVal = value2;
-                        if (scalarVal.isStyled()) {
-                            styledValue = scalarVal.getHtmlValue();
-                        }
-                        String value3 = scalarVal.getRawValue();
-                        if (value3 != null) {
-                            value = value3;
-                        } else {
-                            String value4 = value2.toString();
-                            value = value4;
-                        }
+                    // A "string" resource is not always a scalar value (file values,
+                    // bags, ...). The unconditional cast used to throw
+                    // ClassCastException and killed the whole decode thread.
+                    Object rawValue = resResource.getValue();
+                    if (!(rawValue instanceof ResScalarValue)) {
+                        value = String.valueOf(rawValue);
                     } else {
-                        value = value2.toString();
+                        ResScalarValue value2 = (ResScalarValue) rawValue;
+                        if (value2 instanceof ResReferenceValue) {
+                            value = value2.toString();
+                        } else if (value2.isStyled()) {
+                            styledValue = value2.getHtmlValue();
+                            String styled = value2.getRawValue();
+                            value = styled != null ? styled : value2.toString();
+                        } else {
+                            String value3 = value2.getRawValue();
+                            if (value3 != null) {
+                                value = value3;
+                            } else {
+                                value = value2.toString();
+                            }
+                        }
                     }
                     StringItem item = new StringItem(name, value, styledValue);
                     String qualifier = configFlag.getQualifiers();

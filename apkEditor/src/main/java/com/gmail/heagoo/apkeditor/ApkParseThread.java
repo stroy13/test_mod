@@ -46,6 +46,14 @@ public class ApkParseThread extends Thread {
     private static final Object DECODE_LOCK = new Object();
     private final long[] stageNanos = new long[11];
     private int timingStage = -1;
+    // Watchdog: if the decode makes no progress at all for this long, the UI is
+    // told about the stall instead of waiting forever on "Processing manifest
+    // and resources..." (the last label that was posted before the hang).
+    private static final long STALL_TIMEOUT_MS = 120000L;
+    private volatile long lastProgressNanos = System.nanoTime();
+    private volatile int lastPhase = -1;
+    private volatile boolean finished;
+    private volatile boolean failureReported;
 
     private synchronized void recordStage(int phase) {
         long now = System.nanoTime();
@@ -84,6 +92,8 @@ public class ApkParseThread extends Thread {
 
     public void progress(int phase) {
         recordStage(phase);
+        this.lastPhase = phase;
+        this.lastProgressNanos = System.nanoTime();
         ApkParseConsumer consumer = this.consumerRef.get();
         if (this.cancelled || consumer == null) {
             return;
@@ -92,11 +102,83 @@ public class ApkParseThread extends Thread {
     }
 
     public void progressCount(int done, int total) {
+        this.lastProgressNanos = System.nanoTime();
         ApkParseConsumer consumer = this.consumerRef.get();
         if (this.cancelled || consumer == null) {
             return;
         }
         consumer.decodeProgressCount(done, total);
+    }
+
+    /**
+     * Reports a decode failure to the UI exactly once. Without this a thread that
+     * dies with an {@link Error} (or an early return) left the loading screen
+     * spinning on the last progress label forever.
+     */
+    private void reportFailure(String message) {
+        if (this.failureReported || this.cancelled) {
+            return;
+        }
+        this.failureReported = true;
+        if (message == null || message.length() == 0) {
+            message = "Unknown error";
+        }
+        this.errMessage = message;
+        Log.e("ApkParse", "APK decoding failed: " + message);
+        ApkParseConsumer consumer = this.consumerRef.get();
+        if (consumer != null) {
+            consumer.decodeFailed(message);
+        }
+    }
+
+    private void startWatchdog() {
+        Thread watchdog = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (!ApkParseThread.this.finished) {
+                    try {
+                        Thread.sleep(2000L);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                    if (ApkParseThread.this.finished || ApkParseThread.this.cancelled) {
+                        return;
+                    }
+                    long idleMs = (System.nanoTime() - ApkParseThread.this.lastProgressNanos) / 1000000L;
+                    // Phase 0 = "waiting for previous operation" (the decode lock may
+                    // legitimately be busy with a big project), so be more patient there.
+                    long timeoutMs = ApkParseThread.this.lastPhase == 0 ? 10 * STALL_TIMEOUT_MS : STALL_TIMEOUT_MS;
+                    if (idleMs < timeoutMs) {
+                        continue;
+                    }
+                    String message = buildStallMessage(idleMs);
+                    // Notify first (reportFailure is ignored once cancelled), then
+                    // ask the decoder to stop so the retry button starts clean.
+                    ApkParseThread.this.reportFailure(message);
+                    ApkParseThread.this.stopParse();
+                    return;
+                }
+            }
+        }, "apk-decode-watchdog");
+        watchdog.setDaemon(true);
+        watchdog.start();
+    }
+
+    private String buildStallMessage(long idleMs) {
+        long seconds = idleMs / 1000L;
+        int phase = this.lastPhase;
+        String message;
+        Activity activity = this.activityRef.get();
+        if (activity != null) {
+            try {
+                message = activity.getString(R.string.lab_load_stalled, (int) seconds, phase);
+            } catch (Throwable t) {
+                message = "APK decoding stalled: no progress for " + seconds + " s (stage " + phase + ")";
+            }
+        } else {
+            message = "APK decoding stalled: no progress for " + seconds + " s (stage " + phase + ")";
+        }
+        return message + Document.LINE_SEPARATOR_UNIX + getStageTimings();
     }
 
     public ApkParseThread(Activity ctx, ApkParseConsumer consumer, String apkPath, String decodeRootPath, boolean isFullDecoding) {
@@ -109,39 +191,46 @@ public class ApkParseThread extends Thread {
 
     @Override
     public void run() {
-        Activity activity = null;
+        boolean success = false;
         progress(0);
+        startWatchdog();
+        try {
+            success = decodeApk();
+        } catch (Throwable t) {
+            // Errors (NoClassDefFoundError, OutOfMemoryError, StackOverflowError,
+            // ...) used to escape and kill this thread silently, leaving the
+            // loading screen hanging on the last progress label.
+            Log.e("ApkParse", "APK decoding failed", t);
+            if (this.errMessage == null) {
+                this.errMessage = t instanceof OutOfMemoryError
+                        ? "OutOfMemoryError: insufficient memory while opening the APK"
+                        : t.toString();
+            }
+        } finally {
+            this.finished = true;
+        }
+        if (!success) {
+            reportFailure(this.errMessage);
+        }
+    }
+
+    private boolean decodeApk() {
         synchronized (DECODE_LOCK) {
             if (this.cancelled) {
-                return;
+                return true;
             }
-            try {
-                try {
-                    progress(9);
-                    activity = this.activityRef.get();
-                } catch (LinkageError e) {
-                    this.errMessage = e.toString();
-                    Log.e("ApkParse", "APK decoding failed", e);
-                }
-            } catch (Exception e2) {
-                this.errMessage = e2.toString();
-                Log.e("ApkParse", "APK decoding failed", e2);
-            } catch (OutOfMemoryError e3) {
-                this.errMessage = "OutOfMemoryError: insufficient memory while opening the APK";
-            }
+            progress(9);
+            Activity activity = this.activityRef.get();
             if (activity == null) {
-                return;
+                this.errMessage = "Activity is no longer available";
+                return false;
             }
             ApkComposeThread tmp = new ApkComposeThread(activity, null, null, null);
             if (!tmp.prepare()) {
                 this.errMessage = tmp.getErrMessage();
-            } else if (parse()) {
-                return;
+                return false;
             }
-            ApkParseConsumer consumer = this.consumerRef.get();
-            if (!this.cancelled && consumer != null) {
-                consumer.decodeFailed(this.errMessage);
-            }
+            return parse();
         }
     }
 
