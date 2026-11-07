@@ -71,6 +71,20 @@ jobs:
           } > /tmp/report.md
           gh api -X POST "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -F body=@/tmp/report.md > /dev/null || echo "comment failed"
 
+      - name: Publish APK to the 'debug-latest' release
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG=debug-latest
+          gh release view "$TAG" > /dev/null 2>&1 || \
+            gh release create "$TAG" \
+              --title "Debug builds" \
+              --notes "Latest CI build of the debug APK. The asset is replaced on every successful build; check the workflow run for the exact commit." \
+              --target "${{ github.sha }}"
+          gh release upload "$TAG" apkEditorPro/build/outputs/apk/debug/*.apk --clobber
+          echo "published to https://github.com/${{ github.repository }}/releases/tag/$TAG"
+
       - name: Upload APK
         if: always()
         uses: actions/upload-artifact@v4
