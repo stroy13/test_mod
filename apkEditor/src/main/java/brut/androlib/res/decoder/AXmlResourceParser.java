@@ -407,7 +407,9 @@ public class AXmlResourceParser implements XmlResourceParser {
                 int resId = getAttributeNameResource(index);
                 if (resId != 0) {
                     String value = mAttrDecoder.decodeManifestAttr(resId);
-                    return value;
+                    if (value != null) {
+                        return value;
+                    }
                 }
             } catch (AndrolibException e) {
             }
@@ -420,9 +422,17 @@ public class AXmlResourceParser implements XmlResourceParser {
         if (value.length() != 0 && !android_ns.equals(getAttributeNamespace(index))) {
             return value;
         } else {
+            int resId = getAttributeNameResource(index);
             try {
-                value = mAttrDecoder.decodeManifestAttr(getAttributeNameResource(index));
+                value = mAttrDecoder.decodeManifestAttr(resId);
             } catch (AndrolibException e) {
+            }
+            if (value == null) {
+                // The framework resource table could not be loaded, so the attribute
+                // name is unknown. Returning null used to crash the XML serializer
+                // ("Could not decode AndroidManifest.xml"), a synthetic name lets the
+                // rest of the APK open normally.
+                value = resId != 0 ? String.format("attr_0x%08x", resId) : "";
             }
             return value;
         }

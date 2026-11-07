@@ -138,8 +138,20 @@ public class ARSCDecoder {
 
         nextChunk();
         // Nearly all time consumed in following code
-        for (int i = 0; i < packageCount; i++) {
-            packages[i] = readTablePackage();
+        int found = 0;
+        while (found < packageCount && mHeader.type != Header.TYPE_NONE) {
+            if (mHeader.type == Header.TYPE_PACKAGE) {
+                packages[found++] = readTablePackage();
+            } else {
+                // Not a package: never abort the table, skip whatever we do not know.
+                skipChunkAndReadNext("table");
+            }
+        }
+        if (found < packageCount) {
+            LOGGER.warning("Resource table declares " + packageCount + " package(s), found " + found);
+            ResPackage[] trimmed = new ResPackage[found];
+            System.arraycopy(packages, 0, trimmed, 0, found);
+            return trimmed;
         }
         return packages;
     }
@@ -230,13 +242,20 @@ public class ARSCDecoder {
         mPkg = new ResPackage(mResTable, id, name);
 
         nextChunk();
-        while (mHeader.type == Header.TYPE_LIBRARY) {
-            readLibraryType();
-        }
-
-        // Nearly all the time consumed here
-        while (mHeader.type == Header.TYPE_SPEC_TYPE) {
-            readTableTypeSpec();
+        // Library / type-spec chunks belong to this package; unknown chunks (overlayable,
+        // overlayable policy, staged aliases on new Android releases) are skipped but do
+        // not end the package, otherwise the following type specs would be lost.
+        while (mHeader.type == Header.TYPE_LIBRARY
+                || mHeader.type == Header.TYPE_SPEC_TYPE
+                || isSkippableChunk(mHeader.type)) {
+            if (mHeader.type == Header.TYPE_LIBRARY) {
+                readLibraryType();
+            } else if (mHeader.type == Header.TYPE_SPEC_TYPE) {
+                // Nearly all the time consumed here
+                readTableTypeSpec();
+            } else {
+                skipChunkAndReadNext("package");
+            }
         }
 
         return mPkg;
@@ -278,12 +297,16 @@ public class ARSCDecoder {
         }
 
         // Nearly all time consumed here
-        while (type == Header.TYPE_TYPE) {
-            readTableType();
+        while (type == Header.TYPE_TYPE || isSkippableChunk((short) type)) {
+            if (type == Header.TYPE_TYPE) {
+                readTableType();
 
-            // skip "TYPE 8 chunks" and/or padding data at the end of this chunk
-            if (mCountIn.getCount() < mHeader.endPosition) {
-                mCountIn.skip(mHeader.endPosition - mCountIn.getCount());
+                // skip "TYPE 8 chunks" and/or padding data at the end of this chunk
+                skipToChunkEnd();
+            } else {
+                // Unknown chunk in the middle of a type: skip it and keep the type.
+                LOGGER.warning(String.format("Skipping unsupported chunk type 0x%04x in type spec", type));
+                skipToChunkEnd();
             }
 
             type = nextChunk().type;
@@ -784,9 +807,51 @@ public class ARSCDecoder {
         checkChunkType(expectedType);
     }
 
+    private static boolean isSkippableChunk(short type) {
+        return type == Header.TYPE_OVERLAYABLE
+                || type == Header.TYPE_OVERLAYABLE_POLICY
+                || type == Header.TYPE_STAGED_ALIAS;
+    }
+
+    /**
+     * Moves the counting stream exactly to the end of the current chunk, so the next
+     * {@link #nextChunk()} starts at the next chunk header.
+     */
+    private void skipToChunkEnd() throws IOException {
+        while (mCountIn.getCount() < mHeader.endPosition) {
+            long skipped = mCountIn.skip(mHeader.endPosition - mCountIn.getCount());
+            if (skipped <= 0 && mCountIn.read() < 0) {
+                break;
+            }
+        }
+    }
+
+    /**
+     * Skips a chunk we do not decode (newer Android formats) and advances to the
+     * following chunk. Aborting on such a chunk is what made the Android 16 system
+     * resource table unreadable ("Invalid chunk type: expected=0x00000200,
+     * got=0x00000206").
+     */
+    private void skipChunkAndReadNext(String where) throws IOException, AndrolibException {
+        if (mHeader.chunkSize <= 0) {
+            throw new AndrolibException(String.format(
+                    "Invalid chunk size 0x%08x for chunk type 0x%08x (%s)",
+                    mHeader.chunkSize, mHeader.type, where));
+        }
+        LOGGER.warning(String.format("Skipping unsupported chunk type 0x%04x (size=%d) in %s",
+                mHeader.type, mHeader.chunkSize, where));
+        skipToChunkEnd();
+        nextChunk();
+    }
+
     public static class Header {
         public final static short TYPE_NONE = -1, TYPE_TABLE = 0x0002,
-                TYPE_PACKAGE = 0x0200, TYPE_TYPE = 0x0201, TYPE_SPEC_TYPE = 0x0202, TYPE_LIBRARY = 0x0203;
+                TYPE_PACKAGE = 0x0200, TYPE_TYPE = 0x0201, TYPE_SPEC_TYPE = 0x0202, TYPE_LIBRARY = 0x0203,
+                // Chunks added in newer Android releases (RES_TABLE_OVERLAYABLE_TYPE,
+                // RES_TABLE_OVERLAYABLE_POLICY_TYPE, RES_TABLE_STAGED_ALIAS_TYPE). They
+                // are not needed to decode resources, but they must be skipped instead
+                // of aborting the whole table - Android 16 system tables contain them.
+                TYPE_OVERLAYABLE = 0x0204, TYPE_OVERLAYABLE_POLICY = 0x0205, TYPE_STAGED_ALIAS = 0x0206;
         public final short type;
         public final int headerSize;
         public final int chunkSize;

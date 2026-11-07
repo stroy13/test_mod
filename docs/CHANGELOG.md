@@ -1,5 +1,37 @@
 # Изменения
 
+## 1.10.0.177 — поддержка новых чанков `resources.arsc` (Android 16), versionCode 177
+
+После предыдущего фикса загрузка framework перестала висеть, но на Android 16 падала:
+
+```
+framework: load failed: brut.androlib.AndrolibException:
+Invalid chunk type: expected=0x00000200, got=0x00000206
+Could not decode AndroidManifest.xml
+```
+
+- `0x0206` — это `RES_TABLE_STAGED_ALIAS_TYPE`, в новых Android в `resources.arsc`
+  появились также `0x0204` (`RES_TABLE_OVERLAYABLE_TYPE`) и `0x0205`
+  (`RES_TABLE_OVERLAYABLE_POLICY_TYPE`). `ARSCDecoder.Header` знал только
+  `0x0200/0x0201/0x0202/0x0203`, а `checkChunkType()` на неизвестном чанке бросал
+  исключение — системная таблица Android 16 не читалась вообще.
+- Без framework `decodeManifestAttr()` возвращал `null`, `AXmlResourceParser`
+  отдавал этот `null` наружу, и сериализатор XML падал с NPE — отсюда
+  «Could not decode AndroidManifest.xml» без причины в сообщении.
+
+Исправлено:
+
+1. `ARSCDecoder`: добавлены константы `0x0204/0x0205/0x0206`; неизвестные чанки
+   теперь **пропускаются** по размеру чанка (`Header.endPosition`) в
+   `readTableHeader()`, `readTablePackage()` и `readTableTypeSpec()` вместо падения;
+   для таблицы, где пакетов оказалось меньше заявленного, возвращается то, что
+   прочитано (с предупреждением в лог).
+2. `AXmlResourceParser.getAttributeName()` больше не возвращает `null`: при
+   недоступном framework имя атрибута подставляется как `attr_0x0101xxxx`, так что
+   манифест (и приложение) открывается, а не падает.
+3. `ResAttrDecoder`: устойчив к отсутствующему текущему пакету и к отсутствующей
+   спеке в таблице (возвращает `null`, вызывающий код подставляет синтетическое имя).
+
 ## 1.10.0.176 — разбор таблицы ресурсов framework (Android 16), versionCode 176
 
 Симптом: на Android 16 (SDK 36) экран так и остаётся на «Обработка манифеста и
