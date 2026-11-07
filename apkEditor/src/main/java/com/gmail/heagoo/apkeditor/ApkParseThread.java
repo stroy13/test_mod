@@ -84,6 +84,10 @@ public class ApkParseThread extends Thread {
         if (current != null) {
             result.append(Document.LINE_SEPARATOR_UNIX).append(current.getWorkerStats());
         }
+        ResTable table = this.resTable;
+        if (table != null) {
+            result.append(Document.LINE_SEPARATOR_UNIX).append(table.getFrameworkLoadInfo());
+        }
         return result.toString();
     }
 

@@ -60,6 +60,14 @@ public class ResTable {
     private VersionInfo mVersionInfo = new VersionInfo();
 
     private String mFrameTag;
+    // Framework resources are loaded lazily from a file and parsing them is
+    // expensive. When the load fails (broken/unsupported system table) the old code
+    // retried it for every single android: attribute, so one broken framework table
+    // turned the whole decode into an endless loop. Try at most once per table.
+    private boolean mFrameworkLoadTried;
+    // Short human readable status of the framework table load, shown in the
+    // in-app diagnostics report.
+    private String mFrameworkLoadInfo = "framework: not loaded";
     private Context ctx;
 
     private boolean mApkProtected = false;
@@ -92,6 +100,10 @@ public class ResTable {
         }
 
         return null;
+    }
+
+    public String getFrameworkLoadInfo() {
+        return this.mFrameworkLoadInfo;
     }
 
     public Set<ResPackage> listMainPackages() {
@@ -133,10 +145,18 @@ public class ResTable {
         }
 
         // return loadFrameworkPkg(this, id, mFrameTag);
-        if (mPackagesById.get(1) == null) {
+        if (mPackagesById.get(1) == null && !this.mFrameworkLoadTried) {
+            this.mFrameworkLoadTried = true;
             try {
-                return loadFrameworkPkg(this, id, mFrameTag);
+                ResPackage loaded = loadFrameworkPkg(this, id, mFrameTag);
+                if (loaded != null && loaded.getId() == id) {
+                    return loaded;
+                }
+                // The system table was loaded, but it does not contain the requested
+                // package id; keep the old contract and report "unknown package".
+                return mPackagesById.get(id);
             } catch (Exception e) {
+                this.mFrameworkLoadInfo = "framework: load failed: " + e;
                 e.printStackTrace();
             }
         }
@@ -196,6 +216,7 @@ public class ResTable {
             ResPackage pkg = CacheManager.instance().getFrameworkPackage();
             if (pkg != null) {
                 resTable.addPackage(pkg, false);
+                this.mFrameworkLoadInfo = "framework: from cache";
                 LOGGER.info("Do not need to parse framework again!");
                 return pkg;
             }
@@ -206,15 +227,33 @@ public class ResTable {
         LOGGER.info("Loading resource table from resources.arsc");
         ResPackage[] pkgs = getResPackagesFromApk(resTable, true);
 
-        if (pkgs.length != 1) {
-            throw new AndrolibException(
-                    "Arsc files with zero or multiple packages");
+        if (pkgs == null || pkgs.length == 0) {
+            throw new AndrolibException("Arsc files with zero packages");
         }
 
-        ResPackage pkg = pkgs[0];
+        // Newer system tables (Android 14+) may contain more than one package, so
+        // pick the requested one instead of refusing to load the table at all.
+        ResPackage pkg = null;
+        for (ResPackage candidate : pkgs) {
+            if (candidate.getId() == id) {
+                pkg = candidate;
+                break;
+            }
+        }
+        if (pkg == null && id == 1) {
+            for (ResPackage candidate2 : pkgs) {
+                if ("android".equals(candidate2.getName())) {
+                    pkg = candidate2;
+                    break;
+                }
+            }
+        }
+        if (pkg == null) {
+            pkg = pkgs[0];
+            LOGGER.warning("Framework package id " + id + " not found, using " + pkg.getId());
+        }
         if (pkg.getId() != id) {
-            throw new AndrolibException("Expected pkg of id: "
-                    + String.valueOf(id) + ", got: " + pkg.getId());
+            LOGGER.warning("Expected pkg of id: " + id + ", got: " + pkg.getId());
         }
 
         resTable.addPackage(pkg, false);
@@ -230,6 +269,8 @@ public class ResTable {
         // } catch (Exception e) {
         // }
 
+        this.mFrameworkLoadInfo = "framework: loaded " + pkgs.length + " package(s) in "
+                + (endTime - startTime) + " ms";
         CacheManager.instance().setFrameworkPackage(pkg);
         return pkg;
     }
