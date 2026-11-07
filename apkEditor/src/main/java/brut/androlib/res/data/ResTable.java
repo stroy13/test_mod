@@ -148,7 +148,13 @@ public class ResTable {
         if (mPackagesById.get(1) == null && !this.mFrameworkLoadTried) {
             this.mFrameworkLoadTried = true;
             try {
-                return loadFrameworkPkg(this, id, mFrameTag);
+                ResPackage loaded = loadFrameworkPkg(this, id, mFrameTag);
+                if (loaded != null && loaded.getId() == id) {
+                    return loaded;
+                }
+                // The system table was loaded, but it does not contain the requested
+                // package id; keep the old contract and report "unknown package".
+                return mPackagesById.get(id);
             } catch (Exception e) {
                 this.mFrameworkLoadInfo = "framework: load failed: " + e;
                 e.printStackTrace();
