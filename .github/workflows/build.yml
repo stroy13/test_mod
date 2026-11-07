@@ -40,7 +40,7 @@ jobs:
             exit $code
           fi
 
-      - name: Юнит-тесты (манифест и прогресс DEX)
+      - name: Юнит-тесты (манифест, DEX и темы)
         run: |
           set +e
           ./gradlew :apkEditor:testDebugUnitTest :apkEditorPro:testDebugUnitTest --no-daemon --max-workers=2 --stacktrace > /tmp/test.log 2>&1
@@ -50,6 +50,8 @@ jobs:
             [ -z "$msg" ] && msg=$(tail -n 30 /tmp/test.log | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error title=Unit tests failed::$msg"
             tail -n 60 /tmp/test.log
+            echo "--- AAPT/resource errors"
+            grep -n -E "error:|AAPT|Android resource linking failed|\.xml:[0-9]+" /tmp/test.log | head -n 100 || true
             for report in apkEditor/build/test-results/testDebugUnitTest/TEST-*.xml apkEditorPro/build/test-results/testDebugUnitTest/TEST-*.xml; do
               if [ -f "$report" ]; then
                 echo "--- $report"
@@ -89,6 +91,10 @@ jobs:
                 echo
               fi
             done
+            if [ -f /tmp/test.log ]; then
+              echo "--- resource errors"
+              grep -n -E "error:|AAPT|Android resource linking failed|\.xml:[0-9]+" /tmp/test.log | head -n 120 || true
+            fi
             echo '```'
           } > /tmp/report.md
           gh api -X POST "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -F body=@/tmp/report.md > /dev/null || echo "comment failed"
