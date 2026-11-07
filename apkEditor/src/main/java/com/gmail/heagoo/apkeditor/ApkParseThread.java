@@ -11,6 +11,7 @@ import brut.androlib.res.decoder.ARSCDecoder;
 import brut.androlib.res.util.ExtFile;
 import brut.directory.Directory;
 import com.gmail.heagoo.apkeditor.ApkDecoderMine;
+import com.gmail.heagoo.apkeditor.base.R;
 import com.gmail.heagoo.apkeditor.smali.ResSmaliIdProvider;
 import com.gmail.heagoo.apklib.ManifestInfoCollector;
 import com.gmail.heagoo.common.IOUtils;
