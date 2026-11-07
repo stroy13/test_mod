@@ -596,7 +596,7 @@
         <item name="colorControlHighlight">?labPressed</item>
         <item name="colorError">#ffff8793</item>
         <item name="actionModeBackground">?labHeader</item>
-        <item name="android:windowActionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
             <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeDark" parent="@style/Theme.AppCompat">
@@ -653,7 +653,7 @@
         <item name="colorControlHighlight">?labPressed</item>
         <item name="colorError">#ffff8793</item>
         <item name="actionModeBackground">?labHeader</item>
-        <item name="android:windowActionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
             <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeDarkAlt" parent="@style/Theme.AppCompat">
@@ -710,7 +710,7 @@
         <item name="colorControlHighlight">?labPressed</item>
         <item name="colorError">#ffff8793</item>
         <item name="actionModeBackground">?labHeader</item>
-        <item name="android:windowActionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
             <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeGraphite" parent="@style/EditorThemeDark">
@@ -766,7 +766,7 @@
         <item name="colorControlHighlight">?labPressed</item>
         <item name="colorError">#ffff8793</item>
         <item name="actionModeBackground">?labHeader</item>
-        <item name="android:windowActionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
             <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeIce" parent="@style/EditorThemeLight">
@@ -822,7 +822,7 @@
         <item name="colorControlHighlight">?labPressed</item>
         <item name="colorError">#ffb32638</item>
         <item name="actionModeBackground">?labHeader</item>
-        <item name="android:windowActionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
             <item name="labError">#ffb32638</item>
     </style>
 <style name="EditorThemeLight" parent="@style/Theme.AppCompat.Light.DarkActionBar">
@@ -879,7 +879,7 @@
         <item name="colorControlHighlight">?labPressed</item>
         <item name="colorError">#ffb32638</item>
         <item name="actionModeBackground">?labHeader</item>
-        <item name="android:windowActionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
             <item name="labError">#ffb32638</item>
     </style>
 <style name="EditorThemeMint" parent="@style/EditorThemeLight">
@@ -935,7 +935,7 @@
         <item name="colorControlHighlight">?labPressed</item>
         <item name="colorError">#ffb32638</item>
         <item name="actionModeBackground">?labHeader</item>
-        <item name="android:windowActionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
             <item name="labError">#ffb32638</item>
     </style>
 <style name="EditorThemeOcean" parent="@style/EditorThemeDark">
@@ -991,7 +991,7 @@
         <item name="colorControlHighlight">?labPressed</item>
         <item name="colorError">#ffff8793</item>
         <item name="actionModeBackground">?labHeader</item>
-        <item name="android:windowActionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
             <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeRose" parent="@style/EditorThemeDark">
@@ -1047,7 +1047,7 @@
         <item name="colorControlHighlight">?labPressed</item>
         <item name="colorError">#ffff8793</item>
         <item name="actionModeBackground">?labHeader</item>
-        <item name="android:windowActionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
             <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeSand" parent="@style/EditorThemeLight">
@@ -1103,7 +1103,7 @@
         <item name="colorControlHighlight">?labPressed</item>
         <item name="colorError">#ffb32638</item>
         <item name="actionModeBackground">?labHeader</item>
-        <item name="android:windowActionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
             <item name="labError">#ffb32638</item>
     </style>
 <style name="EditorThemeViolet" parent="@style/EditorThemeDark">
@@ -1159,7 +1159,7 @@
         <item name="colorControlHighlight">?labPressed</item>
         <item name="colorError">#ffff8793</item>
         <item name="actionModeBackground">?labHeader</item>
-        <item name="android:windowActionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
             <item name="labError">#ffff8793</item>
     </style>
 <style name="EditorThemeWine" parent="@style/EditorThemeDark">
@@ -1215,7 +1215,7 @@
         <item name="colorControlHighlight">?labPressed</item>
         <item name="colorError">#ffff8793</item>
         <item name="actionModeBackground">?labHeader</item>
-        <item name="android:windowActionModeBackground">?labHeader</item>
+        <item name="android:actionModeBackground">?labHeader</item>
             <item name="labError">#ffff8793</item>
     </style>
 <style name="LabButton" parent="@android:style/Widget.Button">
