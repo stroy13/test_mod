@@ -4118,7 +4118,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.decodeResultLayout.setVisibility(4);
         this.decodeProgressRow.setVisibility(0);
         this.decodeProgressBar.setVisibility(0);
-        this.decodeProgressText.setText("");
+        this.decodeProgressText.setText(R.string.lab_dex_progress_preparing);
         this.decodeProgressText.setVisibility(0);
     }
 

@@ -8,8 +8,8 @@ android {
     ndkVersion "30.0.16248370"
 
     defaultConfig {
-        versionCode 178
-        versionName "1.10.0.178"
+        versionCode 179
+        versionName "1.10.0.179"
         applicationId "ru.apkeditor.plus"
         minSdk 26
         targetSdk 37
@@ -68,4 +68,6 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:2.0.3'
     implementation 'uk.com.robust-it:cloning:1.9.2'
     implementation 'org.jetbrains:annotations:23.1.0'
+
+    testImplementation 'junit:junit:4.13.2'
 }

@@ -4,7 +4,7 @@
 
 Восстановленное дерево исходников Android-приложения **APK Editor Plus**
 (`ru.apkeditor.plus`, база — versionCode **175** / versionName **1.10.0.175**;
-текущая сборка с исправлениями — **178** / **1.10.0.178**, см.
+текущая сборка с исправлениями — **179** / **1.10.0.179**, см.
 [`docs/CHANGELOG.md`](docs/CHANGELOG.md)).
 
 Проект собирается штатным Gradle: `:apkEditorPro:assembleDebug` →
@@ -20,7 +20,7 @@
 | Параметр | Значение |
 |---|---|
 | Package / applicationId | `ru.apkeditor.plus` |
-| versionCode / versionName | `178` / `1.10.0.178` (база 175 + исправления, см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
+| versionCode / versionName | `179` / `1.10.0.179` (база 175 + исправления, см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
 | minSdk / targetSdk / compileSdk | 26 / 37 / 37 |
 | Gradle / AGP | 9.8.2 / 9.5.1 |
 | JDK | 17 |
@@ -86,7 +86,8 @@
 ## CI и готовый APK
 
 `.github/workflows/build.yml` («Сборка») на каждый push прогоняет юнит-тесты
-(`:apkEditor:testDebugUnitTest`, в т.ч. регрессия на OOM в форматтере манифеста) и
+(`:apkEditor:testDebugUnitTest` и `:apkEditorPro:testDebugUnitTest`: регрессия на OOM
+в форматтере манифеста и проверка реального счётчика классов DEX) и
 собирает `:apkEditorPro:assembleDebug`
 (JDK 17, Android SDK platform 37.0, build-tools 37.0.0, NDK 30.0.16248370):
 

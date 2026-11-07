@@ -488,6 +488,7 @@ APK Editor предназначен для пользователей Android, �
     <string name="lab_compose_worker_failed">Сборка неожиданно остановилась: %1$s</string>
     
     <string name="lab_dex_class_progress">DEX %1$d/%2$d · классы %3$d/%4$d</string>
+    <string name="lab_dex_progress_preparing">Подготовка DEX…</string>
     
     <string name="lab_early_restore_failed">Не удалось восстановить временные правки строк.</string>
     

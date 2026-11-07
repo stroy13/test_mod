@@ -65,7 +65,10 @@
                 <ListView android:id="@id/resource_list" android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_marginLeft="4.0dip" android:layout_marginRight="4.0dip" android:listSelector="@drawable/lab_list_selector" android:cacheColorHint="#00000000" android:groupIndicator="@null" android:layout_weight="1.0" />
                 <FrameLayout android:id="@id/dex_decode_layout" android:layout_width="fill_parent" android:layout_height="wrap_content">
                     <ImageView android:layout_gravity="center" android:id="@id/imageview_dex2smali" android:background="@drawable/bg_icon_dex2smali" android:clickable="true" android:layout_width="wrap_content" android:layout_height="wrap_content" />
-                    <ProgressBar android:layout_gravity="center_horizontal" android:id="@id/progressbar_dex2smali" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <LinearLayout android:gravity="center_vertical" android:layout_gravity="center" android:orientation="horizontal" android:id="@id/dex_progress_row" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                        <ProgressBar android:id="@id/progressbar_dex2smali" android:layout_width="20.0dip" android:layout_height="20.0dip" android:layout_marginEnd="6.0dip" style="?android:progressBarStyleSmall" />
+                        <TextView android:textSize="11.0sp" android:textColor="?labText" android:ellipsize="end" android:id="@id/text_dex2smali_progress" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxWidth="200.0dip" android:maxLines="2" />
+                    </LinearLayout>
                     <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/decode_result_layout" android:visibility="invisible" android:layout_width="fill_parent" android:layout_height="wrap_content">
                         <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/down_arrow_container" android:background="@drawable/lab_list_selector" android:layout_width="fill_parent" android:layout_height="wrap_content">
                             <View android:background="?labBorder" android:layout_width="fill_parent" android:layout_height="1.0px" />

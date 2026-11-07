@@ -3,15 +3,9 @@ name: Сборка
 on:
   push:
   workflow_dispatch:
-    inputs:
-      compare_reference:
-        description: Сравнить прогресс с эталоном 175
-        type: boolean
-        default: false
 
 jobs:
   debug-apk:
-    if: ${{ !inputs.compare_reference }}
     name: Сборка debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -46,10 +40,10 @@ jobs:
             exit $code
           fi
 
-      - name: Юнит-тесты (регрессия OOM в манифесте)
+      - name: Юнит-тесты (манифест и прогресс DEX)
         run: |
           set +e
-          ./gradlew :apkEditor:testDebugUnitTest --no-daemon --max-workers=2 --stacktrace > /tmp/test.log 2>&1
+          ./gradlew :apkEditor:testDebugUnitTest :apkEditorPro:testDebugUnitTest --no-daemon --max-workers=2 --stacktrace > /tmp/test.log 2>&1
           code=$?
           if [ $code -ne 0 ]; then
             msg=$(grep -A 12 -m 1 -E "^FAILURE:|What went wrong|FAILED" /tmp/test.log | head -n 40 | sed ':a;N;$!ba;s/\n/%0A/g')
@@ -116,38 +110,3 @@ jobs:
             apkEditorPro/build/outputs/apk/debug/*.apk
             apkEditorPro/build/outputs/logs/*.txt
           if-no-files-found: warn
-
-  reference:
-    name: Цепочка прогресса в эталонном APK
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: write
-    steps:
-      - name: Подготовка Java и эталона
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - name: Разбор только классов преобразования DEX
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          gh release download test -R "$GITHUB_REPOSITORY" -p 'APK.Editor.+_v1.10.0.175.175.apk' -D reference
-          gh release download v1.5.6 -R skylot/jadx -p jadx-1.5.6.zip -D jadx
-          unzip -q jadx/jadx-1.5.6.zip -d jadx/tool
-          for class in com.gmail.heagoo.apkeditor.smali.AsyncDecodeTask com.gmail.heagoo.apkeditor.pro.DexDecoder com.gmail.heagoo.apkeditor.pro.FastDexDisassembler; do
-            JAVA_OPTS='-Xmx4g' jadx/tool/bin/jadx --no-res --no-debug-info --single-class "$class" --single-class-output "reference/$class.java" reference/*.apk > "reference/$class.log" 2>&1 || true
-          done
-          {
-            echo '## Эталон 175: задача, декодер и параллельный разбор'
-            for f in reference/*.java; do
-              echo '### '"$f"
-              echo '```java'
-              head -c 17000 "$f"
-              echo
-              echo '```'
-            done
-          } > reference/report.md
-          gh api -X POST "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/comments" -F body=@reference/report.md
