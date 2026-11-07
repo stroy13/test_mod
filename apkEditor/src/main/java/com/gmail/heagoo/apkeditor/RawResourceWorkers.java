@@ -27,7 +27,6 @@ final class RawResourceWorkers implements AutoCloseable {
 
     RawResourceWorkers(File apk, final ApkDecoderMine owner, final ResPackage pkg, final boolean protectedApk) throws IOException {
         this.xml = new ThreadLocal<XmlDecoder>() {
-            /* JADX WARN: Can't rename method to resolve collision */
             @Override
             public XmlDecoder initialValue() {
                 XmlDecoder decoder = new XmlDecoder(owner, pkg);

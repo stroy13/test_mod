@@ -119,41 +119,6 @@ public final class BinaryResourceComparison {
         }
     }
 
-    /* JADX WARN: Code restructure failed: missing block: B:55:0x00b4, code lost:
-    
-        throw new java.io.IOException("Таблица ресурсов больше 512 МБ");
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:58:0x00b5, code lost:
-    
-        r0.close();
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:59:0x00b8, code lost:
-    
-        if (r0 == null) goto L47;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:60:0x00ba, code lost:
-    
-        r0.close();
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:62:0x00c1, code lost:
-    
-        arsc(r18, r1, r20);
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:63:0x00c4, code lost:
-    
-        r0.close();
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:64:0x00c7, code lost:
-    
-        r1.delete();
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:65:0x00ca, code lost:
-    
-        return;
-     */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     public static void arscOrApk(Context ctx, File input, File outputDir, File scratch) throws Exception {
         Throwable th = null;
         if (!input.isFile() || Files.isSymbolicLink(input.toPath())) {
@@ -265,72 +230,6 @@ public final class BinaryResourceComparison {
         }
     }
 
-    /* JADX WARN: Code restructure failed: missing block: B:100:0x0215, code lost:
-    
-        r1 = r0;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:110:0x0166, code lost:
-    
-        throw new java.io.IOException("XML в APK превышают безопасный лимит");
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:114:0x016d, code lost:
-    
-        r17 = r1;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:116:0x0171, code lost:
-    
-        r0 = new java.io.ByteArrayOutputStream();
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:117:0x017d, code lost:
-    
-        r16 = r3;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:120:0x018a, code lost:
-    
-        if (new com.gmail.heagoo.apklib.AXMLPrinter().convert(new java.io.ByteArrayInputStream(r11.toByteArray()), r0) == false) goto L183;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:121:0x018c, code lost:
-    
-        write(new java.io.File(r25, r9), new java.lang.String(r0.toByteArray(), java.nio.charset.StandardCharsets.UTF_8));
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:123:0x01a3, code lost:
-    
-        r10.close();
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:124:0x01a6, code lost:
-    
-        r3 = r16;
-        r1 = r17;
-        r0 = r23;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:130:0x01c8, code lost:
-    
-        throw new java.io.IOException("Ошибка декодирования XML: " + r9);
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:132:0x01c9, code lost:
-    
-        r0 = move-exception;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:133:0x01ca, code lost:
-    
-        r1 = r0;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:135:0x01cc, code lost:
-    
-        r0 = move-exception;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:136:0x01cd, code lost:
-    
-        r16 = r3;
-        r1 = r0;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:99:0x0214, code lost:
-    
-        r0 = move-exception;
-     */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     public static void xmlOrApk(File input, File outputDir) throws Exception {
         Throwable th = null;
         Enumeration<? extends ZipEntry> it = null;
@@ -526,7 +425,7 @@ public final class BinaryResourceComparison {
                     int i2 = i;
                     write(new File(outputDir, dir + "/entry.txt"), meta);
                     List<ResResource> items = new ArrayList<>(spec.listResources());
-                    items.sort(Comparator.comparing(new Function() { // from class: com.gmail.heagoo.apkeditor.BinaryResourceComparison$$ExternalSyntheticLambda0
+                    items.sort(Comparator.comparing(new Function() {
                         @Override // java.util.function.Function
                         public final Object apply(Object obj) {
                             String qualifiers;

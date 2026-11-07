@@ -76,7 +76,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         }
     };
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(1);
@@ -106,7 +105,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         init();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void onResume() {
         super.onResume();
         if (this.foderWrapper != null || !StorageAccess.has(this)) {
@@ -115,7 +113,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         init();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initWithPermChecking() {
         if (!StorageAccess.has(this)) {
             StorageAccess.request(this, this.WRITE_EXTERNAL_STORAGE_REQUEST_CODE);
@@ -124,7 +121,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void init() {
         String curDir = getLastDirectory();
         this.pathTV = (TextView) findViewById(R.id.dirPath);
@@ -165,7 +161,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         showSortDialog();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void showSortDialog() {
         final SharedPreferences sharedPreferences = getSharedPreferences("config", 0);
         int i = sharedPreferences.getInt("file_sort_key", 0);
@@ -189,7 +184,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         dialog.dismiss();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void showStorageList(View parent) {
         int height;
         if (this.popupWindow == null) {
@@ -255,7 +249,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public boolean openExtSdCard() {
         String path = SDCard.getExternalStoragePath(this);
         if (path != null && !path.equals("")) {
@@ -278,7 +271,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         return false;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void showDebugDialog() {
         DebugDialog dialog = new DebugDialog(this);
         dialog.show();
@@ -312,7 +304,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
     public void itemLongClicked(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public boolean fileClicked(String filePath) {
         if (!filePath.endsWith(".apk")) {
             return false;
@@ -328,7 +319,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         return true;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void startFullEditActivity(String filePath) {
         UserAppActivity.startFullEditActivity(this, filePath);
     }
@@ -364,7 +354,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         return getResources().getDrawable(R.drawable.lab_apk_file);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public String getDetail1(String dirPath, FileRecord record) {
         ApkInfoParser.AppInfo info;
         if (record == null || record.isDir) {
@@ -377,7 +366,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         return (!record.fileName.toLowerCase(Locale.ROOT).endsWith(".apk") || (info = this.apkIconCache.get(new StringBuilder().append(dirPath).append("/").append(record.fileName).toString())) == null || info.label == null || info.label.toString().isEmpty()) ? detail : info.label + "  ·  " + detail;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     public void editModeSelected(int mode, String extraStr) {
         Intent intent = null;
@@ -401,7 +389,6 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     public void onClick(View v) {
         int id = v.getId();

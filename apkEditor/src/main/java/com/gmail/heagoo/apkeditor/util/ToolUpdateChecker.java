@@ -40,7 +40,7 @@ public final class ToolUpdateChecker {
                     waiters.add(callback);
                 }
                 running = true;
-                new Thread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.util.ToolUpdateChecker$$ExternalSyntheticLambda0
+                new Thread(new Runnable() {
                     @Override // java.lang.Runnable
                     public final void run() {
                         ToolUpdateChecker.lambda$check$0(p);
@@ -50,7 +50,7 @@ public final class ToolUpdateChecker {
         }
     }
 
-    static /* synthetic */ void lambda$check$0(SharedPreferences p) {
+    static void lambda$check$0(SharedPreferences p) {
         String sdk;
         String buildTools;
         String aapt;

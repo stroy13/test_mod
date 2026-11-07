@@ -1,31 +1,26 @@
-# APK Editor Plus v1.10.0.175 — исходники
+# APK Editor Plus v1.10.0.181
 
 [![Сборка](https://github.com/stroy13/test_mod/actions/workflows/build.yml/badge.svg)](https://github.com/stroy13/test_mod/actions/workflows/build.yml)
 
-Восстановленное дерево исходников Android-приложения **APK Editor Plus**
-(`ru.apkeditor.plus`, база — versionCode **175** / versionName **1.10.0.175**;
-текущая сборка с исправлениями — **181** / **1.10.0.181**, см.
-[`docs/CHANGELOG.md`](docs/CHANGELOG.md)).
+Полноценный форк Android-приложения **APK Editor Plus** (`ru.apkeditor.plus`)
+с собственными исправлениями и развитием кодовой базы. Актуальная версия —
+**181** / **1.10.0.181**, история изменений — в [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
 Проект собирается штатным Gradle: `:apkEditorPro:assembleDebug` →
 `apkEditorPro/build/outputs/apk/debug/apkEditorPro-debug.apk`.
-
-> Это восстановленные (декомпилированные и приведённые к сборке) исходники, а не побитово
-> оригинальный код разработчика. Подробности, известные расхождения и история правок —
-> в [`docs/RECOVERY-STATUS.md`](docs/RECOVERY-STATUS.md) и [`docs/BUILD-ERRORS.txt`](docs/BUILD-ERRORS.txt).
-> Права на оригинальное приложение принадлежат его авторам, см. [`NOTICE.md`](NOTICE.md).
+Атрибуция оригинальных авторов и права на сторонние компоненты — в [`NOTICE.md`](NOTICE.md).
 
 ## Стек и параметры сборки
 
 | Параметр | Значение |
 |---|---|
 | Package / applicationId | `ru.apkeditor.plus` |
-| versionCode / versionName | `181` / `1.10.0.181` (база 175 + исправления, см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
+| versionCode / versionName | `181` / `1.10.0.181` (см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
 | minSdk / targetSdk / compileSdk | 26 / 37 / 37 |
 | Gradle / AGP | 9.8.2 / 9.5.1 |
 | JDK | 17 |
 | NDK | 30.0.16248370 (ndkBuild, ABI: `armeabi-v7a`, `arm64-v8a`) |
-| Язык | Java (766 файлов), нативный код C/C++ в `jni/` |
+| Язык | Java (786 файлов), нативный код C/C++ в `jni/` |
 
 ## Структура проекта
 
@@ -46,7 +41,7 @@
 ├── settings.gradle   # список модулей
 ├── gradle.properties # JVM-аргументы, AndroidX/Jetifier
 ├── gradlew, gradle/  # Gradle wrapper (9.8.2)
-└── docs/             # статус восстановления и известные проблемы сборки
+└── docs/             # документация и история изменений
 ```
 
 Модули поставляются с готовыми бинарными зависимостями в `libs/` (`dx-1.10.jar`,
@@ -80,14 +75,14 @@
 4. Результат: `apkEditorPro/build/outputs/apk/debug/apkEditorPro-debug.apk`
    (подпись — debug; для релиза подписывайте своим ключом).
 
-Совет из практики восстановления: при нехватке RAM на dex-этапе помогает повторный запуск
-без `clean` и `org.gradle.jvmargs=-Xmx900m` в `gradle.properties`.
+Совет: при нехватке RAM на dex-этапе помогает повторный запуск без `clean` и
+`org.gradle.jvmargs=-Xmx900m` в `gradle.properties`.
 
 ## CI и готовый APK
 
-`.github/workflows/build.yml` («Сборка») на каждый push прогоняет юнит-тесты
-(`:apkEditor:testDebugUnitTest` и `:apkEditorPro:testDebugUnitTest`: регрессия на OOM
-в форматтере манифеста и проверка реального счётчика классов DEX) и
+`.github/workflows/build.yml` («Сборка») на каждый push прогоняет юнит-тесты шести
+модулей (`_AndroidCommon`, `appListUtil`, `appDataEditor`, `httpServer`, `apkEditor`,
+`apkEditorPro`: регрессии манифеста, счётчика классов DEX, тем и сортировки), затем
 собирает `:apkEditorPro:assembleDebug`
 (JDK 17, Android SDK platform 37.0, build-tools 37.0.0, NDK 30.0.16248370):
 
@@ -101,35 +96,15 @@
 Учтите: это debug-подпись, поверх релизной сборки из релиза `test` такой APK не
 встанет — потребуется удалить установленное приложение.
 
-## Что изменено относительно «сырого» архива исходников
-
-Архив с исходниками лежал в релизе одним файлом со случайным именем
-(`fkMIqyv9….tar.xz`) внутри папки `work175/`. Здесь он разложен как нормальный
-Gradle-проект в корне репозитория:
-
-- содержимое `work175/` поднято в корень, папка `work175/` убрана;
-- добавлены `README.md`, `NOTICE.md`, `.gitignore`, `.gitattributes`,
-  `local.properties.example`;
-- `local.properties` (машинные пути `/home/user/android-env/...`) удалён из репозитория
-  и внесён в `.gitignore`, вместо него — пример;
-- `.idea/` (локальные настройки IDE) исключена;
-- добавлен Gradle wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/*`); в исходном
-  `.gitignore` каталог `gradle/` выгружался целиком, из-за чего `./gradlew` не работал;
-- убраны артефакты декомпиляции: 109 «россыпью» `*.class` в `apkEditorPro/libs/`
-  (они не используются сборкой — там подключаются только jar) и
-  `apkEditor/src/main/jni/injector/jni/injector.c.bak`;
-- отчёт о восстановлении и лог ошибок сборки перенесены в `docs/`.
-
 ## Список изменений
 
-Правки поверх восстановленных исходников (исправление «вечной» загрузки
-«Обработка манифеста и ресурсов…» и др.) — в [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
+Исправления и новые возможности форка (сортировка списков, применение всех 12 тем,
+прогресс DEX→smali, исправление OOM манифеста и др.) — в [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
-## Источники и происхождение
+## Источники и атрибуция
 
 - Upstream: [TimScriptov/ApkEditor](https://github.com/TimScriptov/ApkEditor) (v121).
 - Оригинальное приложение: APK Editor Pro, автор **SteelWorks** (пакеты `com.gmail.heagoo.*`).
-- Классы и ресурсы v175, восстановленные JADX/apktool из эталонного APK.
 - Ссылки из оригинального README: [RuStore](https://apps.rustore.ru/app/com.mcal.apkeditor.pro),
   [4PDA](https://4pda.to/forum/index.php?showtopic=575450),
   [Telegram](https://t.me/apkeditorproofficial).

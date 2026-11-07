@@ -39,7 +39,7 @@ public final class Aapt2Pipeline {
     private static void run(String[] args) throws IOException, InterruptedException {
         final Process p = new ProcessBuilder(args).redirectErrorStream(true).start();
         final StringBuilder msg = new StringBuilder();
-        Thread drain = new Thread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.util.Aapt2Pipeline$$ExternalSyntheticLambda0
+        Thread drain = new Thread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
                 Aapt2Pipeline.lambda$run$0(p, msg);
@@ -67,7 +67,7 @@ public final class Aapt2Pipeline {
         }
     }
 
-    static /* synthetic */ void lambda$run$0(Process p, StringBuilder msg) {
+    static void lambda$run$0(Process p, StringBuilder msg) {
         try {
             Reader r = new InputStreamReader(p.getInputStream(), "UTF-8");
             try {

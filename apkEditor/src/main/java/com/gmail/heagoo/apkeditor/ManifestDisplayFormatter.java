@@ -67,7 +67,7 @@ public final class ManifestDisplayFormatter {
                     spanCursor++;
                 }
                 // Bounded scan of this attribute's value spans. The previous
-                // decompiled loop was `while (true)` and only advanced `j` in one
+                // loop was `while (true)` and only advanced `j` in one
                 // branch, so a matching `name="value"` kept adding insertions
                 // forever until the heap was exhausted (OutOfMemoryError).
                 for (int j = spanCursor; j < spans.size(); j++) {

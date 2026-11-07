@@ -20,7 +20,6 @@ public class ApkComposeFailAdapter extends BaseAdapter {
     private boolean isDark;
     private List<String> lines = new ArrayList();
 
-    /* JADX WARN: Multi-variable type inference failed */
     public ApkComposeFailAdapter(ApkComposeActivity apkComposeActivity, String errMessage) {
         this.activityRef = new WeakReference<>(apkComposeActivity);
         this.isDark = GlobalConfig.instance(apkComposeActivity).isDarkTheme();
@@ -85,7 +84,6 @@ public class ApkComposeFailAdapter extends BaseAdapter {
                 }
                 final int lineIndex = lineNum;
                 holder.viewBtn.setOnClickListener(new View.OnClickListener() {
-                    /* JADX WARN: Type inference failed for: r0v3, types: [android.content.Context, com.gmail.heagoo.apkeditor.ApkComposeActivity] */
                     @Override
                     public void onClick(View v) {
                         ApkComposeActivity r0 = (ApkComposeActivity) ApkComposeFailAdapter.this.activityRef.get();

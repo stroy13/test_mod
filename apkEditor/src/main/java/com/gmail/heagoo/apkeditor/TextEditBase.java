@@ -100,7 +100,6 @@ public abstract class TextEditBase extends CustomizedLangActivity implements Col
         return true;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(1);
@@ -199,7 +198,6 @@ public abstract class TextEditBase extends CustomizedLangActivity implements Col
         updateSpecialCharButton(filePath);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initBottomMenu() {
         this.specialCharLayout = findViewById(R.id.special_char_layout);
         this.menuLayout = (LinearLayout) findViewById(R.id.menu_layout);
@@ -223,7 +221,6 @@ public abstract class TextEditBase extends CustomizedLangActivity implements Col
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void updateSpecialCharButton(String filePath) {
         int idx = getSpecialStringIndex(filePath);
         if (idx == this.specialStrIndex) {
@@ -256,7 +253,6 @@ public abstract class TextEditBase extends CustomizedLangActivity implements Col
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void updateBottomMenu(boolean inputMethodVisible) {
         if (SettingEditorActivity.symbolInputEnabled(this)) {
             if (inputMethodVisible) {
@@ -335,7 +331,6 @@ public abstract class TextEditBase extends CustomizedLangActivity implements Col
         return this.bInputMethodShown;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void showMoreOptions(View parent) {
         LayoutInflater layoutInflater = LayoutInflater.from(this);
         View view = layoutInflater.inflate(R.layout.popup_list, (ViewGroup) null);
@@ -392,7 +387,6 @@ public abstract class TextEditBase extends CustomizedLangActivity implements Col
         popupWindow.showAtLocation(parent, 8388661, Display.dip2px(this, 12.0f), Display.dip2px(this, 52.0f));
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void showHtmlDialog() {
         if (this.htmlDialog == null) {
             this.htmlDialog = new HtmlViewDialog(this);
@@ -400,7 +394,6 @@ public abstract class TextEditBase extends CustomizedLangActivity implements Col
         this.htmlDialog.show(this.curFilePath, getDisplayName(this.curFilePath));
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void showJavaCodeWithTip() {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
         boolean shown = sp.getBoolean("java_edit_tip_shown", false);
@@ -420,7 +413,6 @@ public abstract class TextEditBase extends CustomizedLangActivity implements Col
         showJavaCode();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void showJavaCode() {
         if (this.apkPath == null) {
             Toast.makeText((Context) this, (CharSequence) "Internal error: cannot find apk path to decode java code, please contact the author.", 1).show();
@@ -454,17 +446,8 @@ public abstract class TextEditBase extends CustomizedLangActivity implements Col
                         }
                     }
 
-                    /* JADX WARN: Code restructure failed: missing block: B:8:0x005d, code lost:
-                    
-                        if (r4 != false) goto L13;
-                     */
                     @Override
-                    /*
-                        Code decompiled incorrectly, please refer to instructions dump.
-                        To view partially-correct add '--show-bad-code' argument
-                    */
                     public void afterProcess() {
-                        // Restored manually in recovery stage 3 from the --show-bad-code dump.
                         if (!this.succeed) {
                             Toast.makeText((Context) TextEditBase.this, (CharSequence) this.errMessage, 1).show();
                             return;
@@ -550,7 +533,6 @@ public abstract class TextEditBase extends CustomizedLangActivity implements Col
         return filePath;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void onColorChange(int argb) {
         String strColor = String.format("#%08x", Integer.valueOf(argb));
         ClipboardUtil.copyToClipboard(this, strColor);
@@ -558,13 +540,11 @@ public abstract class TextEditBase extends CustomizedLangActivity implements Col
         Toast.makeText((Context) this, (CharSequence) message, 0).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     public void operateLines(int from, int to) {
         Toast.makeText((Context) this, (CharSequence) "Not implemented.", 0).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void showPopWindow(View parent) {
         if (this.popupWindowHelper != null && this.curFilePath.equals(this.popupWindowHelper.getFile())) {
             this.popupWindowHelper.doPopWindowShow(parent);

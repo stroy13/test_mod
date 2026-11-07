@@ -46,7 +46,6 @@ public final class SmaliCheck {
         }
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public static void checkInterrupted() {
         if (Thread.currentThread().isInterrupted()) {
             throw new CancellationException("Smali check cancelled");
@@ -62,7 +61,7 @@ public final class SmaliCheck {
             try {
                 final smaliFlexLexer lexer = new smaliFlexLexer(reader, api);
                 lexer.setSourceFile(file);
-                TokenSource cancellableTokens = new TokenSource() { // from class: com.gmail.heagoo.apkeditor.pro.SmaliCheck.1
+                TokenSource cancellableTokens = new TokenSource() {
                     public String getSourceName() {
                         return lexer.getSourceName();
                     }
@@ -75,7 +74,7 @@ public final class SmaliCheck {
                     }
                 };
                 CommonTokenStream tokens = new CommonTokenStream(cancellableTokens);
-                smaliParser parser = new smaliParser(tokens) { // from class: com.gmail.heagoo.apkeditor.pro.SmaliCheck.2
+                smaliParser parser = new smaliParser(tokens) {
                     public void displayRecognitionError(String[] names, RecognitionException e) {
                         errors.add(e.line + ":" + getErrorMessage(e, names));
                     }
@@ -95,14 +94,14 @@ public final class SmaliCheck {
                     reader.close();
                     return strArr;
                 }
-                CommonTreeNodeStream tree = new CommonTreeNodeStream(parsed.getTree()) { // from class: com.gmail.heagoo.apkeditor.pro.SmaliCheck.3
+                CommonTreeNodeStream tree = new CommonTreeNodeStream(parsed.getTree()) {
                     public Object nextElement() {
                         SmaliCheck.checkInterrupted();
                         return super.nextElement();
                     }
                 };
                 tree.setTokenStream(tokens);
-                smaliTreeWalker walker = new smaliTreeWalker(tree) { // from class: com.gmail.heagoo.apkeditor.pro.SmaliCheck.4
+                smaliTreeWalker walker = new smaliTreeWalker(tree) {
                     public void displayRecognitionError(String[] names, RecognitionException e) {
                         errors.add(e.line + ":" + getErrorMessage(e, names));
                     }

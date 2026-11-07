@@ -48,7 +48,7 @@ public final class RoundedDialogUi {
 
     public static ScrollView scroll(Context c, View child) {
         final int available = Math.max(dp(c, 160), c.getResources().getDisplayMetrics().heightPixels - dp(c, 240));
-        ScrollView scroll = new ScrollView(c) { // from class: com.gmail.heagoo.apkeditor.util.RoundedDialogUi.1
+        ScrollView scroll = new ScrollView(c) {
             @Override // android.widget.ScrollView, android.widget.FrameLayout, android.view.View
             protected void onMeasure(int w, int h) {
                 int size = View.MeasureSpec.getSize(h);
@@ -76,7 +76,7 @@ public final class RoundedDialogUi {
         cancel.setMinHeight(dp(c, 44));
         cancel.setClickable(true);
         cancel.setFocusable(true);
-        cancel.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.util.RoundedDialogUi$$ExternalSyntheticLambda0
+        cancel.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
                 action.run();

@@ -42,7 +42,6 @@ public class SearchFilenameDialog extends Dialog implements View.OnClickListener
     private TextView selectionTipTv;
     private TextView titleTv;
 
-    /* JADX WARN: Multi-variable type inference failed */
     public SearchFilenameDialog(ApkInfoActivity apkInfoActivity, String searchFolder, List<String> filenameList, String keyword, boolean caseSensitive) {
         super(apkInfoActivity);
         this.modifiedFiles = new HashSet();
@@ -62,7 +61,6 @@ public class SearchFilenameDialog extends Dialog implements View.OnClickListener
         init(apkInfoActivity);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void init(ApkInfoActivity apkInfoActivity) {
         int resId = R.layout.dlg_filename_searchret;
         View view = LayoutInflater.from(apkInfoActivity).inflate(resId, (ViewGroup) null);

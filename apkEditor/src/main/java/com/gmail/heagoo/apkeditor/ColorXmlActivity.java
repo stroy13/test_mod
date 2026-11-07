@@ -34,7 +34,6 @@ public class ColorXmlActivity extends CustomizedLangActivity implements View.OnC
     private Button saveBtn;
     private String xmlPath;
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(1);
@@ -60,7 +59,6 @@ public class ColorXmlActivity extends CustomizedLangActivity implements View.OnC
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initView() {
         TextView filenameTv = (TextView) findViewById(R.id.filename);
         filenameTv.setText(getFileName());
@@ -85,7 +83,6 @@ public class ColorXmlActivity extends CustomizedLangActivity implements View.OnC
         return this.xmlPath.substring(pos + 1);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initData() {
         this.colorValues = new ArrayList<>();
         BufferedReader br = null;
@@ -148,7 +145,6 @@ public class ColorXmlActivity extends CustomizedLangActivity implements View.OnC
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void openInEditor() {
         Intent intent = TextEditor.getEditorIntent(this, this.xmlPath, null);
         ActivityUtil.attachParam(intent, "syntaxFileName", "xml.xml");
@@ -157,7 +153,6 @@ public class ColorXmlActivity extends CustomizedLangActivity implements View.OnC
         startActivityForResult(intent, 0);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void saveColors() {
         BufferedWriter bw = null;
         try {
@@ -201,7 +196,6 @@ public class ColorXmlActivity extends CustomizedLangActivity implements View.OnC
         setResult(1, intent);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
         int initColor = this.colorValues.get(position).intColorValue;

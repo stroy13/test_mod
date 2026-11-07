@@ -128,7 +128,6 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         notificationManager.createNotificationChannel(chan1);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         createChannel();
@@ -151,7 +150,6 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void bind2Service() {
         Intent intent = new Intent((Context) this, (Class<?>) ApkComposeService.class);
         try {
@@ -353,7 +351,6 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private String getApkPackageName() {
         try {
             ApkInfoParser.AppInfo info = new ApkInfoParser().parse(this, this.targetApkPath);
@@ -366,7 +363,6 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     public void onClick(View v) {
         int id = v.getId();
@@ -461,7 +457,6 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void applyCodePatch() {
         new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() {
             private String errMessage = null;
@@ -510,7 +505,6 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         return new AxmlStringModifier(this.decodeRootPath, modifications);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void showTipDialog() {
         View view = LayoutInflater.from(this).inflate(R.layout.dlg_tip, (ViewGroup) null);
         TextView msgTv = (TextView) view.findViewById(R.id.tv_message);
@@ -531,7 +525,6 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         tipDlg.show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void stopBuildAndGoBack() {
         try {
             if (this.binder != null) {
@@ -546,7 +539,6 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         finish();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void showStopBuildDialog() {
         AlertDialog.Builder confirmDlg = new AlertDialog.Builder(this).setTitle(R.string.please_note).setMessage(R.string.sure_to_stop_build).setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
             @Override
@@ -557,7 +549,6 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         confirmDlg.show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void onBackPressed() {
         if (this.binder != null && this.binder.isRunning()) {
             if (!PreferenceUtil.getBoolean(this, "donot_show_compose_tip", false)) {
@@ -602,7 +593,6 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
             return sb.toString();
         }
 
-        /* JADX WARN: Type inference failed for: r0v2, types: [android.content.Context, com.gmail.heagoo.apkeditor.ApkComposeActivity] */
         @Override
         public void handleMessage(Message msg) {
             ApkComposeActivity apkComposeActivity = this.activityRef.get();

@@ -93,7 +93,6 @@ public class EditorActivity extends CustomizedLangActivity implements View.OnCli
     private boolean lastChangedState = false;
     private boolean lastUndoState = true;
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(1);
@@ -191,7 +190,6 @@ public class EditorActivity extends CustomizedLangActivity implements View.OnCli
         return this.filePath;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initData() {
         this.curDocument = new Document(this, new File(this.filePath), this.syntaxFileName);
         try {
@@ -210,7 +208,6 @@ public class EditorActivity extends CustomizedLangActivity implements View.OnCli
         this.editorView = (LinearLayout) findViewById(R.id.editorView);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initEditView() {
         this.editorInnerLayout = (LinearLayout) findViewById(R.id.editorLayout);
         this.editorOuterLayout = (FrameLayout) findViewById(R.id.center_layout);
@@ -472,7 +469,6 @@ public class EditorActivity extends CustomizedLangActivity implements View.OnCli
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void executeSaveAction() {
         ProcessingDialog dlg = new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() {
             public void process() throws Exception {

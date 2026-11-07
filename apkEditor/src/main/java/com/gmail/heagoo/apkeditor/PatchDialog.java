@@ -80,7 +80,6 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
     private Button selectApplyBtn;
     private WebView webView;
 
-    /* JADX WARN: Multi-variable type inference failed */
     public PatchDialog(ApkInfoActivity apkInfoActivity) {
         super(apkInfoActivity);
         this.exampleDir = null;
@@ -97,7 +96,6 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         getWindow().setLayout((width * 7) / 8, -2);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void init(ApkInfoActivity apkInfoActivity) {
         int resId = R.layout.dlg_patch;
         View view = LayoutInflater.from(apkInfoActivity).inflate(resId, (ViewGroup) null);
@@ -174,7 +172,6 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         }
     }
 
-    /* JADX WARN: Type inference failed for: r0v2, types: [android.content.Context, com.gmail.heagoo.apkeditor.ApkInfoActivity] */
     private void previewPatch() {
         final ApkInfoActivity apkInfoActivity = this.activityRef.get();
         if (apkInfoActivity == null || this.patchRunning) {
@@ -194,7 +191,6 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         }, "patch-preview").start();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m253lambda$previewPatch$4$comgmailheagooapkeditorPatchDialog(final ApkInfoActivity apkInfoActivity, String path) {
         try {
             final PatchPreflight.Report report = PatchPreflight.inspectReport(apkInfoActivity, this, new File(path));
@@ -215,7 +211,6 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m251lambda$previewPatch$2$comgmailheagooapkeditorPatchDialog(final ApkInfoActivity apkInfoActivity, final PatchPreflight.Report report) {
         if (apkInfoActivity.isFinishing() || !isShowing()) {
             return;
@@ -232,7 +227,6 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         showPatchPreviewDetails(a, report.details);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m252lambda$previewPatch$3$comgmailheagooapkeditorPatchDialog(ApkInfoActivity apkInfoActivity, String message) {
         if (apkInfoActivity.isFinishing() || !isShowing()) {
             return;
@@ -240,7 +234,6 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         new AlertDialog.Builder(apkInfoActivity).setTitle("Не удалось проверить патч").setMessage(message).setPositiveButton("Понятно", (DialogInterface.OnClickListener) null).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void showPatchPreviewDetails(ApkInfoActivity apkInfoActivity, String text) {
         TextView view = new TextView(apkInfoActivity);
         view.setText(text.isEmpty() ? "Описание не содержит действий." : text);
@@ -410,7 +403,6 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m258lambda$shareLog$7$comgmailheagooapkeditorPatchDialog(final ApkInfoActivity apkInfoActivity, File source) {
         try {
             File dir = new File(apkInfoActivity.getCacheDir(), "patch-log-share");
@@ -457,7 +449,6 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m256lambda$shareLog$5$comgmailheagooapkeditorPatchDialog(ApkInfoActivity apkInfoActivity, Intent send) {
         findViewById(R.id.btn_patch_log_share).setEnabled(true);
         try {
@@ -467,7 +458,6 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m257lambda$shareLog$6$comgmailheagooapkeditorPatchDialog(ApkInfoActivity apkInfoActivity, Exception e) {
         findViewById(R.id.btn_patch_log_share).setEnabled(true);
         Toast.makeText((Context) apkInfoActivity, (CharSequence) apkInfoActivity.getString(R.string.patch_log_error, new Object[]{e.toString()}), 1).show();
@@ -720,7 +710,6 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         });
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m249lambda$patchFinished$11$comgmailheagooapkeditorPatchDialog(PatchLogBuffer completed, boolean failed, ApkInfoActivity apkInfoActivity) {
         renderLog(completed, true);
         this.curPatchTv.setEnabled(true);

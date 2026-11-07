@@ -186,7 +186,6 @@ public class TextEditNormalActivity extends TextEditBase implements View.OnClick
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onSaveInstanceState(Bundle outState) {
         String unsavedFilePath;
         super.onSaveInstanceState(outState);
@@ -211,7 +210,6 @@ public class TextEditNormalActivity extends TextEditBase implements View.OnClick
         super.onRestoreInstanceState(savedInstanceState);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onResume() {
         super.onResume();
         debug("enter onResume", new Object[0]);
@@ -227,7 +225,6 @@ public class TextEditNormalActivity extends TextEditBase implements View.OnClick
         debug("exit onResume", new Object[0]);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void showHideLineNumbers() {
         if (SettingEditorActivity.showLineNumbers(this)) {
             this.lineNumbers.setVisibility(0);
@@ -257,7 +254,6 @@ public class TextEditNormalActivity extends TextEditBase implements View.OnClick
         this.methodMenu.setOnClickListener(this);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initEditView() {
         this.editorInnerLayout = (LinearLayout) findViewById(R.id.editorLayout);
         this.editorOuterLayout = (FrameLayout) findViewById(R.id.center_layout);
@@ -493,7 +489,6 @@ public class TextEditNormalActivity extends TextEditBase implements View.OnClick
         super.onDestroy();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void changeLineNumbers(boolean updateLineCount, int nd) {
         if (!updateLineCount || nd != this.previousMaxDigits) {
             this.updateLineCount = updateLineCount;
@@ -567,7 +562,6 @@ public class TextEditNormalActivity extends TextEditBase implements View.OnClick
     protected synchronized void updateUndoRedoState() {
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void doReloadWithCheck(final int fileIdxOffset) {
         Document document = this.curDocument;
         boolean docChanged = document.changed();
@@ -595,7 +589,6 @@ public class TextEditNormalActivity extends TextEditBase implements View.OnClick
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void doCopySelectedText() {
         int start = this.textEditor.getSelectionStart();
         int end = this.textEditor.getSelectionEnd();
@@ -611,7 +604,6 @@ public class TextEditNormalActivity extends TextEditBase implements View.OnClick
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void doPaste() {
         String text = ClipboardUtil.getText(this);
         if (text == null) {
@@ -737,7 +729,6 @@ public class TextEditNormalActivity extends TextEditBase implements View.OnClick
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void executeSaveAction(final ICommonCallback callback) {
         ProcessingDialog dlg = new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() {
             @Override
@@ -921,7 +912,6 @@ public class TextEditNormalActivity extends TextEditBase implements View.OnClick
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void onBackPressed() {
         if (this.curDocument == null || !this.curDocument.changed()) {
             finish();
@@ -944,7 +934,6 @@ public class TextEditNormalActivity extends TextEditBase implements View.OnClick
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     public void operateLines(int from, int to) {
         String fmt;

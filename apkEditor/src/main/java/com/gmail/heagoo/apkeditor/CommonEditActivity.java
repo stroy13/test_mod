@@ -115,8 +115,6 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
         return bitmap;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* JADX WARN: Type inference failed for: r0v6, types: [com.gmail.heagoo.apkeditor.CommonEditActivity$1] */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(1);
@@ -163,7 +161,6 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
         initView();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void parseFinished(String errMessage) {
         if (errMessage == null) {
             this.manifestInfo = this.manifestParser.getManifestInfo();
@@ -208,7 +205,6 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initView() {
         this.apkIcon = (ImageView) findViewById(R.id.apk_icon);
         this.launcherIcon = (ImageView) findViewById(R.id.launcher_icon);
@@ -249,7 +245,6 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
         findViewById(R.id.btn_save).setOnClickListener(this);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     public void onClick(View v) {
         int id = v.getId();
@@ -273,7 +268,6 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
         output.close();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void enhancedPackageRename() {
         File fileDir = getFilesDir();
         String rootDirectory = fileDir.getAbsolutePath();
@@ -356,7 +350,6 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private String saveLauncher() {
         try {
             if (this.apkInfo.icon != null) {
@@ -375,7 +368,6 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void saveChanges() {
         boolean notModified;
         boolean notModified2;
@@ -488,7 +480,6 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private boolean checkPackageName() {
         if (this.newPackageName.equals("")) {
             Toast.makeText((Context) this, (CharSequence) "Invalid Package Name", 0).show();
@@ -508,7 +499,6 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
         return true;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void makeAPK(boolean bCheatPkgName, boolean refactorDex) {
         Map<String, String> fileReplaces = new HashMap<>();
         fileReplaces.put("AndroidManifest.xml", this.newManifestFile);

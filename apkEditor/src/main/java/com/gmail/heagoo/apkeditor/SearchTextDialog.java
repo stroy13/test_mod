@@ -47,7 +47,6 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
     private LinearLayout searchingLayout;
     private TextView titleTv;
 
-    /* JADX WARN: Multi-variable type inference failed */
     public SearchTextDialog(ApkInfoActivity apkInfoActivity, String searchFolder, List<String> filenameList, String keyword, boolean caseSensitive) {
         super(apkInfoActivity);
         this.matchedFiles = new ArrayList<>();
@@ -94,8 +93,6 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
         return true;
     }
 
-    /* JADX WARN: Type inference failed for: r3v3, types: [android.content.Context, com.gmail.heagoo.apkeditor.ApkInfoActivity] */
-    /* JADX WARN: Type inference failed for: r4v8, types: [android.content.Context, com.gmail.heagoo.apkeditor.ApkInfoActivity] */
     @Override // android.widget.ExpandableListView.OnChildClickListener
     public boolean onChildClick(ExpandableListView parent, View v, int groupPos, int childPos, long id) {
         Intent intent;
@@ -130,7 +127,6 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
         return false;
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public void showMatchedFiles() {
         String format = this.activityRef.get().getString(R.string.str_files_found);
         String text = String.format(format, Integer.valueOf(this.matchedFiles.size()), this.keyword);
@@ -157,7 +153,7 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
         AlertDialog.Builder comfirmDlg = new AlertDialog.Builder((Context) this.activityRef.get());
         String msg = String.format(this.activityRef.get().getString(R.string.sure_to_replace_all), this.keyword, strReplace);
         comfirmDlg.setMessage(msg);
-        comfirmDlg.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.SearchTextDialog.1
+        comfirmDlg.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override // android.content.DialogInterface.OnClickListener
             public void onClick(DialogInterface dialog, int whichButton) {
                 if (!"".equals(strReplace.trim())) {
@@ -166,7 +162,7 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
                 SearchTextDialog.this.doReplaceAll(strReplace);
             }
         });
-        comfirmDlg.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.SearchTextDialog.2
+        comfirmDlg.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
             @Override // android.content.DialogInterface.OnClickListener
             public void onClick(DialogInterface dialog, int whichButton) {
             }
@@ -175,7 +171,7 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
     }
 
     protected void doReplaceAll(final String strReplace) {
-        new ProcessingDialog((Activity) this.activityRef.get(), new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.SearchTextDialog.3
+        new ProcessingDialog((Activity) this.activityRef.get(), new ProcessingDialog.ProcessingInterface() {
             int failedNum = 0;
             String failMessage = "";
 
@@ -221,11 +217,11 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
             return true;
         }
         final int groupIdx = ExpandableListView.getPackedPositionGroup(id);
-        parent.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() { // from class: com.gmail.heagoo.apkeditor.SearchTextDialog.4
+        parent.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
             @Override // android.view.View.OnCreateContextMenuListener
             public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
                 MenuItem item1 = menu.add(0, 1, 0, R.string.delete);
-                item1.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.SearchTextDialog.4.1
+                item1.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
                     @Override // android.view.MenuItem.OnMenuItemClickListener
                     public boolean onMenuItemClick(MenuItem item) {
                         SearchTextDialog.this.deleteItem(groupIdx);
@@ -233,7 +229,7 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
                     }
                 });
                 MenuItem item2 = menu.add(0, 2, 0, R.string.extract);
-                item2.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.SearchTextDialog.4.2
+                item2.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
                     @Override // android.view.MenuItem.OnMenuItemClickListener
                     public boolean onMenuItemClick(MenuItem item) {
                         SearchTextDialog.this.extractItem(groupIdx);
@@ -241,7 +237,7 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
                     }
                 });
                 MenuItem item3 = menu.add(0, 3, 0, R.string.replace);
-                MenuItem.OnMenuItemClickListener listener = new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.SearchTextDialog.4.3
+                MenuItem.OnMenuItemClickListener listener = new MenuItem.OnMenuItemClickListener() {
                     @Override // android.view.MenuItem.OnMenuItemClickListener
                     public boolean onMenuItemClick(MenuItem item) {
                         SearchTextDialog.this.replaceItem(groupIdx);
@@ -254,7 +250,6 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
         return false;
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public void deleteItem(int position) {
         ResListAdapter resManager = this.activityRef.get().getResListAdapter();
         String filepath = this.matchedFiles.get(position);
@@ -265,7 +260,6 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
         this.listAdapter.removeItem(position);
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public void extractItem(int position) {
         if (position < this.matchedFiles.size()) {
             String filepath = this.matchedFiles.get(position);
@@ -273,11 +267,10 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
         }
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public void replaceItem(final int position) {
         if (position < this.matchedFiles.size()) {
             String filepath = this.matchedFiles.get(position);
-            this.activityRef.get().replaceFile(filepath, new SomethingChangedListener() { // from class: com.gmail.heagoo.apkeditor.SearchTextDialog.5
+            this.activityRef.get().replaceFile(filepath, new SomethingChangedListener() {
                 @Override // com.gmail.heagoo.apkeditor.SomethingChangedListener
                 public void somethingChanged() {
                     SearchTextDialog.this.listView.collapseGroup(position);
@@ -302,13 +295,6 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
             this.caseSensitive = caseSensitive;
         }
 
-        /* JADX WARN: Code restructure failed: missing block: B:25:0x004d, code lost:
-        
-            if (0 == 0) goto L29;
-         */
-        /*
-            Code decompiled incorrectly, please refer to instructions dump.
-        */
         private boolean fileContainsKeyword(File file) {
             boolean ret = false;
             BufferedReader br = null;
@@ -367,7 +353,6 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
             return name.endsWith(".xml") || name.endsWith(".smali") || name.endsWith(".txt");
         }
 
-        /* JADX INFO: Access modifiers changed from: protected */
         @Override // android.os.AsyncTask
         public List<String> doInBackground(Object... params) {
             File root = new File(this.baseFolder);
@@ -384,7 +369,6 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
             return SearchTextDialog.this.matchedFiles;
         }
 
-        /* JADX INFO: Access modifiers changed from: protected */
         @Override // android.os.AsyncTask
         public void onPostExecute(List<String> result) {
             SearchTextDialog.this.showMatchedFiles();
@@ -402,16 +386,7 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
             this.groupPosition = groupPosition;
         }
 
-        /* JADX INFO: Access modifiers changed from: protected */
-        /* JADX WARN: Can't rename method to resolve collision */
-        /* JADX WARN: Code restructure failed: missing block: B:25:0x006a, code lost:
-        
-            if (r2 == null) goto L27;
-         */
         @Override // android.os.AsyncTask
-        /*
-            Code decompiled incorrectly, please refer to instructions dump.
-        */
         public TxtSearchResult doInBackground(Object... params) {
             int position;
             TxtSearchResult result = new TxtSearchResult();
@@ -452,7 +427,6 @@ public class SearchTextDialog extends Dialog implements ExpandableListView.OnGro
             return result;
         }
 
-        /* JADX INFO: Access modifiers changed from: protected */
         @Override // android.os.AsyncTask
         public void onPostExecute(TxtSearchResult result) {
             if (result.matchList != null) {

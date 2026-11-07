@@ -16,7 +16,7 @@ final class FastClassPaths {
     }
 
     FastClassPaths(File root) {
-        this(root, new CaseProbe() { // from class: com.gmail.heagoo.apkeditor.pro.FastClassPaths$$ExternalSyntheticLambda0
+        this(root, new CaseProbe() {
             @Override // com.gmail.heagoo.apkeditor.pro.FastClassPaths.CaseProbe
             public final boolean isSensitive(File file) throws IOException {
                 return PathUtil.testCaseSensitivity(file);

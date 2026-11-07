@@ -242,7 +242,6 @@ class MatchedTextListAdapter extends BaseExpandableListAdapter implements View.O
         }
     }
 
-    /* JADX WARN: Type inference failed for: r3v12, types: [android.content.Context, com.gmail.heagoo.apkeditor.ApkInfoActivity] */
     @Override
     public void onClick(View v) {
         Intent intent;

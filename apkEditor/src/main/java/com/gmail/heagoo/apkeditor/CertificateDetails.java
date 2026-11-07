@@ -33,11 +33,6 @@ public final class CertificateDetails {
         return Base64.getMimeEncoder(64, new byte[]{10}).encodeToString(data);
     }
 
-    /* JADX WARN: Removed duplicated region for block: B:11:0x0120 A[LOOP:0: B:9:0x011d->B:11:0x0120, LOOP_END] */
-    /* JADX WARN: Removed duplicated region for block: B:7:0x00e0  */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     public static String describe(X509Certificate c) throws Exception {
         BigInteger p;
         int i = 0;

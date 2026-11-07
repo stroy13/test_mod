@@ -34,21 +34,6 @@ public class SmaliNoticeDialog extends Dialog implements View.OnClickListener {
         initView();
     }
 
-    /* JADX WARN: Code restructure failed: missing block: B:14:0x0050, code lost:
-    
-        r0.close();
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:26:0x004e, code lost:
-    
-        if (r0 == null) goto L16;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:9:0x0047, code lost:
-    
-        if (r0 != null) goto L26;
-     */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     private void initView() {
         InputStream in = null;
         StringBuilder sb = new StringBuilder();
@@ -66,7 +51,7 @@ public class SmaliNoticeDialog extends Dialog implements View.OnClickListener {
             TextView tv = (TextView) this.view.findViewById(R.id.content);
             tv.setText(this.context.getString(R.string.smali_notice_intro) + "\n\n" + sb.toString());
             Button originalBtn = (Button) this.view.findViewById(R.id.original_button);
-            originalBtn.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.SmaliNoticeDialog$$ExternalSyntheticLambda0
+            originalBtn.setOnClickListener(new View.OnClickListener() {
                 @Override // android.view.View.OnClickListener
                 public final void onClick(View view) {
                     SmaliNoticeDialog.this.m295lambda$initView$0$comgmailheagooapkeditorSmaliNoticeDialog(view);
@@ -85,8 +70,7 @@ public class SmaliNoticeDialog extends Dialog implements View.OnClickListener {
         }
     }
 
-    /* renamed from: lambda$initView$0$com-gmail-heagoo-apkeditor-SmaliNoticeDialog, reason: not valid java name */
-    /* synthetic */ void m295lambda$initView$0$comgmailheagooapkeditorSmaliNoticeDialog(View v) {
+    void m295lambda$initView$0$comgmailheagooapkeditorSmaliNoticeDialog(View v) {
         try {
             InputStream source = this.context.getAssets().open("smali-NOTICE");
             try {

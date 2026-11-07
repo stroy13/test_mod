@@ -100,7 +100,6 @@ public class SmaliMethodWindowHelper {
             }
         }
 
-        /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
         @Override
         public Boolean doInBackground(Void... params) {
             BufferedReader br = new BufferedReader(new StringReader(this.content));

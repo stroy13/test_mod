@@ -197,7 +197,7 @@ public final class ComparisonCore {
         if (children == null) {
             throw new IOException("Нет доступа к папке: " + dir);
         }
-        Arrays.sort(children, Comparator.comparing(new Function() { // from class: com.gmail.heagoo.apkeditor.ComparisonCore$$ExternalSyntheticLambda0
+        Arrays.sort(children, Comparator.comparing(new Function() {
             @Override // java.util.function.Function
             public final Object apply(Object obj) {
                 return ((File) obj).getName();
@@ -334,7 +334,7 @@ public final class ComparisonCore {
                     throw new IOException("Запись не найдена: " + entry.name);
                 }
                 InputStream in = z.getInputStream(e);
-                return new FilterInputStream(in) { // from class: com.gmail.heagoo.apkeditor.ComparisonCore.1
+                return new FilterInputStream(in) {
                     @Override // java.io.FilterInputStream, java.io.InputStream, java.io.Closeable, java.lang.AutoCloseable
                     public void close() throws IOException {
                         try {
@@ -413,80 +413,6 @@ public final class ComparisonCore {
         return prev;
     }
 
-    /* JADX WARN: Code restructure failed: missing block: B:18:0x0047, code lost:
-    
-        if (r11 >= r12) goto L35;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:20:0x004c, code lost:
-    
-        if ((r2 - r1) != 1) goto L28;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:21:0x004e, code lost:
-    
-        r0 = r11;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:22:0x004f, code lost:
-    
-        if (r0 >= r12) goto L48;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:24:0x0059, code lost:
-    
-        if (r18[r1].equals(r21[r0]) == false) goto L26;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:25:0x0063, code lost:
-    
-        r0 = r0 + 1;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:27:0x005b, code lost:
-    
-        r6.add(new int[]{r1, r0});
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:28:0x0066, code lost:
-    
-        r9 = r2;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:37:0x0069, code lost:
-    
-        r9 = (r1 + r2) / 2;
-        r0 = scores(r18, r1, r9, r21, r11, r12, false);
-        r9 = r2;
-        r2 = scores(r18, r9, r9, r21, r11, r12, true);
-        r7 = r12 - r11;
-        r5 = 0;
-        r10 = -1;
-        r13 = 0;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:38:0x0085, code lost:
-    
-        if (r5 > r7) goto L50;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:39:0x0087, code lost:
-    
-        r3 = r0[r5] + r2[r7 - r5];
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:40:0x008e, code lost:
-    
-        if (r3 <= r10) goto L52;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:41:0x0090, code lost:
-    
-        r10 = r5;
-        r13 = r10;
-        r10 = r3;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:43:0x0094, code lost:
-    
-        r5 = r5 + 1;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:46:0x0097, code lost:
-    
-        matches(r18, r1, r9, r21, r11, r11 + r13, r6);
-        r6 = r24;
-        matches(r18, r9, r9, r21, r11 + r13, r12, r6);
-     */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     private static void matches(String[] a, int as, int ae, String[] b, int bs, int be, List<int[]> out) {
         int i;
         List<int[]> list = out;

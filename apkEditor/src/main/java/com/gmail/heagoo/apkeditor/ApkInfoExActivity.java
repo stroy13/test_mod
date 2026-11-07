@@ -57,7 +57,6 @@ public class ApkInfoExActivity extends ApkInfoActivity {
     private View menuItem_select;
     private LinearLayout menuLayout;
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -120,7 +119,6 @@ public class ApkInfoExActivity extends ApkInfoActivity {
         this.menuLayout.addView(this.menuItem_details, param);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private View createVerticalLine() {
         View line = new View(this);
         line.setLayoutParams(new LinearLayout.LayoutParams(1, -1));
@@ -128,7 +126,6 @@ public class ApkInfoExActivity extends ApkInfoActivity {
         return line;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private View createMenuItem(int drawable, int drawable2, int title) {
         int resId = R.layout.item_res_menu;
         View view = LayoutInflater.from(this).inflate(resId, (ViewGroup) null);
