@@ -67,138 +67,6 @@ public final class DecodedApkDiff {
         }
     }
 
-    /* JADX WARN: Code restructure failed: missing block: B:100:0x00c1, code lost:
-    
-        r0 = "smali_" + r11.substring(0, r11.length() - 4);
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:102:0x0161, code lost:
-    
-        r0 = th;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:105:0x00b3, code lost:
-    
-        r13.close();
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:45:0x0175, code lost:
-    
-        r0 = move-exception;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:46:0x0176, code lost:
-    
-        r1 = r0;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:47:0x017f, code lost:
-    
-        if (r13 != null) goto L99;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:49:0x0181, code lost:
-    
-        r13.close();
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:51:?, code lost:
-    
-        throw r1;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:52:0x0185, code lost:
-    
-        r0 = move-exception;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:53:0x0186, code lost:
-    
-        r1.addSuppressed(r0);
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:54:0x0189, code lost:
-    
-        throw r1;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:55:0x018a, code lost:
-    
-        r0 = th;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:56:0x0192, code lost:
-    
-        r12.delete();
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:57:0x0195, code lost:
-    
-        throw r0;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:58:?, code lost:
-    
-        throw r1;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:61:0x00a4, code lost:
-    
-        throw new java.io.IOException("DEX превышает лимит 512 МБ");
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:64:0x00a9, code lost:
-    
-        r2 = r4;
-        r20 = r5;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:66:0x00ae, code lost:
-    
-        r1.close();
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:67:0x00b1, code lost:
-    
-        if (r13 == null) goto L97;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:70:0x00bc, code lost:
-    
-        if (r11.equals("classes.dex") == false) goto L40;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:71:0x00be, code lost:
-    
-        r0 = "smali";
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:72:0x00df, code lost:
-    
-        r1 = r0;
-        r0 = java.lang.Class.forName("com.gmail.heagoo.apkeditor.pro.DexDecoder").getConstructor(r19).newInstance(r12.getAbsolutePath());
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:78:0x0113, code lost:
-    
-        r0.getClass().getMethod("dex2smali", r19).invoke(r0, new java.io.File(r24, r1).getAbsolutePath());
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:81:0x0121, code lost:
-    
-        r12.delete();
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:82:0x0124, code lost:
-    
-        r4 = r2;
-        r0 = r19;
-        r5 = r20;
-        r2 = r21;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:85:0x01b8, code lost:
-    
-        r0 = move-exception;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:86:0x01b9, code lost:
-    
-        r1 = r0;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:94:0x012f, code lost:
-    
-        r0 = e;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:95:0x0134, code lost:
-    
-        r17 = r0;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:96:0x0160, code lost:
-    
-        throw new java.io.IOException("DEX " + r11 + ": " + r17.getCause(), r17.getCause());
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:98:0x0131, code lost:
-    
-        r0 = e;
-     */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     static void decode(Activity activity, File apk, File root, File scratch) throws Exception {
         Throwable th;
         byte[] buf = new byte[32768];
@@ -206,7 +74,7 @@ public final class DecodedApkDiff {
         validateArchive(apk);
         final boolean[] success = {false};
         final String[] error = {null};
-        ApkParseConsumer consumer = new ApkParseConsumer() { // from class: com.gmail.heagoo.apkeditor.DecodedApkDiff.1
+        ApkParseConsumer consumer = new ApkParseConsumer() {
             @Override // com.gmail.heagoo.apkeditor.ApkParseConsumer
             public void decodeFailed(String e) {
                 error[0] = e;
@@ -312,7 +180,7 @@ public final class DecodedApkDiff {
         if (files == null) {
             throw new IOException("Нет доступа: " + dir);
         }
-        Arrays.sort(files, Comparator.comparing(new Function() { // from class: com.gmail.heagoo.apkeditor.DecodedApkDiff$$ExternalSyntheticLambda0
+        Arrays.sort(files, Comparator.comparing(new Function() {
             @Override // java.util.function.Function
             public final Object apply(Object obj) {
                 return ((File) obj).getName();

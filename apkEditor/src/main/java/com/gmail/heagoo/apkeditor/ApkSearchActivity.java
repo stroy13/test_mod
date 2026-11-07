@@ -26,7 +26,6 @@ public class ApkSearchActivity extends CustomizedLangActivity implements Adapter
     private View searchingLayout;
     private TextView titleTV;
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(1);
@@ -41,7 +40,6 @@ public class ApkSearchActivity extends CustomizedLangActivity implements Adapter
         new ApkSearchThread().start();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initView() {
         this.titleTV = (TextView) findViewById(R.id.title);
         this.searchingLayout = findViewById(R.id.searching_layout);
@@ -80,7 +78,6 @@ public class ApkSearchActivity extends CustomizedLangActivity implements Adapter
         });
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
         if (position < this.apkFileList.size()) {
@@ -94,12 +91,10 @@ public class ApkSearchActivity extends CustomizedLangActivity implements Adapter
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void startFullEditActivity(String filePath) {
         UserAppActivity.startFullEditActivity(this, filePath);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     public void editModeSelected(int mode, String extraStr) {
         Intent intent = null;

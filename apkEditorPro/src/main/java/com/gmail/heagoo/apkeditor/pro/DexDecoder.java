@@ -14,9 +14,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.BiConsumer;
 
 /**
- * DEX decoder used by the editor. The listener restoration matches v175:
- * FastDexDisassembler reports completed classes, rather than a timer or file polling.
- * The original single-argument entry point remains available to comparison tools.
+ * DEX decoder used by the editor. FastDexDisassembler reports completed classes
+ * through the progress listener, rather than a timer or file polling.
+ * The single-argument entry point remains available to comparison tools.
  */
 public class DexDecoder {
     private final String dexFilePath;

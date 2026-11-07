@@ -35,7 +35,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 /* loaded from: /tmp/apkx/classes5.dex */
 public final class ProjectAnalysis {
-    private static final BooleanSupplier NEVER = new BooleanSupplier() { // from class: com.gmail.heagoo.apkeditor.ProjectAnalysis$$ExternalSyntheticLambda0
+    private static final BooleanSupplier NEVER = new BooleanSupplier() {
         @Override // java.util.function.BooleanSupplier
         public final boolean getAsBoolean() {
             return ProjectAnalysis.lambda$static$0();
@@ -82,7 +82,7 @@ public final class ProjectAnalysis {
         }
     }
 
-    static /* synthetic */ boolean lambda$static$0() {
+    static boolean lambda$static$0() {
         return false;
     }
 
@@ -98,9 +98,6 @@ public final class ProjectAnalysis {
         }
     }
 
-    /* JADX WARN: Type inference failed for: r9v0 */
-    /* JADX WARN: Type inference failed for: r9v1, types: [boolean, int] */
-    /* JADX WARN: Type inference failed for: r9v7 */
     private static void walk(File root, List<File> out, Report report, Progress listener, BooleanSupplier cancelled) throws IOException {
         List<File> list;
         boolean z;
@@ -116,7 +113,7 @@ public final class ProjectAnalysis {
             if (files == null) {
                 report.skipped++;
             } else {
-                Arrays.sort(files, Comparator.comparing(new Function() { // from class: com.gmail.heagoo.apkeditor.ProjectAnalysis$$ExternalSyntheticLambda1
+                Arrays.sort(files, Comparator.comparing(new Function() {
                     @Override // java.util.function.Function
                     public final Object apply(Object obj) {
                         return ((File) obj).getName();
@@ -179,10 +176,6 @@ public final class ProjectAnalysis {
         return resourceUses(root, id, null, NEVER);
     }
 
-    /* JADX WARN: Removed duplicated region for block: B:68:0x01a9 A[EXC_TOP_SPLITTER, SYNTHETIC] */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     public static Report resourceUses(File root, String id, Progress listener, BooleanSupplier cancelled) throws Exception {
         String[] v;
         String[] v2;
@@ -323,10 +316,6 @@ public final class ProjectAnalysis {
         return r;
     }
 
-    /* JADX WARN: Removed duplicated region for block: B:50:0x0208 A[EXC_TOP_SPLITTER, SYNTHETIC] */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     private static Set<String> resourceIndex(File root, List<File> files, Report report, Progress listener, BooleanSupplier cancelled) throws IOException {
         Iterator<File> it;
         int done;
@@ -533,40 +522,6 @@ public final class ProjectAnalysis {
         return diagnose(root, null, NEVER);
     }
 
-    /* JADX WARN: Can't wrap try/catch for region: R(6:34|(5:35|36|37|38|39)|(2:41|(1:43)(20:57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|(4:73|74|75|(9:77|78|79|(2:108|109)|81|82|(7:85|86|87|88|(2:90|91)(1:93)|92|83)|106|107)(1:116))|117|(1:119)|46))(1:147)|44|45|46) */
-    /* JADX WARN: Code restructure failed: missing block: B:50:0x02af, code lost:
-    
-        r0 = move-exception;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:51:?, code lost:
-    
-        throw r0;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:53:0x02ad, code lost:
-    
-        r0 = e;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:55:0x02ab, code lost:
-    
-        r0 = e;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:56:0x02cb, code lost:
-    
-        r0.add(r6, 0, "XML не проверен: " + r0.getMessage());
-        r0.skipped++;
-        r0.checked--;
-        r0.xmlChecked--;
-     */
-    /* JADX WARN: Incorrect condition in loop: B:7:0x003f */
-    /* JADX WARN: Removed duplicated region for block: B:105:? A[Catch: Exception -> 0x02ab, SAXParseException -> 0x02ad, InterruptedIOException -> 0x02af, SYNTHETIC, TRY_LEAVE, TryCatch #38 {InterruptedIOException -> 0x02af, SAXParseException -> 0x02ad, Exception -> 0x02ab, blocks: (B:45:0x028f, B:104:0x026a, B:103:0x0267, B:119:0x0252, B:132:0x0288, B:131:0x0285), top: B:44:0x028f }] */
-    /* JADX WARN: Removed duplicated region for block: B:191:0x03c2 A[Catch: Exception -> 0x0417, LinkageError -> 0x043e, InvocationTargetException -> 0x0449, TRY_LEAVE, TryCatch #30 {Exception -> 0x0417, blocks: (B:170:0x0347, B:172:0x034e, B:174:0x035c, B:178:0x036a, B:184:0x037e, B:189:0x03a8, B:191:0x03c2, B:197:0x03e9, B:200:0x0400, B:202:0x03fa, B:212:0x0390, B:219:0x038d, B:176:0x0391), top: B:169:0x0347 }] */
-    /* JADX WARN: Removed duplicated region for block: B:29:0x00c4  */
-    /* JADX WARN: Removed duplicated region for block: B:98:0x0262 A[EXC_TOP_SPLITTER, SYNTHETIC] */
-    /* JADX WARN: Unreachable blocks removed: 1, instructions: 1 */
-    /* JADX WARN: Unreachable blocks removed: 2, instructions: 2 */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     public static Report diagnose(File root, Progress listener, BooleanSupplier cancelled) throws Exception {
         Exception e = null;
         boolean z;
@@ -697,13 +652,13 @@ public final class ProjectAnalysis {
                             } catch (Exception e11) {
                             }
                             XMLReader xml = fac.newSAXParser().getXMLReader();
-                            xml.setEntityResolver(new EntityResolver() { // from class: com.gmail.heagoo.apkeditor.ProjectAnalysis$$ExternalSyntheticLambda2
+                            xml.setEntityResolver(new EntityResolver() {
                                 @Override // org.xml.sax.EntityResolver
                                 public final InputSource resolveEntity(String str, String str2) throws IOException, SAXException {
                                     return ProjectAnalysis.lambda$diagnose$1(str, str2);
                                 }
                             });
-                            xml.setErrorHandler(new DefaultHandler() { // from class: com.gmail.heagoo.apkeditor.ProjectAnalysis.1
+                            xml.setErrorHandler(new DefaultHandler() {
                                 @Override // org.xml.sax.helpers.DefaultHandler, org.xml.sax.ErrorHandler
                                 public void error(SAXParseException e12) throws SAXException {
                                     throw e12;
@@ -1025,7 +980,7 @@ public final class ProjectAnalysis {
         return r;
     }
 
-    static /* synthetic */ InputSource lambda$diagnose$1(String publicId, String systemId) throws IOException, SAXException {
+    static InputSource lambda$diagnose$1(String publicId, String systemId) throws IOException, SAXException {
         return new InputSource(new StringReader(""));
     }
 

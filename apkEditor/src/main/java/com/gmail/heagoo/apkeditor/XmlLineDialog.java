@@ -35,7 +35,6 @@ public class XmlLineDialog extends Dialog implements View.OnClickListener {
         void xmlLineChanged(int i, String str);
     }
 
-    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
     public XmlLineDialog(Context ctx, IXmlLineChanged changeListener, int lineIndex, String lineContent) {
         super(ctx);
         String value;

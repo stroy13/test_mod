@@ -75,7 +75,6 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         return true;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ToolUpdateChecker.check(this, false, (Runnable) null);
@@ -95,7 +94,6 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         initFileWithPermissionCheck();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void setupLanguage() {
         String languageToLoad = PreferenceManager.getDefaultSharedPreferences(this).getString("Language", "");
         if (!languageToLoad.equals("")) {
@@ -108,7 +106,6 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void onResume() {
         super.onResume();
         if (StorageAccess.has(this)) {
@@ -121,7 +118,6 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         super.onDestroy();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void checkVersion() {
         String pkgName = getPackageName();
         if (pkgName.charAt(pkgName.length() - 1) == 'o') {
@@ -132,7 +128,6 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void setupSlidingMenu() {
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
@@ -166,12 +161,10 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         this.mDrawerLayout.openDrawer(8388611);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m230x5dd5d71(View v) {
         startActivity(new Intent((Context) this, (Class<?>) SettingActivity.class));
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m231x927d8872(View v) {
         new AboutDialog(this).show();
     }
@@ -247,30 +240,25 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         });
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m221lambda$initUI$3$comgmailheagooapkeditorMainActivity(View v) {
         Intent intent = new Intent((Context) this, (Class<?>) FileListActivity.class);
         startActivity(intent);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m222lambda$initUI$4$comgmailheagooapkeditorMainActivity(View v) {
         Intent intent = new Intent((Context) this, (Class<?>) UserAppActivity.class);
         startActivity(intent);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void lambda$initUI$5(View v) {
         Intent intent = new Intent((Context) this, (Class<?>) SettingActivity.class);
         startActivity(intent);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m223lambda$initUI$8$comgmailheagooapkeditorMainActivity(View v) {
         startActivity(new Intent((Context) this, (Class<?>) OdexPatchActivity.class));
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m224lambda$initUI$9$comgmailheagooapkeditorMainActivity(View v) {
         if (System.currentTimeMillis() < 3600000) {
             test();
@@ -278,13 +266,11 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         new ProcessingDialog(this, this, -1).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void lambda$initUI$12(View v) {
         Intent helpIntent = new Intent((Context) this, (Class<?>) ProjectListActivity.class);
         startActivity(helpIntent);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m220lambda$initUI$13$comgmailheagooapkeditorMainActivity(View v) {
         Intent helpIntent = new Intent((Context) this, (Class<?>) HelpActivity.class);
         startActivity(helpIntent);
@@ -306,7 +292,6 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         return v.resourceId;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void renderRecentFiles() {
         LinearLayout linearLayout = (LinearLayout) findViewById(R.id.home_recent_container);
         View empty = findViewById(R.id.home_recent_empty_panel);
@@ -393,7 +378,6 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         openRecent(entry);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     boolean m228x8e9223d7(final RecentHistory.Entry entry, View v) {
         new AlertDialog.Builder(this).setMessage(R.string.home_recent_remove).setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton(R.string.home_recent_remove_action, new DialogInterface.OnClickListener() {
             @Override
@@ -404,13 +388,11 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         return true;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m227x1f1f8d6(RecentHistory.Entry entry, DialogInterface d, int w) {
         RecentFiles.remove(this, entry);
         renderRecentFiles();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void openRecent(RecentHistory.Entry entry) {
         String path = entry.path;
         if (!entry.packageName.isEmpty()) {
@@ -436,7 +418,6 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     void m225lambda$openRecent$17$comgmailheagooapkeditorMainActivity(int mode, String extra) {
         Intent intent;
         if (mode == 0) {
@@ -474,7 +455,6 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         return true;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public boolean onOptionsItemSelected(MenuItem item) {
         if (this.mDrawerToggle != null && this.mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
@@ -532,7 +512,6 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void initFileWithPermissionCheck() {
         if (!StorageAccess.has(this)) {
             StorageAccess.request(this, this.WRITE_EXTERNAL_STORAGE_REQUEST_CODE);
@@ -544,7 +523,6 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
     private void initFile() {
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
         switch ((int) id) {
@@ -570,7 +548,6 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         this.mDrawerLayout.closeDrawer(this.mDrawerList);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     public void process() throws Exception {
         try {

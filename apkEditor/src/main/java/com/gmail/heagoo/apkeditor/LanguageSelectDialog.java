@@ -25,7 +25,6 @@ public class LanguageSelectDialog extends Dialog implements View.OnClickListener
     private boolean isAutoTranslate;
     private String[] languages;
 
-    /* JADX WARN: Multi-variable type inference failed */
     public LanguageSelectDialog(ApkInfoActivity apkInfoActivity, String[] _lang, String[] _codes) {
         super(apkInfoActivity);
         requestWindowFeature(1);
@@ -122,7 +121,6 @@ public class LanguageSelectDialog extends Dialog implements View.OnClickListener
         }
     }
 
-    /* JADX WARN: Type inference failed for: r0v2, types: [android.content.Context, com.gmail.heagoo.apkeditor.ApkInfoActivity] */
     private boolean addLanguage(String strCode) {
         ApkInfoActivity apkInfoActivity = this.activityRef.get();
         String error = apkInfoActivity.addLanguageRetError(strCode);

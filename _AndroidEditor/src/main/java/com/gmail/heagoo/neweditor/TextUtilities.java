@@ -337,16 +337,7 @@ public class TextUtilities {
         }
     }
 
-    /* JADX WARN: Code restructure failed: missing block: B:32:0x0046, code lost:
-    
-        continue;
-     */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-        To view partially-correct add '--show-bad-code' argument
-    */
     public static int getStringCase(CharSequence str) {
-        // Restored manually in recovery stage 3 from the --show-bad-code dump.
         if (str.length() == 0) {
             return 0;
         }

@@ -156,7 +156,6 @@ public final class PatchPreflight {
         return s.length() > 500 ? s.substring(0, 500) + "…" : s;
     }
 
-    /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
     private static String label(String type) {
         char c;
         switch (type.hashCode()) {
@@ -274,21 +273,6 @@ public final class PatchPreflight {
         return r.summary + "\n\n" + r.details;
     }
 
-    /* JADX WARN: Can't wrap try/catch for region: R(11:(3:99|100|(14:102|103|(4:174|175|176|(2:178|179))(1:105)|(1:109)|110|111|(4:113|(3:115|116|(2:167|168))(1:169)|118|(2:161|(1:163))(2:124|(2:130|(1:132))))(1:170)|133|134|(5:136|137|138|(1:140)|141)|158|150|(2:152|153)(1:155)|154))(1:187)|110|111|(0)(0)|133|134|(0)|158|150|(0)(0)|154) */
-    /* JADX WARN: Code restructure failed: missing block: B:160:0x0338, code lost:
-    
-        r0 = e;
-     */
-    /* JADX WARN: Removed duplicated region for block: B:105:0x026e  */
-    /* JADX WARN: Removed duplicated region for block: B:113:0x02a1 A[Catch: all -> 0x0390, TryCatch #19 {all -> 0x0390, blocks: (B:111:0x029d, B:113:0x02a1, B:115:0x02aa), top: B:110:0x029d }] */
-    /* JADX WARN: Removed duplicated region for block: B:136:0x031e  */
-    /* JADX WARN: Removed duplicated region for block: B:152:0x0364 A[Catch: all -> 0x0379, TRY_LEAVE, TryCatch #12 {all -> 0x0379, blocks: (B:168:0x02b7, B:118:0x02bf, B:120:0x02c7, B:122:0x02cf, B:124:0x02d7, B:126:0x02dd, B:128:0x02e5, B:130:0x02f4, B:132:0x02ff, B:134:0x0318, B:150:0x035b, B:152:0x0364, B:161:0x0305, B:163:0x0310), top: B:167:0x02b7 }] */
-    /* JADX WARN: Removed duplicated region for block: B:155:0x0369 A[SYNTHETIC] */
-    /* JADX WARN: Removed duplicated region for block: B:170:0x0316  */
-    /* JADX WARN: Removed duplicated region for block: B:174:0x0241 A[EXC_TOP_SPLITTER, SYNTHETIC] */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     public static Report inspectReport(Context context, IPatchContext base, File file) throws Exception {
         ZipFile zip = null;
         Throwable th = null;

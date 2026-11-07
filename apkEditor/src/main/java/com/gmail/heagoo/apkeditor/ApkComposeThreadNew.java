@@ -70,24 +70,7 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
         this.bSignApk = bSignApk;
     }
 
-    /* JADX WARN: Code restructure failed: missing block: B:36:0x009a, code lost:
-    
-        if (composeResource() == false) goto L66;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:51:0x011a, code lost:
-    
-        if (r6 == false) goto L47;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:69:0x0152, code lost:
-    
-        if (signApk() == false) goto L66;
-     */
-    /* JADX WARN: Removed duplicated region for block: B:22:0x0199  */
-    /* JADX WARN: Removed duplicated region for block: B:29:? A[RETURN, SYNTHETIC] */
     @Override // java.lang.Thread, java.lang.Runnable
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     public void run() {
         System.currentTimeMillis();
         File buildDir = new File(this.decodedFilePath + "/build");
@@ -265,7 +248,7 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
 
     private void cleanup() {
         try {
-            ProjectCleanup.deleteAll(new File(SDCard.getEditorDirectory(), "tmp"), new BooleanSupplier() { // from class: com.gmail.heagoo.apkeditor.ApkComposeThreadNew$$ExternalSyntheticLambda0
+            ProjectCleanup.deleteAll(new File(SDCard.getEditorDirectory(), "tmp"), new BooleanSupplier() {
                 @Override // java.util.function.BooleanSupplier
                 public final boolean getAsBoolean() {
                     return ApkComposeThreadNew.lambda$cleanup$0();
@@ -275,7 +258,7 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
         }
     }
 
-    static /* synthetic */ boolean lambda$cleanup$0() {
+    static boolean lambda$cleanup$0() {
         return false;
     }
 
@@ -284,7 +267,7 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
         Map<String, String> extraReplaces = new HashMap<>();
         if (this.extraMaker != null) {
             try {
-                this.extraMaker.prepareReplaces(this.ctx, this.resourceApkPath, extraReplaces, new IDescriptionUpdate() { // from class: com.gmail.heagoo.apkeditor.ApkComposeThreadNew.1
+                this.extraMaker.prepareReplaces(this.ctx, this.resourceApkPath, extraReplaces, new IDescriptionUpdate() {
                     public void updateDescription(String strDesc) {
                     }
                 });

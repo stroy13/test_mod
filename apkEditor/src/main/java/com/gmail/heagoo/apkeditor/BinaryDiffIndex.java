@@ -34,13 +34,6 @@ public final class BinaryDiffIndex {
         }
     }
 
-    /* JADX WARN: Code restructure failed: missing block: B:86:0x002e, code lost:
-    
-        throw new java.io.InterruptedIOException("Сравнение отменено");
-     */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     public static long build(InputStream first, InputStream second, File index, BooleanSupplier cancelled) throws IOException {
         File file;
         Throwable th;

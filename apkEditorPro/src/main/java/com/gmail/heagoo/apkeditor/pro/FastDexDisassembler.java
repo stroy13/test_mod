@@ -27,10 +27,8 @@ import java.util.function.BiConsumer;
 /**
  * Parallel DEX disassembly with real completed-class progress.
  *
- * <p>The recovered v175 source contained a decompiler-reconstructed worker-submit
- * loop that unconditionally threw "DEX disassembly interrupted" on the normal
- * path. This implementation keeps the public API and 128-class progress batching,
- * but uses a bounded, explicit executor lifecycle so successful jobs finish.
+ * <p>Keeps the public API and 128-class progress batching and uses a bounded,
+ * explicit executor lifecycle so successful jobs finish cleanly.
  */
 public final class FastDexDisassembler {
     public static int workerCount() {

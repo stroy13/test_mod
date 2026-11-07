@@ -46,7 +46,6 @@ public class AxmlEditActivity extends CustomizedLangActivity implements IDirChan
     private MyThread thread;
     private ZipHelper zipHelper;
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(1);
@@ -78,7 +77,6 @@ public class AxmlEditActivity extends CustomizedLangActivity implements IDirChan
         super.onDestroy();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == 0 && resultCode == 1) {
             String filePath = data.getStringExtra("xmlPath");
@@ -99,7 +97,6 @@ public class AxmlEditActivity extends CustomizedLangActivity implements IDirChan
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public String getBinaryPath() {
         ApkComposeThread tmp = new ApkComposeThread(this, null, null, null);
         tmp.prepare();
@@ -113,7 +110,6 @@ public class AxmlEditActivity extends CustomizedLangActivity implements IDirChan
         super.onSaveInstanceState(outState);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void dataReady(boolean succeed) {
         findViewById(R.id.progress_bar).setVisibility(8);
         if (succeed) {
@@ -125,7 +121,6 @@ public class AxmlEditActivity extends CustomizedLangActivity implements IDirChan
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initCenterView() {
         this.filesAdapter = new ZipFileListAdapter(this, this, this.zipHelper, true);
         this.fileListView.setAdapter((ListAdapter) this.filesAdapter);
@@ -176,7 +171,6 @@ public class AxmlEditActivity extends CustomizedLangActivity implements IDirChan
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void makeAPK() {
         Map<String, String> fileReplaces = this.filesAdapter.getReplaces();
         Intent intent = new Intent((Context) this, (Class<?>) ApkCreateActivity.class);

@@ -11,7 +11,7 @@ import org.junit.Test;
  * Регрессия на краш ru.apkeditor.plus:
  * java.lang.OutOfMemoryError в ManifestDisplayFormatter.plan(...):81.
  *
- * <p>Декомпилированный внутренний цикл был {@code while (true)} и увеличивал индекс
+ * <p>Внутренний цикл был {@code while (true)} и увеличивал индекс
  * {@code j} только в одной из веток, поэтому для длинной строки манифеста с атрибутом
  * {@code name="value"} вставки добавлялись бесконечно, пока не заканчивалась куча.
  *

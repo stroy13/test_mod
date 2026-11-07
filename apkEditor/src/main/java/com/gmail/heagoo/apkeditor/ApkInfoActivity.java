@@ -236,7 +236,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     // Last decode phase reported by ApkParseThread, -1 when nothing was reported yet.
     private int lastLoadPhase = -1;
 
-    /* JADX INFO: Access modifiers changed from: private */
     static final class AnalysisJob {
         final AtomicBoolean cancelled;
         AlertDialog dialog;
@@ -365,7 +364,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         return bestConfig;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onCreate(Bundle savedInstanceState) {
         String previousToken;
         super.onCreate(savedInstanceState);
@@ -452,7 +450,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         startApkDecode();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void startApkDecode() {
         this.isFullDecoding = ActivityUtil.getBoolParam(getIntent(), "isFullDecoding");
         this.lastLoadError = null;
@@ -470,7 +467,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.parseThread.start();
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public boolean storeProject(String prjDirectory, ProjectInfo_V1 prjInfo) {
         String versionPath = prjDirectory + "/.prj_version";
         String infoPath = prjDirectory + "/ae.prj";
@@ -489,9 +485,8 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         recoverFromBundle(bundle);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void recoverFromBundle(final Bundle savedInstanceState) {
-        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.1
+        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() {
             @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
             public void process() {
                 ApkInfoActivity.this.recoverData(savedInstanceState);
@@ -508,7 +503,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         return saveCurrentState(workingPath, false, null);
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public ActivityState_V1 saveCurrentState(String workingPath, boolean saveAll, File projectDir) {
         ActivityState_V1 state = new ActivityState_V1();
         Map<String, Map<String, String>> changedValues = this.stringListAdapter.getChangedValues();
@@ -571,7 +565,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         return state;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void moveTempFile2ProjectDir(Map<String, String> added, Map<String, String> replaced, File projectDir) {
         try {
             String tmpFolder = SDCard.makeWorkingDir(this);
@@ -603,7 +596,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void onSaveInstanceState(Bundle savedInstanceState) {
         String workingPath = null;
         boolean pending = this.projectName == null && !this.resourceParsed;
@@ -665,7 +657,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         return PendingStringEdits.snapshot(this.stringListAdapter.getChangedValues());
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void restorePendingStringEdits(Bundle state) {
         String token = state.getString("lab_early_token");
         if (token != null && token.matches("[0-9a-f-]{36}")) {
@@ -709,7 +700,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         recoverView();
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public void recoverData(Bundle savedInstanceState) {
         this.allStringValues = (HashMap) IOUtils.readObjectFromFile(savedInstanceState.getString("allStringValues_file"));
         String path = savedInstanceState.getString("changedStringValues_file");
@@ -752,7 +742,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         PendingStringEdits.merge(allStringValues, changedStringValues);
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public void recoverView() {
         showStringList();
         setupClickListener();
@@ -771,7 +760,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.saveBtn.setVisibility(0);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void onDestroy() {
         this.screenDestroyed = true;
         if (this.analysisJob != null) {
@@ -794,7 +782,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         super.onDestroy();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void onBackPressed() {
         boolean dealed = false;
         if (this.curSelectedRadio == 1) {
@@ -820,7 +807,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (dealed) {
             return;
         }
-        AlertDialog.Builder dlg = new AlertDialog.Builder(this).setMessage(R.string.sure_to_exit_editing).setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda22
+        AlertDialog.Builder dlg = new AlertDialog.Builder(this).setMessage(R.string.sure_to_exit_editing).setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
             @Override // android.content.DialogInterface.OnClickListener
             public final void onClick(DialogInterface dialogInterface, int i) {
                 ApkInfoActivity.this.m61xd7b44d3f(dialogInterface, i);
@@ -828,7 +815,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }).setNegativeButton(R.string.no, (DialogInterface.OnClickListener) null);
         if (this.projectName == null && (this.parseThread == null || !this.parseThread.isAlive())) {
             dlg.setMessage(R.string.sure_to_exit);
-            dlg.setNeutralButton(R.string.save_as_project, new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda23
+            dlg.setNeutralButton(R.string.save_as_project, new DialogInterface.OnClickListener() {
                 @Override // android.content.DialogInterface.OnClickListener
                 public final void onClick(DialogInterface dialogInterface, int i) {
                     ApkInfoActivity.this.m62x9aa0b69e(dialogInterface, i);
@@ -838,8 +825,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         dlg.show();
     }
 
-    /* renamed from: lambda$onBackPressed$0$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m61xd7b44d3f(DialogInterface dialog, int which) {
+    void m61xd7b44d3f(DialogInterface dialog, int which) {
         if (this.parseThread != null && this.parseThread.isAlive()) {
             this.parseThread.stopParse();
             this.parseThread = null;
@@ -847,14 +833,12 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         finish();
     }
 
-    /* renamed from: lambda$onBackPressed$1$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m62x9aa0b69e(DialogInterface dialog, int which) {
+    void m62x9aa0b69e(DialogInterface dialog, int which) {
         saveAsProject();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void saveProject() {
-        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.2
+        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() {
             ProjectInfo_V1 prjInfo;
             String prjRoot;
 
@@ -885,9 +869,8 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }, -1).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void saveAsProject() {
-        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.3
+        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() {
             String errorMessage = null;
             File projectDir;
             ActivityState_V1 state;
@@ -951,7 +934,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }, -1).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case 0:
@@ -1065,7 +1047,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (bInUiThread) {
             this.mfListAdapter.reload();
         } else {
-            runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.4
+            runOnUiThread(new Runnable() {
                 @Override // java.lang.Runnable
                 public void run() {
                     ApkInfoActivity.this.mfListAdapter.reload();
@@ -1074,8 +1056,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* JADX WARN: Type inference failed for: r1v31, types: [com.gmail.heagoo.apkeditor.ApkInfoActivity$5] */
     private void initView() {
         Throwable th = null;
         Resources res = getResources();
@@ -1094,7 +1074,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (isAmazonVersion()) {
             this.manifestRadio.setVisibility(8);
         }
-        new Thread() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.5
+        new Thread() {
             @Override // java.lang.Thread, java.lang.Runnable
             public void run() {
                 try {
@@ -1155,7 +1135,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.loadRetryButton.setText(R.string.lab_load_retry);
         this.loadRetryButton.setVisibility(8);
         this.loadingLayout.addView(this.loadRetryButton);
-        this.loadRetryButton.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda14
+        this.loadRetryButton.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
                 ApkInfoActivity.this.m59lambda$initView$2$comgmailheagooapkeditorApkInfoActivity(view);
@@ -1165,7 +1145,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.loadCopyButton.setText(R.string.lab_load_copy);
         this.loadCopyButton.setVisibility(8);
         this.loadingLayout.addView(this.loadCopyButton);
-        this.loadCopyButton.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda15
+        this.loadCopyButton.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
                 ApkInfoActivity.this.m60lambda$initView$3$comgmailheagooapkeditorApkInfoActivity(view);
@@ -1216,14 +1196,11 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         editView3.setAdapter(this.mfKeywordAdapter);
     }
 
-    /* renamed from: lambda$initView$2$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m59lambda$initView$2$comgmailheagooapkeditorApkInfoActivity(View v) {
+    void m59lambda$initView$2$comgmailheagooapkeditorApkInfoActivity(View v) {
         startApkDecode();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* renamed from: lambda$initView$3$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m60lambda$initView$3$comgmailheagooapkeditorApkInfoActivity(View v) {
+    void m60lambda$initView$3$comgmailheagooapkeditorApkInfoActivity(View v) {
         ClipboardManager clipboard = (ClipboardManager) getSystemService("clipboard");
         StringBuilder report = new StringBuilder();
         report.append(getString(R.string.about_apk_editor_title)).append("\nAndroid ").append(Build.VERSION.RELEASE).append(" (SDK ").append(Build.VERSION.SDK_INT).append(")\n").append("Status: ").append(((TextView) findViewById(R.id.tv_tip)).getText()).append('\n');
@@ -1244,7 +1221,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         Toast.makeText((Context) this, R.string.lab_load_copied, 0).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void updateSearchOption() {
         int txtId;
         int caseId;
@@ -1274,7 +1250,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         btn.setOnClickListener(this);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override // android.view.View.OnClickListener
     public void onClick(View v) {
         int id = v.getId();
@@ -1408,38 +1383,37 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* renamed from: lambda$setupClickListener$4$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m80x4044eabe(View v) {
+    void m80x4044eabe(View v) {
         stringRadioClicked();
     }
 
     protected void setupClickListener() {
-        this.stringRadio.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda36
+        this.stringRadio.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
                 ApkInfoActivity.this.m80x4044eabe(view);
             }
         });
-        this.resRadio.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda37
+        this.resRadio.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
                 ApkInfoActivity.this.m81x331541d(view);
             }
         });
-        this.manifestRadio.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda38
+        this.manifestRadio.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
                 ApkInfoActivity.this.m82xc61dbd7c(view);
             }
         });
         this.saveBtn = (Button) findViewById(R.id.save_button);
-        this.saveBtn.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda39
+        this.saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
                 ApkInfoActivity.this.m83x890a26db(view);
             }
         });
-        findViewById(R.id.menu_project_tools).setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda40
+        findViewById(R.id.menu_project_tools).setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
                 ApkInfoActivity.this.m84x4bf6903a(view);
@@ -1457,38 +1431,32 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* renamed from: lambda$setupClickListener$5$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m81x331541d(View v) {
+    void m81x331541d(View v) {
         resRadioClicked();
     }
 
-    /* renamed from: lambda$setupClickListener$6$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m82xc61dbd7c(View v) {
+    void m82xc61dbd7c(View v) {
         manifestRadioClicked();
     }
 
-    /* renamed from: lambda$setupClickListener$7$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m83x890a26db(View v) {
+    void m83x890a26db(View v) {
         composeApkFile();
     }
 
-    /* renamed from: lambda$setupClickListener$8$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m84x4bf6903a(View v) {
+    void m84x4bf6903a(View v) {
         showProjectTools();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private ArrayAdapter<String> dialogChoiceAdapter(String[] items) {
         return new ArrayAdapter<String>((Context) this, R.layout.lab_dialog_list_item, items);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void showProjectTools() {
         if (!this.resourceParsed || this.decodeRootPath == null || !new File(this.decodeRootPath).isDirectory()) {
             Toast.makeText((Context) this, (CharSequence) "Дождитесь открытия проекта", 0).show();
         } else {
             String[] choices = {"Диагностика XML и smali", "Найти использование ресурса", "Сравнить переводы", "Создать контрольную точку", "Восстановить контрольную точку"};
-            new AlertDialog.Builder(this).setTitle("Инструменты проекта").setAdapter(dialogChoiceAdapter(choices), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda34
+            new AlertDialog.Builder(this).setTitle("Инструменты проекта").setAdapter(dialogChoiceAdapter(choices), new DialogInterface.OnClickListener() {
                 @Override // android.content.DialogInterface.OnClickListener
                 public final void onClick(DialogInterface dialogInterface, int i) {
                     ApkInfoActivity.this.m89xc2305a3(dialogInterface, i);
@@ -1497,9 +1465,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* renamed from: lambda$showProjectTools$10$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m89xc2305a3(DialogInterface dialog, int which) {
+    void m89xc2305a3(DialogInterface dialog, int which) {
         if (which == 0) {
             runProjectAnalysis(null);
             return;
@@ -1508,7 +1474,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             final EditText input = new EditText(this);
             input.setSingleLine(true);
             input.setHint("Например: string/app_name");
-            new AlertDialog.Builder(this).setTitle("Поиск ресурса").setView(input).setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton("Искать", new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda26
+            new AlertDialog.Builder(this).setTitle("Поиск ресурса").setView(input).setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton("Искать", new DialogInterface.OnClickListener() {
                 @Override // android.content.DialogInterface.OnClickListener
                 public final void onClick(DialogInterface dialogInterface, int i) {
                     ApkInfoActivity.this.m90x3c31a359(input, dialogInterface, i);
@@ -1528,12 +1494,10 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         compareLocales();
     }
 
-    /* renamed from: lambda$showProjectTools$9$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m90x3c31a359(EditText input, DialogInterface d, int w) {
+    void m90x3c31a359(EditText input, DialogInterface d, int w) {
         runProjectAnalysis(input.getText().toString().trim());
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void runProjectAnalysis(final String resource) {
         if (this.analysisJob != null) {
             return;
@@ -1559,10 +1523,10 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         progressParams.topMargin = p / 2;
         content.addView(progress, progressParams);
         job.dialog = new AlertDialog.Builder(this).setTitle(resource == null ? "Диагностика XML и smali" : "Поиск использования ресурса").setView(content).setCancelable(false).setNegativeButton("Отменить", (DialogInterface.OnClickListener) null).create();
-        job.dialog.setOnShowListener(new DialogInterface.OnShowListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda1
+        job.dialog.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override // android.content.DialogInterface.OnShowListener
             public final void onShow(DialogInterface dialogInterface) {
-                job.dialog.getButton(-2).setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda25
+                job.dialog.getButton(-2).setOnClickListener(new View.OnClickListener() {
                     @Override // android.view.View.OnClickListener
                     public final void onClick(View view) {
                         ApkInfoActivity.lambda$runProjectAnalysis$11(job, view);
@@ -1571,7 +1535,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             }
         });
         job.dialog.show();
-        job.worker = new Thread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda2
+        job.worker = new Thread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
                 ApkInfoActivity.this.m79xa753bc88(job, resource, root);
@@ -1580,7 +1544,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         job.worker.start();
     }
 
-    static /* synthetic */ void lambda$runProjectAnalysis$11(AnalysisJob job, View v) {
+    static void lambda$runProjectAnalysis$11(AnalysisJob job, View v) {
         job.cancelled.set(true);
         job.progressText.setText("Останавливаем проверку…");
         job.dialog.getButton(-2).setEnabled(false);
@@ -1589,10 +1553,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* renamed from: lambda$runProjectAnalysis$16$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m79xa753bc88(final AnalysisJob job, final String resource, final File root) {
+    void m79xa753bc88(final AnalysisJob job, final String resource, final File root) {
         ProjectAnalysis.Report resourceUses;
-        ProjectAnalysis.Progress listener = new ProjectAnalysis.Progress() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda19
+        ProjectAnalysis.Progress listener = new ProjectAnalysis.Progress() {
             @Override // com.gmail.heagoo.apkeditor.ProjectAnalysis.Progress
             public final void update(String str, int i, int i2, String str2) {
                 ApkInfoActivity.this.m77x217ae9ca(job, str, i, i2, str2);
@@ -1604,7 +1567,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             if (resource == null) {
                 final AtomicBoolean atomicBoolean = job.cancelled;
                 Objects.requireNonNull(atomicBoolean);
-                resourceUses = ProjectAnalysis.diagnose(root, listener, new BooleanSupplier() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda20
+                resourceUses = ProjectAnalysis.diagnose(root, listener, new BooleanSupplier() {
                     @Override // java.util.function.BooleanSupplier
                     public final boolean getAsBoolean() {
                         return atomicBoolean.get();
@@ -1613,7 +1576,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             } else {
                 final AtomicBoolean atomicBoolean2 = job.cancelled;
                 Objects.requireNonNull(atomicBoolean2);
-                resourceUses = ProjectAnalysis.resourceUses(root, resource, listener, new BooleanSupplier() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda20
+                resourceUses = ProjectAnalysis.resourceUses(root, resource, listener, new BooleanSupplier() {
                     @Override // java.util.function.BooleanSupplier
                     public final boolean getAsBoolean() {
                         return atomicBoolean2.get();
@@ -1628,7 +1591,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
         final ProjectAnalysis.Report result = report;
         final String failure = error;
-        runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda21
+        runOnUiThread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
                 ApkInfoActivity.this.m78xe4675329(job, failure, result, root, resource);
@@ -1636,8 +1599,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         });
     }
 
-    /* renamed from: lambda$runProjectAnalysis$14$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m77x217ae9ca(final AnalysisJob job, String phase, int done, int total, String path) {
+    void m77x217ae9ca(final AnalysisJob job, String phase, int done, int total, String path) {
         StringBuilder sb;
         StringBuilder append;
         long now = System.nanoTime();
@@ -1656,7 +1618,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 append = sb.append(": ").append(done);
             }
             final String message = append2.append(append.toString()).append(name.isEmpty() ? "" : "\n" + name).toString();
-            runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda17
+            runOnUiThread(new Runnable() {
                 @Override // java.lang.Runnable
                 public final void run() {
                     ApkInfoActivity.this.m76x5e8e806b(job, message);
@@ -1665,17 +1627,14 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* renamed from: lambda$runProjectAnalysis$13$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m76x5e8e806b(AnalysisJob job, String message) {
+    void m76x5e8e806b(AnalysisJob job, String message) {
         if (this.analysisJob != job || job.cancelled.get() || isFinishing() || isDestroyed()) {
             return;
         }
         job.progressText.setText(message);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* renamed from: lambda$runProjectAnalysis$15$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m78xe4675329(AnalysisJob job, String failure, ProjectAnalysis.Report result, File root, String resource) {
+    void m78xe4675329(AnalysisJob job, String failure, ProjectAnalysis.Report result, File root, String resource) {
         if (this.analysisJob != job) {
             return;
         }
@@ -1698,7 +1657,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         Toast.makeText((Context) this, (CharSequence) "Проверка отменена", 0).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void showAnalysisReport(final File root, final ProjectAnalysis.Report r, String resource) {
         String caution;
         if (isFinishing() || isDestroyed()) {
@@ -1731,7 +1689,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (r.findings.isEmpty()) {
             b.setMessage(caution2 + (r.checked == 0 ? "\nПодходящих файлов для проверки не найдено." : resource == null ? "\nЗамечаний не найдено." : "\nСовпадений не найдено."));
         } else {
-            b.setAdapter(dialogChoiceAdapter(items), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda48
+            b.setAdapter(dialogChoiceAdapter(items), new DialogInterface.OnClickListener() {
                 @Override // android.content.DialogInterface.OnClickListener
                 public final void onClick(DialogInterface dialogInterface, int i2) {
                     ApkInfoActivity.this.m85xa18dd12a(root, r, dialogInterface, i2);
@@ -1741,14 +1699,12 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         b.show();
     }
 
-    /* renamed from: lambda$showAnalysisReport$17$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m85xa18dd12a(File root, ProjectAnalysis.Report r, DialogInterface d, int index) {
+    void m85xa18dd12a(File root, ProjectAnalysis.Report r, DialogInterface d, int index) {
         if (index > 0) {
             openAnalysisFinding(root, r.findings.get(index - 1));
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void openAnalysisFinding(File root, ProjectAnalysis.Finding finding) {
         try {
             File f = new File(root, finding.path).getCanonicalFile();
@@ -1775,7 +1731,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void compareLocales() {
         if (this.allStringValues == null || this.allStringValues.isEmpty()) {
             Toast.makeText((Context) this, (CharSequence) "Строковые ресурсы ещё не подготовлены", 0).show();
@@ -1787,7 +1742,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         for (int i = 0; i < names.length; i++) {
             names[i] = configs.get(i).isEmpty() ? "По умолчанию" : configs.get(i);
         }
-        new AlertDialog.Builder(this).setTitle("Базовый язык").setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda45
+        new AlertDialog.Builder(this).setTitle("Базовый язык").setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() {
             @Override // android.content.DialogInterface.OnClickListener
             public final void onClick(DialogInterface dialogInterface, int i2) {
                 ApkInfoActivity.this.m52x23d1a179(names, configs, dialogInterface, i2);
@@ -1795,15 +1750,12 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }).show();
     }
 
-    /* renamed from: lambda$compareLocales$18$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m50xa09429f0(List configs, int baseIndex, int targetIndex, DialogInterface d3, int mode) {
+    void m50xa09429f0(List configs, int baseIndex, int targetIndex, DialogInterface d3, int mode) {
         showLocaleDifferences((String) configs.get(baseIndex), (String) configs.get(targetIndex), mode == 1);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* renamed from: lambda$compareLocales$19$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m51x6380934f(final List configs, final int baseIndex, DialogInterface d2, final int targetIndex) {
-        new AlertDialog.Builder(this).setTitle("Показать").setAdapter(dialogChoiceAdapter(new String[]{"Только отсутствующие и ошибки", "Все строки"}), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda33
+    void m51x6380934f(final List configs, final int baseIndex, DialogInterface d2, final int targetIndex) {
+        new AlertDialog.Builder(this).setTitle("Показать").setAdapter(dialogChoiceAdapter(new String[]{"Только отсутствующие и ошибки", "Все строки"}), new DialogInterface.OnClickListener() {
             @Override // android.content.DialogInterface.OnClickListener
             public final void onClick(DialogInterface dialogInterface, int i) {
                 ApkInfoActivity.this.m50xa09429f0(configs, baseIndex, targetIndex, dialogInterface, i);
@@ -1811,10 +1763,8 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* renamed from: lambda$compareLocales$20$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m52x23d1a179(String[] names, final List configs, DialogInterface d, final int baseIndex) {
-        new AlertDialog.Builder(this).setTitle("Сравнить с языком").setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda46
+    void m52x23d1a179(String[] names, final List configs, DialogInterface d, final int baseIndex) {
+        new AlertDialog.Builder(this).setTitle("Сравнить с языком").setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() {
             @Override // android.content.DialogInterface.OnClickListener
             public final void onClick(DialogInterface dialogInterface, int i) {
                 ApkInfoActivity.this.m51x6380934f(configs, baseIndex, dialogInterface, i);
@@ -1822,7 +1772,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void showLocaleDifferences(String base, final String target, boolean showAll) {
         StringBuilder append = null;
         String str = null;
@@ -1860,7 +1809,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             b.setMessage("Отсутствующие строки и несовпадения простых плейсхолдеров не найдены.");
         } else {
             labels.add(0, "Сравниваются строковые ресурсы; plurals, arrays и нестандартные форматы не проверяются. Нажмите на строку для редактирования.");
-            b.setAdapter(dialogChoiceAdapter((String[]) labels.toArray(new String[0])), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda35
+            b.setAdapter(dialogChoiceAdapter((String[]) labels.toArray(new String[0])), new DialogInterface.OnClickListener() {
                 @Override // android.content.DialogInterface.OnClickListener
                 public final void onClick(DialogInterface dialogInterface, int i) {
                     ApkInfoActivity.this.m88x613d8627(entries, t, target, dialogInterface, i);
@@ -1870,18 +1819,14 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         b.show();
     }
 
-    /* renamed from: lambda$showLocaleDifferences$21$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m86xdb64b369(String target, StringItem source, EditText translation, DialogInterface q, int w) {
+    void m86xdb64b369(String target, StringItem source, EditText translation, DialogInterface q, int w) {
         addMissingTranslation(target, source.name, translation.getText().toString());
     }
 
-    /* renamed from: lambda$showLocaleDifferences$22$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m87x9e511cc8(String target, StringItem dest, EditText edit, DialogInterface x, int w) {
+    void m87x9e511cc8(String target, StringItem dest, EditText edit, DialogInterface x, int w) {
         writeTranslation(target, dest, edit.getText().toString());
     }
 
-    // Restored manually during source recovery from the DEX instructions of
-    // lambda$showLocaleDifferences$23 (JADX failed to generate this method).
     void m88x613d8627(List<StringItem> entries, Map<String, StringItem> t, final String target, DialogInterface d, int i) {
         if (i == 0) {
             return;
@@ -1920,7 +1865,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 .show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void writeTranslation(String qualifier, StringItem item, String value) {
         char c;
         int i;
@@ -1932,7 +1876,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             }
             if (item.name.matches("[a-z][a-z0-9_]*") && (qualifier.isEmpty() || qualifier.matches("-[A-Za-z0-9-]+"))) {
                 File dir = new File(this.decodeRootPath, "res/values" + qualifier);
-                File[] files = dir.listFiles(new FilenameFilter() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda47
+                File[] files = dir.listFiles(new FilenameFilter() {
                     @Override // java.io.FilenameFilter
                     public final boolean accept(File file, String str) {
                         boolean endsWith;
@@ -2034,7 +1978,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void addMissingTranslation(String qualifier, String name, String value) {
         try {
             if (!name.matches("[a-z][a-z0-9_]*") || (!qualifier.isEmpty() && !qualifier.matches("-[A-Za-z0-9-]+"))) {
@@ -2066,12 +2009,10 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public File checkpointRoot() {
         return new File(getFilesDir(), "project-checkpoints");
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public Map<String, String> checkpointMap(Map<String, String> input, File folder) throws Exception {
         Map<String, String> out = new HashMap<>();
         int i = 0;
@@ -2089,12 +2030,11 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         return out;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void createCheckpoint() {
         if (this.curConfig == null || this.allStringValues == null || this.resListAdapter == null) {
             Toast.makeText((Context) this, (CharSequence) "Дождитесь полной загрузки проекта", 0).show();
         } else {
-            new AlertDialog.Builder(this).setTitle("Контрольная точка").setMessage("Будут скопированы файлы проекта, исходный APK и несохранённые изменения редактора. Нужен свободный объём памяти. Исходный проект не изменится.").setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton("Создать", new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda31
+            new AlertDialog.Builder(this).setTitle("Контрольная точка").setMessage("Будут скопированы файлы проекта, исходный APK и несохранённые изменения редактора. Нужен свободный объём памяти. Исходный проект не изменится.").setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton("Создать", new DialogInterface.OnClickListener() {
                 @Override // android.content.DialogInterface.OnClickListener
                 public final void onClick(DialogInterface dialogInterface, int i) {
                     ApkInfoActivity.this.m53xe1911c04(dialogInterface, i);
@@ -2103,10 +2043,8 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* renamed from: lambda$createCheckpoint$25$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m53xe1911c04(DialogInterface d, int w) {
-        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.6
+    void m53xe1911c04(DialogInterface d, int w) {
+        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() {
             File dest;
             String error;
 
@@ -2182,13 +2120,12 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }, -1).show();
     }
 
-    static /* synthetic */ boolean lambda$restoreCheckpoint$26(File f) {
+    static boolean lambda$restoreCheckpoint$26(File f) {
         return f.isDirectory() && new File(f, "ae.prj").isFile();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void restoreCheckpoint() {
-        final File[] list = checkpointRoot().listFiles(new FileFilter() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda41
+        final File[] list = checkpointRoot().listFiles(new FileFilter() {
             @Override // java.io.FileFilter
             public final boolean accept(File file) {
                 return ApkInfoActivity.lambda$restoreCheckpoint$26(file);
@@ -2198,7 +2135,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             Toast.makeText((Context) this, (CharSequence) "Контрольных точек пока нет", 0).show();
             return;
         }
-        Arrays.sort(list, new Comparator() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda42
+        Arrays.sort(list, new Comparator() {
             @Override // java.util.Comparator
             public final int compare(Object obj, Object obj2) {
                 int compareTo;
@@ -2211,7 +2148,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         for (int i = 0; i < list.length; i++) {
             names[i] = fmt.format(new Date(list[i].lastModified()));
         }
-        new AlertDialog.Builder(this).setTitle("Выберите контрольную точку").setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda43
+        new AlertDialog.Builder(this).setTitle("Выберите контрольную точку").setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() {
             @Override // android.content.DialogInterface.OnClickListener
             public final void onClick(DialogInterface dialogInterface, int i2) {
                 ApkInfoActivity.this.m75x429261e2(list, dialogInterface, i2);
@@ -2219,16 +2156,13 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }).show();
     }
 
-    /* renamed from: lambda$restoreCheckpoint$28$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m73xbf54ea59(File[] list, int index, DialogInterface q, int w) {
+    void m73xbf54ea59(File[] list, int index, DialogInterface q, int w) {
         restoreCheckpointCopy(list[index]);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* renamed from: lambda$restoreCheckpoint$29$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m74x824153b8(final File[] list, final int index, DialogInterface x, int choice) {
+    void m74x824153b8(final File[] list, final int index, DialogInterface x, int choice) {
         if (choice == 0) {
-            new AlertDialog.Builder(this).setMessage("Будет создан отдельный проект. Текущий проект и контрольная точка сохранятся.").setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton("Восстановить", new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda0
+            new AlertDialog.Builder(this).setMessage("Будет создан отдельный проект. Текущий проект и контрольная точка сохранятся.").setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton("Восстановить", new DialogInterface.OnClickListener() {
                 @Override // android.content.DialogInterface.OnClickListener
                 public final void onClick(DialogInterface dialogInterface, int i) {
                     ApkInfoActivity.this.m73xbf54ea59(list, index, dialogInterface, i);
@@ -2239,10 +2173,8 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* renamed from: lambda$restoreCheckpoint$30$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m75x429261e2(final File[] list, DialogInterface d, final int index) {
-        new AlertDialog.Builder(this).setTitle("Что восстановить?").setAdapter(dialogChoiceAdapter(new String[]{"Весь проект — в отдельную копию", "Один файл в текущем проекте"}), new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda3
+    void m75x429261e2(final File[] list, DialogInterface d, final int index) {
+        new AlertDialog.Builder(this).setTitle("Что восстановить?").setAdapter(dialogChoiceAdapter(new String[]{"Весь проект — в отдельную копию", "Один файл в текущем проекте"}), new DialogInterface.OnClickListener() {
             @Override // android.content.DialogInterface.OnClickListener
             public final void onClick(DialogInterface dialogInterface, int i) {
                 ApkInfoActivity.this.m74x824153b8(list, index, dialogInterface, i);
@@ -2250,10 +2182,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }).show();
     }
 
-    /* renamed from: com.gmail.heagoo.apkeditor.ApkInfoActivity$7, reason: invalid class name */
     class AnonymousClass7 implements FileSelectDialog.IFileSelection {
-        final /* synthetic */ File val$checkpoint;
-        final /* synthetic */ File val$decoded;
+        final File val$checkpoint;
+        final File val$decoded;
 
         AnonymousClass7(File file, File file2) {
             this.val$decoded = file;
@@ -2320,7 +2251,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                     }
                     if (!ApkInfoActivity.this.resListAdapter.getDeletedFiles().contains(rel)) {
                         final File from = picked;
-                        new AlertDialog.Builder(ApkInfoActivity.this).setMessage("Заменить текущий файл содержимым контрольной точки?\n" + rel).setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton("Восстановить", new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$7$$ExternalSyntheticLambda0
+                        new AlertDialog.Builder(ApkInfoActivity.this).setMessage("Заменить текущий файл содержимым контрольной точки?\n" + rel).setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).setPositiveButton("Восстановить", new DialogInterface.OnClickListener() {
                             @Override // android.content.DialogInterface.OnClickListener
                             public final void onClick(DialogInterface dialogInterface, int i2) {
                                 ApkInfoActivity.AnonymousClass7.this.m91xb47d70b0(target, from, rel, dialogInterface, i2);
@@ -2337,8 +2268,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             }
         }
 
-        /* renamed from: lambda$fileSelectedInDialog$0$com-gmail-heagoo-apkeditor-ApkInfoActivity$7, reason: not valid java name */
-        /* synthetic */ void m91xb47d70b0(File to, File from, String name, DialogInterface d, int w) {
+        void m91xb47d70b0(File to, File from, String name, DialogInterface d, int w) {
             File temp = null;
             try {
                 temp = File.createTempFile(".restore-", ".tmp", to.getParentFile());
@@ -2356,16 +2286,14 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void selectCheckpointFile(File checkpoint) {
         File decoded = new File(checkpoint, "decoded");
         FileSelectDialog.IFileSelection callback = new AnonymousClass7(decoded, checkpoint);
         new FileSelectDialog(this, callback, "", null, "Выберите файл контрольной точки", false, false, false, "checkpoint-files", decoded.getAbsolutePath()).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void restoreCheckpointCopy(final File source) {
-        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.8
+        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() {
             File dest;
             String error;
             String label;
@@ -2458,7 +2386,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void composeApkFile() {
         if (!MainActivity.upgradedFromOldVersion(this)) {
             AlertDialog.Builder alert = new AlertDialog.Builder(this);
@@ -2486,7 +2413,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void build(final boolean bSign) {
         boolean z;
         String errMsg;
@@ -2549,7 +2475,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             AlertDialog.Builder dlg = new AlertDialog.Builder(this);
             dlg.setTitle(R.string.warning);
             dlg.setMessage(errMsg + "\nAre you sure to continue?");
-            dlg.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda32
+            dlg.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                 @Override // android.content.DialogInterface.OnClickListener
                 public final void onClick(DialogInterface dialogInterface, int i) {
                     ApkInfoActivity.this.m49lambda$build$31$comgmailheagooapkeditorApkInfoActivity(bSign, dialogInterface, i);
@@ -2562,8 +2488,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         launchBuildActivityAndService(bSign);
     }
 
-    /* renamed from: lambda$build$31$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m49lambda$build$31$comgmailheagooapkeditorApkInfoActivity(boolean bSign, DialogInterface dialog, int which) {
+    void m49lambda$build$31$comgmailheagooapkeditorApkInfoActivity(boolean bSign, DialogInterface dialog, int which) {
         launchBuildActivityAndService(bSign);
     }
 
@@ -2610,8 +2535,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
-    /* JADX WARN: Multi-variable type inference failed */
     public void showCannotStartBuildDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this).setMessage(R.string.build_in_progress_tip).setTitle(R.string.please_note).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null);
         builder.show();
@@ -2622,10 +2545,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.resListAdapter.addFolder(dirPath, folderName);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void importFolder(final String folderPath) {
         final String dirPath = this.resListAdapter.getData(null);
-        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.9
+        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() {
             private String errorMessage = null;
 
             @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
@@ -2654,7 +2576,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }, -1).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void launchBuildActivityAndService(boolean bSign) {
         if (ServiceUtil.isMyServiceRunning(this, ApkComposeService.class)) {
             Intent intent = new Intent((Context) this, (Class<?>) ApkComposeService.class);
@@ -2664,8 +2585,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
-    /* JADX WARN: Multi-variable type inference failed */
     public void launchWithoutCheck(boolean bSign) {
         String filename;
         String outputDir = SDCard.getEditorDirectory();
@@ -2729,7 +2648,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private String serialize2File(Map<String, String> fileEntry2ZipEntry2) {
         try {
             String filepath = SDCard.makeWorkingDir(this) + RandomUtil.getRandomString(8);
@@ -2793,7 +2711,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void resRadioClicked() {
         SharedPreferences sp;
         int showTimes;
@@ -2827,7 +2744,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 this.bStringPrepared = false;
             }
             if (this.bStringPrepared) {
-                runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda24
+                runOnUiThread(new Runnable() {
                     @Override // java.lang.Runnable
                     public final void run() {
                         ApkInfoActivity.this.m70x99392872();
@@ -2837,9 +2754,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* renamed from: lambda$resTableDecoded$32$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m70x99392872() {
+    void m70x99392872() {
         if (this.screenDestroyed || this.lastLoadError != null) {
             return;
         }
@@ -2864,7 +2779,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 this.bStringPrepared = false;
             }
         }
-        runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda27
+        runOnUiThread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
                 ApkInfoActivity.this.m72x8b124e30(stringShowNeeded, fileEntry2ZipEntry);
@@ -2872,8 +2787,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         });
     }
 
-    /* renamed from: lambda$resourceDecoded$34$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m72x8b124e30(boolean stringShowNeeded, final Map fileEntry2ZipEntry) {
+    void m72x8b124e30(boolean stringShowNeeded, final Map fileEntry2ZipEntry) {
         if (this.screenDestroyed || this.lastLoadError != null) {
             return;
         }
@@ -2891,7 +2805,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             }
             snapshot.put(entry.getKey(), values);
         }
-        this.indexSaveTask = new FutureTask<>(new Callable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda28
+        this.indexSaveTask = new FutureTask<>(new Callable() {
             @Override // java.util.concurrent.Callable
             public final Object call() throws Exception {
                 return ApkInfoActivity.this.m71xc825e4d1(snapshot, fileEntry2ZipEntry);
@@ -2910,9 +2824,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.saveBtn.setVisibility(0);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* renamed from: lambda$resourceDecoded$33$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ Boolean m71xc825e4d1(HashMap snapshot, Map fileEntry2ZipEntry) throws Exception {
+    Boolean m71xc825e4d1(HashMap snapshot, Map fileEntry2ZipEntry) throws Exception {
         try {
             String workingPath = SDCard.makeWorkingDir(this);
             boolean stringsOk = IOUtils.writeObjectToFile(workingPath + "allStringValues", snapshot);
@@ -2924,7 +2836,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void decodeDex(IGeneralCallback dexDecodedCallback) {
         this.dexDecodedCallback = dexDecodedCallback;
         this.dexDecoded = false;
@@ -2933,7 +2844,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
 
     @Override // com.gmail.heagoo.apkeditor.ApkParseConsumer
     public void decodeProgress(final int phase) {
-        runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda13
+        runOnUiThread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
                 ApkInfoActivity.this.m55x48b50c1c(phase);
@@ -2941,8 +2852,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         });
     }
 
-    /* renamed from: lambda$decodeProgress$35$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m55x48b50c1c(int phase) {
+    void m55x48b50c1c(int phase) {
         if (this.screenDestroyed || this.lastLoadError != null) {
             return;
         }
@@ -2958,7 +2868,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
 
     @Override // com.gmail.heagoo.apkeditor.ApkParseConsumer
     public void decodeProgressCount(final int done, final int total) {
-        runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda5
+        runOnUiThread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
                 ApkInfoActivity.this.m56xf7cdc1ba(done, total);
@@ -2966,8 +2876,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         });
     }
 
-    /* renamed from: lambda$decodeProgressCount$36$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m56xf7cdc1ba(int done, int total) {
+    void m56xf7cdc1ba(int done, int total) {
         if (this.screenDestroyed || this.lastLoadError != null) {
             return;
         }
@@ -2981,7 +2890,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
 
     @Override // com.gmail.heagoo.apkeditor.ApkParseConsumer
     public void decodeFailed(final String errMessage) {
-        runOnUiThread(new Runnable() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda12
+        runOnUiThread(new Runnable() {
             @Override // java.lang.Runnable
             public final void run() {
                 ApkInfoActivity.this.m54x9748ebaa(errMessage);
@@ -2989,8 +2898,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         });
     }
 
-    /* renamed from: lambda$decodeFailed$37$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m54x9748ebaa(String errMessage) {
+    void m54x9748ebaa(String errMessage) {
         if (this.screenDestroyed) {
             return;
         }
@@ -3082,7 +2990,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
 
     private void initAddLanguageBtn() {
         ImageView iv = (ImageView) findViewById(R.id.add_language);
-        iv.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda18
+        iv.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public final void onClick(View view) {
                 ApkInfoActivity.this.m57x9a29bf31(view);
@@ -3090,13 +2998,11 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         });
     }
 
-    /* renamed from: lambda$initAddLanguageBtn$38$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m57x9a29bf31(View v) {
+    void m57x9a29bf31(View v) {
         LanguageSelectDialog dlg = new LanguageSelectDialog(this, null, null);
         dlg.show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initTranslateBtn() {
         ImageView iv = (ImageView) findViewById(R.id.translate);
         if (generalTranslatePluginExist(this)) {
@@ -3104,7 +3010,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         } else if (proTranslatePluginExist()) {
             iv.setOnClickListener(this);
         } else {
-            iv.setOnClickListener(new View.OnClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda44
+            iv.setOnClickListener(new View.OnClickListener() {
                 @Override // android.view.View.OnClickListener
                 public final void onClick(View view) {
                     ApkInfoActivity.this.m58xb7ddd23b(view);
@@ -3113,9 +3019,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
-    /* renamed from: lambda$initTranslateBtn$39$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m58xb7ddd23b(View v) {
+    void m58xb7ddd23b(View v) {
         new AboutPluginDialog(this).show();
     }
 
@@ -3163,7 +3067,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         resetSpinner();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void translateLanguage(String strQualifier) {
         Intent intent;
         List<TranslateItem> translatedList = new ArrayList<>();
@@ -3442,7 +3345,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public void updateStringList() {
         if (this.curConfig == null) {
             this.curConfig = getBestConfig(this.allStringValues.keySet());
@@ -3456,7 +3358,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.stringListAdapter.updateData(this.curConfig, values);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initSpinner() {
         if (this.allStringValues == null) {
             return;
@@ -3492,7 +3393,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         ArrayAdapter<String> adapter = new ArrayAdapter<>((Context) this, android.R.layout.simple_spinner_item, languages);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter((SpinnerAdapter) adapter);
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.10
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override // android.widget.AdapterView.OnItemSelectedListener
             public void onItemSelected(AdapterView<?> arg0, View arg1, int position, long arg3) {
                 ApkInfoActivity.this.curConfig = (String) ApkInfoActivity.this.langConfigList.get(position);
@@ -3510,7 +3411,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         initSpinner();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void showDecodedFileList() {
         String curDir;
         if (this.resCurrentDir != null && this.resCurrentDir.startsWith(this.decodeRootPath)) {
@@ -3520,7 +3420,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             curDir = curDir2;
         }
         String path = this.isFullDecoding ? null : this.apkPath;
-        this.resListAdapter = new ResListAdapter(this, path, curDir, this.decodeRootPath, this.fileEntry2ZipEntry, new FilenameFilter() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda16
+        this.resListAdapter = new ResListAdapter(this, path, curDir, this.decodeRootPath, this.fileEntry2ZipEntry, new FilenameFilter() {
             @Override // java.io.FilenameFilter
             public final boolean accept(File file, String str) {
                 return ApkInfoActivity.lambda$showDecodedFileList$40(file, str);
@@ -3541,7 +3441,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         updateCenterView();
     }
 
-    static /* synthetic */ boolean lambda$showDecodedFileList$40(File dir, String filename) {
+    static boolean lambda$showDecodedFileList$40(File dir, String filename) {
         return true;
     }
 
@@ -3624,7 +3524,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         openFile(oldDir, rec.fileName, rec.isInZip);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void openEditableFile(String directory, String fileName, boolean bInZip, String entryName, String syntaxFileName) {
         String filePath = this.resListAdapter.getReplacedFilePath(entryName);
         if (filePath == null) {
@@ -3642,7 +3541,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         openFileEditor(filePath, syntaxFileName, fileName, entryName);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void openFile(String directory, String fileName, boolean bInZip) {
         String entryName;
         if (directory.equals(this.decodeRootPath)) {
@@ -3741,7 +3639,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         return false;
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void openFileEditor(String filePath, String syntaxFileName, String displayFileName, String entryName) {
         if ("res/values/colors.xml".equals(entryName)) {
             Intent intent = new Intent((Context) this, (Class<?>) ColorXmlActivity.class);
@@ -3761,7 +3658,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     @Override // android.widget.AdapterView.OnItemLongClickListener
     public boolean onItemLongClick(AdapterView<?> parent, View arg1, final int position, long id) {
         final boolean isFirstItem = position == 0;
-        parent.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda4
+        parent.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
             @Override // android.view.View.OnCreateContextMenuListener
             public final void onCreateContextMenu(ContextMenu contextMenu, View view, ContextMenu.ContextMenuInfo contextMenuInfo) {
                 ApkInfoActivity.this.m69x6899fc00(position, isFirstItem, contextMenu, view, contextMenuInfo);
@@ -3770,15 +3667,14 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         return false;
     }
 
-    /* renamed from: lambda$onItemLongClick$47$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ void m69x6899fc00(final int position, boolean isFirstItem, ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+    void m69x6899fc00(final int position, boolean isFirstItem, ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         MenuItem.OnMenuItemClickListener listener;
         List<FileRecord> records = new ArrayList<>();
         String curPath = this.resListAdapter.getData(records);
         boolean isDir = records.get(position).isDir;
         if (!isFirstItem) {
             MenuItem item1 = menu.add(0, 1, 0, R.string.delete);
-            item1.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda6
+            item1.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
                 @Override // android.view.MenuItem.OnMenuItemClickListener
                 public final boolean onMenuItemClick(MenuItem menuItem) {
                     return ApkInfoActivity.this.m63xd70f83c6(position, menuItem);
@@ -3787,7 +3683,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
         if (!isFirstItem || curPath.equals(this.decodeRootPath)) {
             MenuItem item2 = menu.add(0, 2, 0, R.string.extract);
-            item2.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda7
+            item2.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
                 @Override // android.view.MenuItem.OnMenuItemClickListener
                 public final boolean onMenuItemClick(MenuItem menuItem) {
                     return ApkInfoActivity.this.m64x99fbed25(position, menuItem);
@@ -3797,14 +3693,14 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (!isFirstItem || curPath.equals(this.decodeRootPath)) {
             MenuItem item3 = menu.add(0, 3, 0, R.string.replace);
             if (isDir) {
-                listener = new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda8
+                listener = new MenuItem.OnMenuItemClickListener() {
                     @Override // android.view.MenuItem.OnMenuItemClickListener
                     public final boolean onMenuItemClick(MenuItem menuItem) {
                         return ApkInfoActivity.this.m65x5ce85684(position, menuItem);
                     }
                 };
             } else {
-                listener = new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda9
+                listener = new MenuItem.OnMenuItemClickListener() {
                     @Override // android.view.MenuItem.OnMenuItemClickListener
                     public final boolean onMenuItemClick(MenuItem menuItem) {
                         return ApkInfoActivity.this.m66x1fd4bfe3(position, menuItem);
@@ -3814,14 +3710,14 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             item3.setOnMenuItemClickListener(listener);
         }
         MenuItem item4 = menu.add(0, 4, 0, R.string.add_a_file);
-        item4.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda10
+        item4.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override // android.view.MenuItem.OnMenuItemClickListener
             public final boolean onMenuItemClick(MenuItem menuItem) {
                 return ApkInfoActivity.this.m67xe2c12942(position, menuItem);
             }
         });
         MenuItem item5 = menu.add(0, 5, 0, R.string.new_folder);
-        item5.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity$$ExternalSyntheticLambda11
+        item5.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override // android.view.MenuItem.OnMenuItemClickListener
             public final boolean onMenuItemClick(MenuItem menuItem) {
                 return ApkInfoActivity.this.m68xa5ad92a1(position, menuItem);
@@ -3829,8 +3725,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         });
     }
 
-    /* renamed from: lambda$onItemLongClick$41$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ boolean m63xd70f83c6(int position, MenuItem item) {
+    boolean m63xd70f83c6(int position, MenuItem item) {
         List<Integer> positions = new ArrayList<>(1);
         positions.add(Integer.valueOf(position));
         this.resListAdapter.deleteFile(positions);
@@ -3838,36 +3733,31 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         return true;
     }
 
-    /* renamed from: lambda$onItemLongClick$42$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ boolean m64x99fbed25(int position, MenuItem item) {
+    boolean m64x99fbed25(int position, MenuItem item) {
         List<Integer> positions = new ArrayList<>(1);
         positions.add(Integer.valueOf(position));
         extractFileOrDir(positions);
         return true;
     }
 
-    /* renamed from: lambda$onItemLongClick$43$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ boolean m65x5ce85684(int position, MenuItem item) {
+    boolean m65x5ce85684(int position, MenuItem item) {
         replaceFolder(position);
         this.resListAdapter.dumpChangedFiles();
         return true;
     }
 
-    /* renamed from: lambda$onItemLongClick$44$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ boolean m66x1fd4bfe3(int position, MenuItem item) {
+    boolean m66x1fd4bfe3(int position, MenuItem item) {
         replaceFile(position);
         this.resListAdapter.dumpChangedFiles();
         return true;
     }
 
-    /* renamed from: lambda$onItemLongClick$45$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ boolean m67xe2c12942(int position, MenuItem item) {
+    boolean m67xe2c12942(int position, MenuItem item) {
         addFile(position);
         return true;
     }
 
-    /* renamed from: lambda$onItemLongClick$46$com-gmail-heagoo-apkeditor-ApkInfoActivity, reason: not valid java name */
-    /* synthetic */ boolean m68xa5ad92a1(int position, MenuItem item) {
+    boolean m68xa5ad92a1(int position, MenuItem item) {
         createFolder(position);
         return true;
     }
@@ -3910,10 +3800,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         extractFileOrDir_internal(sources);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void extractFileOrDir_internal(final List<FileCopyDialog.CopySource> sources) {
         String dlgTitle = getString(R.string.select_folder);
-        FileSelectDialog.IFileSelection callback = new FileSelectDialog.IFileSelection() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.11
+        FileSelectDialog.IFileSelection callback = new FileSelectDialog.IFileSelection() {
             @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
             public void fileSelectedInDialog(String filePath, String extraStr, boolean openFile) {
                 FileCopyDialog dlg = new FileCopyDialog(ApkInfoActivity.this, ApkInfoActivity.this.apkPath, ApkInfoActivity.this.decodeRootPath, ApkInfoActivity.this.fileEntry2ZipEntry, sources, filePath);
@@ -3934,7 +3823,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         dlg.show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private String extractFileFromZip(String entryName) {
         String filename;
         int pos = entryName.lastIndexOf("/");
@@ -3969,7 +3857,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         replaceFile(filepath, (SomethingChangedListener) null);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void replaceFile(String replacedPath, final SomethingChangedListener listener) {
         String suffix;
         int slashPosition = replacedPath.lastIndexOf(47);
@@ -3982,7 +3869,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             suffix = suffix2;
         }
         final String fileTypeStr = suffix;
-        FileSelectDialog dlg = new FileSelectDialog(this, new FileSelectDialog.IFileSelection() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.12
+        FileSelectDialog dlg = new FileSelectDialog(this, new FileSelectDialog.IFileSelection() {
             @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
             public void fileSelectedInDialog(String filePath, String extraStr, boolean openFile) {
                 if (openFile) {
@@ -4012,13 +3899,12 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         dlg.show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void replaceFolder(int position) {
         String dlgTitle = getString(R.string.select_folder_replace);
         List<FileRecord> records = new ArrayList<>();
         String dirPath = this.resListAdapter.getData(records);
         FileRecord rec = records.get(position);
-        FileSelectDialog.IFileSelection callback = new FileSelectDialog.IFileSelection() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.13
+        FileSelectDialog.IFileSelection callback = new FileSelectDialog.IFileSelection() {
             @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
             public void fileSelectedInDialog(String filePath, String extraStr, boolean openFile) {
                 String workingDir = SDCard.getEditorDirectory() + "/tmp";
@@ -4047,10 +3933,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         dlg.show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void addFile(int position) {
         String dirPath = this.resListAdapter.getData(null);
-        FileSelectDialog dlg = new FileSelectDialog(this, new FileSelectDialog.IFileSelection() { // from class: com.gmail.heagoo.apkeditor.ApkInfoActivity.14
+        FileSelectDialog dlg = new FileSelectDialog(this, new FileSelectDialog.IFileSelection() {
             @Override // com.gmail.heagoo.apkeditor.FileSelectDialog.IFileSelection
             public void fileSelectedInDialog(String filePath, String extraStr, boolean openFile) {
                 String name = filePath.substring(filePath.lastIndexOf("/") + 1);
@@ -4070,7 +3955,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         dlg.show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void createFolder(int position) {
         boolean showImportFolder = this.isFullDecoding;
         new AddFolderDialog(this, this, showImportFolder).show();
@@ -4107,7 +3991,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void fakeShow() {
         Toast.makeText((Context) this, (CharSequence) "Manifest editing is disabled (seems not a genuine version)", 1).show();
     }
@@ -4134,7 +4017,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void dexDecodingFinished(boolean ret, String strError, String strWarning) {
         this.dexConversionInProgress = false;
         this.dexDecoded = ret;

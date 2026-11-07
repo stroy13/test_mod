@@ -263,7 +263,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
     }
 
     private static void copyAndroidjar(final Context ctx, String binRootPath) throws IOException {
-        BundledFrameworkFiles.ensure(new File(binRootPath), new BundledFrameworkFiles.AssetSource() { // from class: com.gmail.heagoo.apkeditor.ApkComposeThread$$ExternalSyntheticLambda0
+        BundledFrameworkFiles.ensure(new File(binRootPath), new BundledFrameworkFiles.AssetSource() {
             public final InputStream open() throws IOException {
                 return ctx.getAssets().open("android.zip");
             }
@@ -283,24 +283,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
         this.bSignApk = bSignApk;
     }
 
-    /* JADX WARN: Code restructure failed: missing block: B:33:0x0062, code lost:
-    
-        if (composeResource() == false) goto L74;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:48:0x00dd, code lost:
-    
-        if (r4 == false) goto L45;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:67:0x0147, code lost:
-    
-        if (signApk() == false) goto L74;
-     */
-    /* JADX WARN: Removed duplicated region for block: B:19:0x019d  */
-    /* JADX WARN: Removed duplicated region for block: B:26:? A[RETURN, SYNTHETIC] */
     @Override // java.lang.Thread, java.lang.Runnable
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     public void run() {
         System.currentTimeMillis();
         boolean rebuildResNeeded = isResourceModified();
@@ -515,7 +498,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
             f.delete();
         }
         try {
-            ProjectCleanup.deleteAll(new File(SDCard.getEditorDirectory(), "tmp"), new BooleanSupplier() { // from class: com.gmail.heagoo.apkeditor.ApkComposeThread$$ExternalSyntheticLambda1
+            ProjectCleanup.deleteAll(new File(SDCard.getEditorDirectory(), "tmp"), new BooleanSupplier() {
                 @Override // java.util.function.BooleanSupplier
                 public final boolean getAsBoolean() {
                     return ApkComposeThread.lambda$cleanup$1();
@@ -525,7 +508,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
         }
     }
 
-    static /* synthetic */ boolean lambda$cleanup$1() {
+    static boolean lambda$cleanup$1() {
         return false;
     }
 
@@ -533,7 +516,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
         Map<String, String> extraReplaces = new HashMap<>();
         if (this.extraMaker != null) {
             try {
-                this.extraMaker.prepareReplaces(this.ctx, this.tempApkPath, extraReplaces, new IDescriptionUpdate() { // from class: com.gmail.heagoo.apkeditor.ApkComposeThread.1
+                this.extraMaker.prepareReplaces(this.ctx, this.tempApkPath, extraReplaces, new IDescriptionUpdate() {
                     public void updateDescription(String strDesc) {
                     }
                 });

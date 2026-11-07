@@ -253,31 +253,7 @@ public class Document implements Serializable {
         }, cancelled);
     }
 
-    /* JADX WARN: Can't wrap try/catch for region: R(17:14|(1:20)|(4:70|71|72|(1:74))(1:22)|23|(3:68|69|54)|27|28|29|30|31|32|(3:(1:56)(2:36|(1:55)(6:40|41|42|43|44|45))|46|47)|57|58|52|53|54) */
-    /* JADX WARN: Code restructure failed: missing block: B:60:0x00fc, code lost:
-    
-        r0 = e;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:61:0x00fd, code lost:
-    
-        r3 = r16;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:63:0x0100, code lost:
-    
-        r0 = e;
-     */
-    /* JADX WARN: Code restructure failed: missing block: B:75:0x005d, code lost:
-    
-        if (r22 < r13) goto L31;
-     */
-    /* JADX WARN: Incorrect condition in loop: B:13:0x0031 */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-        To view partially-correct add '--show-bad-code' argument
-    */
     public void syntaxHighlight(EditText textEditor, int start, int end, int lstart, int lend, boolean change, Context context) {
-        // Restored manually in recovery stage 3 from the JADX --show-bad-code dump
-        // and the v175 smali reference; loop bound corrected to lines.length.
         try {
             if (this.mTokenMarker == null) {
                 if (this.clearNext) {
@@ -326,13 +302,7 @@ public class Document implements Serializable {
         }
     }
 
-    /* JADX WARN: Incorrect condition in loop: B:13:0x002d */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-        To view partially-correct add '--show-bad-code' argument
-    */
     public void syntaxHighlight(EditText textEditor) {
-        // Restored manually in recovery stage 3 (see syntaxHighlight above).
         try {
             if (this.mTokenMarker == null) {
                 if (this.clearNext) {

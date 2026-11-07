@@ -132,7 +132,6 @@ public class FileCopyDialog extends Dialog implements View.OnClickListener {
         this.view.findViewById(R.id.layout_done).setVisibility(0);
     }
 
-    /* JADX WARN: Type inference failed for: r0v0, types: [com.gmail.heagoo.apkeditor.FileCopyDialog$1] */
     @Override
     public void show() {
         new Thread() {

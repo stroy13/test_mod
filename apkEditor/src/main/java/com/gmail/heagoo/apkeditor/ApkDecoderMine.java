@@ -254,8 +254,6 @@ public class ApkDecoderMine implements XmlDecoder.IReferenceDecoder, AXMLParser.
         }
     }
 
-    // Restored during source recovery: body taken from the upstream source of this
-    // class (string constants and call structure verified against the v175 DEX).
     private void decode(ResResource res, Directory inDir, Directory outDir)
             throws AndrolibException {
         ResFileValue fileValue = (ResFileValue) res.getValue();
@@ -402,18 +400,7 @@ public class ApkDecoderMine implements XmlDecoder.IReferenceDecoder, AXMLParser.
         }
     }
 
-    /* JADX WARN: Removed duplicated region for block: B:127:0x021e A[EXC_TOP_SPLITTER, SYNTHETIC] */
-    /* JADX WARN: Removed duplicated region for block: B:69:0x013e A[EXC_TOP_SPLITTER, SYNTHETIC] */
-    /* JADX WARN: Removed duplicated region for block: B:86:0x01bb A[Catch: all -> 0x0207, TryCatch #3 {all -> 0x0207, blocks: (B:114:0x01ee, B:117:0x01fa, B:57:0x00f2, B:59:0x00fe, B:63:0x0130, B:65:0x0134, B:70:0x013e, B:72:0x014b, B:75:0x0152, B:76:0x0184, B:83:0x01a9, B:84:0x01b5, B:86:0x01bb, B:87:0x01be, B:89:0x01cf, B:92:0x01d7, B:95:0x0167, B:102:0x010d, B:104:0x011a, B:107:0x0124), top: B:113:0x01ee }] */
-    /* JADX WARN: Removed duplicated region for block: B:89:0x01cf A[Catch: all -> 0x0207, TryCatch #3 {all -> 0x0207, blocks: (B:114:0x01ee, B:117:0x01fa, B:57:0x00f2, B:59:0x00fe, B:63:0x0130, B:65:0x0134, B:70:0x013e, B:72:0x014b, B:75:0x0152, B:76:0x0184, B:83:0x01a9, B:84:0x01b5, B:86:0x01bb, B:87:0x01be, B:89:0x01cf, B:92:0x01d7, B:95:0x0167, B:102:0x010d, B:104:0x011a, B:107:0x0124), top: B:113:0x01ee }] */
-    /* JADX WARN: Removed duplicated region for block: B:99:0x01b3 A[SYNTHETIC] */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-        To view partially-correct add '--show-bad-code' argument
-    */
-    // Restored during source recovery from the upstream source of this class.
-    // NOTE: the v175 original used parallel raw-resource workers (RawCandidate);
-    // this restored version decodes serially (equivalent output, slower).
+    // Raw resources are decoded serially (equivalent output).
     private void decodeFileResources(ExtFile apkFile, Directory outDir)
             throws AndrolibException {
         Directory inDir = null;

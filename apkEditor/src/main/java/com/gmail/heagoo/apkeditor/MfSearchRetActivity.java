@@ -25,7 +25,6 @@ public class MfSearchRetActivity extends CustomizedLangActivity implements View.
     private ArrayList<Integer> lineIndexs;
     private String xmlPath;
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(1);
@@ -41,7 +40,6 @@ public class MfSearchRetActivity extends CustomizedLangActivity implements View.
         initView();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void initView() {
         TextView titleTv = (TextView) findViewById(R.id.title);
         String format = getResources().getString(R.string.mf_search_ret);
@@ -71,7 +69,6 @@ public class MfSearchRetActivity extends CustomizedLangActivity implements View.
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void saveModification() {
         boolean modified = false;
         for (int i = 0; i < this.editViews.size(); i++) {
@@ -95,7 +92,6 @@ public class MfSearchRetActivity extends CustomizedLangActivity implements View.
         Toast.makeText((Context) this, R.string.no_change_detected, 0).show();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private boolean saveManifest() {
         try {
             FileOutputStream fos = new FileOutputStream(this.xmlPath + ".tmp");

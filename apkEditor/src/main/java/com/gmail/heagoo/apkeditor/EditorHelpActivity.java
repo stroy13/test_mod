@@ -7,7 +7,6 @@ import com.gmail.heagoo.common.CustomizedLangActivity;
 import com.gmail.heagoo.neweditor.ParserRule;
 
 public class EditorHelpActivity extends CustomizedLangActivity {
-    /* JADX WARN: Multi-variable type inference failed */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (GlobalConfig.instance(this).isFullScreen()) {

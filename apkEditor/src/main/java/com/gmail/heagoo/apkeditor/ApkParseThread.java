@@ -250,7 +250,6 @@ public class ApkParseThread extends Thread {
         input.close();
     }
 
-    /* JADX WARN: Unreachable blocks removed: 2, instructions: 2 */
     private boolean parse() {
         boolean z;
         boolean z2;

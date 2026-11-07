@@ -101,7 +101,6 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().requestFeature(1);
@@ -142,7 +141,6 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
                 getResources().getStringArray(R.array.order_key)).ordinal();
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     protected void initAppList() {
         AppListAdapter adapter = new AppListAdapter(this);
         adapter.setAppList(this.displayApps, SettingActivity.getListOrder(this));
@@ -171,7 +169,6 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
         reScanAppList();
     }
 
-    /* JADX WARN: Type inference failed for: r0v0, types: [com.gmail.heagoo.apkeditor.UserAppActivity$1] */
     private void reScanAppList() {
         final int generation = ++this.scanGeneration;
         final int typeIndex = this.appTypeIndex;
@@ -227,7 +224,6 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     public void appClicked(AppInfo appInfo) {
         PackageManager pm = getPackageManager();
         try {
@@ -269,7 +265,6 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
         showAppList(matchedApps);
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void popListAdapter(View parent) {
         if (this.popupWindow == null) {
             LayoutInflater layoutInflater = (LayoutInflater) getSystemService("layout_inflater");
@@ -329,7 +324,6 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     @Override
     public void editModeSelected(int mode, String extraStr) {
         Intent intent = null;
@@ -413,7 +407,6 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void backupApp(int position) {
         try {
             AppInfo info = getAppInfo(position);
@@ -457,7 +450,6 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
         }
     }
 
-    /* JADX WARN: Multi-variable type inference failed */
     private void launchApp(int position) {
         try {
             AppInfo info = getAppInfo(position);

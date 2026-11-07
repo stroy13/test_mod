@@ -108,7 +108,6 @@ public class ApkComposeService extends Service implements ITaskCallback {
         super.onDestroy();
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public void showNotification() {
         Intent composeIntent = new Intent(this, (Class<?>) ApkComposeActivity.class);
         composeIntent.setAction(Constants.ACTION.MAIN_ACTION);
@@ -138,7 +137,6 @@ public class ApkComposeService extends Service implements ITaskCallback {
         }
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public void resetStatus() {
         if (this.composeThread != null && this.composeThread.isAlive()) {
             this.composeThread.stopRunning();
@@ -149,7 +147,6 @@ public class ApkComposeService extends Service implements ITaskCallback {
     private void dumpModification() {
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
     public void startComposeThread() {
         if (this.srcApkPath != null) {
             this.composeThread = new ApkComposeThread(this, this.decodeRootPath, this.srcApkPath, this.targetApkPath);
@@ -161,7 +158,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
         }
         this.composeThread.setModification(this.stringModified.booleanValue(), this.manifestModified.booleanValue(), this.resFileModified.booleanValue(), this.modifiedSmaliFolders, this.addedFiles, this.replacedFiles, this.deletedFiles, this.fileEntry2ZipEntry, this.signAPK);
         this.composeThread.setTaskCallback(this);
-        this.composeThread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() { // from class: com.gmail.heagoo.apkeditor.ApkComposeService$$ExternalSyntheticLambda0
+        this.composeThread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override // java.lang.Thread.UncaughtExceptionHandler
             public final void uncaughtException(Thread thread, Throwable th) {
                 ApkComposeService.this.m35x7541076d(thread, th);
@@ -170,8 +167,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
         this.composeThread.start();
     }
 
-    /* renamed from: lambda$startComposeThread$0$com-gmail-heagoo-apkeditor-ApkComposeService, reason: not valid java name */
-    /* synthetic */ void m35x7541076d(Thread thread, Throwable error) {
+    void m35x7541076d(Thread thread, Throwable error) {
         Log.e("ApkComposeService", "Build worker failed", error);
         synchronized (this.composeResult) {
             if (this.composeResult.finished) {
@@ -181,13 +177,6 @@ public class ApkComposeService extends Service implements ITaskCallback {
         }
     }
 
-    /* JADX WARN: Code restructure failed: missing block: B:17:0x0037, code lost:
-    
-        if (r1 == null) goto L22;
-     */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-    */
     private Map<String, String> getMapFromFile(String filepath) {
         Map<String, String> result = new HashMap<>();
         BufferedReader br = null;

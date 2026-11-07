@@ -19,7 +19,6 @@ public class AppAgreementDialog extends Dialog implements View.OnClickListener {
     private final WeakReference<MainActivity> activityRef;
     private EditText inputEt;
 
-    /* JADX WARN: Multi-variable type inference failed */
     public AppAgreementDialog(MainActivity mainActivity) {
         super(mainActivity, EditorTheme.dialogStyle(mainActivity));
         requestWindowFeature(1);
