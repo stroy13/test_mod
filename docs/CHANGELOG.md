@@ -1,5 +1,58 @@
 # Изменения
 
+## 1.10.0.178 — исправление OOM при показе манифеста, versionCode 178
+
+Симптом: приложение падает при открытии/прокрутке манифеста, в логе:
+
+```
+FATAL EXCEPTION: main
+Process: ru.apkeditor.plus
+java.lang.OutOfMemoryError: Failed to allocate a 124606360 byte allocation
+    with 72692304 free bytes and 69MB until OOM, target footprint 536870912,
+    growth limit 536870912
+    at java.util.ArrayList.grow(ArrayList.java:245)
+    at java.util.ArrayList.add(ArrayList.java:491)
+    at com.gmail.heagoo.apkeditor.ManifestDisplayFormatter.plan(ManifestDisplayFormatter.java:81)
+    at com.gmail.heagoo.apkeditor.ManifestListAdapter.formatManifestLine(ManifestListAdapter.java:179)
+    at com.gmail.heagoo.apkeditor.ManifestListAdapter.getView(ManifestListAdapter.java:173)
+```
+
+Причина — незавершающийся цикл в `ManifestDisplayFormatter.plan()`. Это место
+восстановлено JADX с потерями: внутренний перебор span-ов значения атрибута был
+декомпилирован в `while (true)`, где индекс `j` увеличивался только в ветке
+«не кавычковое значение». Для длинной строки манифеста с атрибутом `name="value"`,
+который не помещается по ширине, совпадающая ветка (`kind == VALUE`, кавычки,
+между именем и значением только `=`) добавляла вставку `\n    ` и **не** двигала
+`j` — список `plan.insertions` рос бесконечно, пока не заканчивалась куча
+(отсюда `ArrayList.grow` → OOM на строке 81). Остальные ветки (`j >= size`,
+`value.start >= end`, `kind == TAG/ATTRIBUTE`) тоже не имели выхода и давали
+вечный цикл (ANR). То есть любая достаточно длинная строка манифеста вешала или
+ронила UI-поток при отрисовке списка.
+
+Исправлено в `ManifestDisplayFormatter`:
+
+1. Внутренний перебор заменён на ограниченный `for (int j = spanCursor; j < spans.size(); j++)`
+   с выходом по `value.start >= end` и `break` после найденного значения атрибута —
+   цикл гарантированно завершается, вставка добавляется ровно один раз.
+2. Метод `plan()` переписан начисто (убраны артефакты декомпиляции вида
+   `attributes = attributes2`, `list = spans`, `width2 = measure`), магические
+   числа заменены константами `ManifestSyntax.ATTRIBUTE/VALUE/SYMBOL`. Поведение
+   переноса строк не изменилось: атрибуты переносятся на отдельные строки с отступом
+   2 пробела, длинные кавычковые значения — на строку с отступом 4 пробела,
+   вокруг `/>` и `">` ставятся word-joiner'ы (`\u2060`), как и раньше.
+
+Проверка: добавлен юнит-тест `ManifestDisplayFormatterTest` (модуль `apkEditor`,
+`testImplementation junit:4.13.2`) — длинные строки с атрибутами, self-closing теги,
+строка с 40 атрибутами, короткие/пустые строки; у каждого теста `timeout = 5000`,
+чтобы при возврате бага тест падал быстро, а не вешал CI. Тест выполняется в CI
+(`:apkEditor:testDebugUnitTest`). Синтаксис изменённого файла проверен парсером Java,
+логика цикла дополнительно проверена поведенчески (старый код — бесконечный рост
+вставок, новый — ограниченный корректный перенос). Полноценная сборка — workflow
+`.github/workflows/build.yml`.
+
+Заодно `versionCode`/`versionName` подняты до 178 / `1.10.0.178`, а workflow и его
+шаги/релиз переведены на русский язык.
+
 ## 1.10.0.177 — поддержка новых чанков `resources.arsc` (Android 16), versionCode 177
 
 После предыдущего фикса загрузка framework перестала висеть, но на Android 16 падала:

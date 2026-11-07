@@ -34,71 +34,59 @@ public final class ManifestDisplayFormatter {
     }
 
     public static Plan plan(String text, List<ManifestSyntax.Span> spans, float width, Width measure) {
-        List<ManifestSyntax.Span> attributes;
-        List<ManifestSyntax.Span> list = spans;
-        Width width2 = measure;
         Plan plan = new Plan();
-        if (text.length() == 0 || width <= 0.0f || width2.measure(text, 0, text.length()) <= width) {
+        if (text.length() == 0 || width <= 0.0f || measure.measure(text, 0, text.length()) <= width) {
             return plan;
         }
-        List<ManifestSyntax.Span> attributes2 = new ArrayList<>();
-        for (ManifestSyntax.Span span : list) {
-            if (span.kind == 2 && span.start > 0 && whitespace(text.charAt(span.start - 1))) {
-                attributes2.add(span);
+        List<ManifestSyntax.Span> attributes = new ArrayList<>();
+        for (ManifestSyntax.Span span : spans) {
+            if (span.kind == ManifestSyntax.ATTRIBUTE && span.start > 0 && whitespace(text.charAt(span.start - 1))) {
+                attributes.add(span);
             }
         }
-        float two = width2.measure("  ", 0, 2);
+        float two = measure.measure("  ", 0, 2);
         float four = 2.0f * two;
         int lineStart = 0;
         float indent = 0.0f;
         int spanCursor = 0;
-        int i = 0;
-        while (i < attributes2.size()) {
-            ManifestSyntax.Span attr = attributes2.get(i);
-            int end = i + 1 < attributes2.size() ? attributes2.get(i + 1).start : text.length();
-            if (width2.measure(text, lineStart, end) + indent <= width) {
-                attributes = attributes2;
-            } else {
-                if (attr.start <= lineStart) {
-                    attributes = attributes2;
-                } else {
-                    attributes = attributes2;
-                    plan.insertions.add(new Insertion(attr.start, "\n  "));
-                    lineStart = attr.start;
-                    indent = two;
+        for (int i = 0; i < attributes.size(); i++) {
+            ManifestSyntax.Span attr = attributes.get(i);
+            int end = i + 1 < attributes.size() ? attributes.get(i + 1).start : text.length();
+            if (measure.measure(text, lineStart, end) + indent <= width) {
+                continue;
+            }
+            if (attr.start > lineStart) {
+                plan.insertions.add(new Insertion(attr.start, "\n  "));
+                lineStart = attr.start;
+                indent = two;
+            }
+            // If the attribute still does not fit on its own line, move its quoted
+            // value onto a separate, deeper-indented line.
+            if (measure.measure(text, lineStart, end) + indent > width) {
+                while (spanCursor < spans.size() && spans.get(spanCursor).start < attr.end) {
+                    spanCursor++;
                 }
-                if (width2.measure(text, lineStart, end) + indent > width) {
-                    while (spanCursor < list.size() && list.get(spanCursor).start < attr.end) {
-                        spanCursor++;
+                // Bounded scan of this attribute's value spans. The previous
+                // decompiled loop was `while (true)` and only advanced `j` in one
+                // branch, so a matching `name="value"` kept adding insertions
+                // forever until the heap was exhausted (OutOfMemoryError).
+                for (int j = spanCursor; j < spans.size(); j++) {
+                    ManifestSyntax.Span value = spans.get(j);
+                    if (value.start >= end) {
+                        break;
                     }
-                    int j = spanCursor;
-                    while (true) {
-                        if (j < list.size()) {
-                            ManifestSyntax.Span value = list.get(j);
-                            if (value.start < end && value.kind != 2 && value.kind != 1) {
-                                if (value.kind == 3 && quoted(text, value)) {
-                                    if (text.substring(attr.end, value.start).trim().equals("=")) {
-                                        plan.insertions.add(new Insertion(value.start, "\n    "));
-                                        int lineStart2 = value.start;
-                                        lineStart = lineStart2;
-                                        indent = four;
-                                    }
-                                } else {
-                                    j++;
-                                    list = spans;
-                                }
-                            }
-                        }
+                    if (value.kind == ManifestSyntax.VALUE && quoted(text, value)
+                            && text.substring(attr.end, value.start).trim().equals("=")) {
+                        plan.insertions.add(new Insertion(value.start, "\n    "));
+                        lineStart = value.start;
+                        indent = four;
+                        break;
                     }
                 }
             }
-            i++;
-            list = spans;
-            width2 = measure;
-            attributes2 = attributes;
         }
         for (ManifestSyntax.Span s : spans) {
-            if (s.kind == 5 && s.start < text.length() && text.charAt(s.start) == '>') {
+            if (s.kind == ManifestSyntax.SYMBOL && s.start < text.length() && text.charAt(s.start) == '>') {
                 int close = s.start;
                 int prev = close - 1;
                 if (prev >= 0 && text.charAt(prev) == '/') {
