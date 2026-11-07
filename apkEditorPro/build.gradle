@@ -17,13 +17,6 @@ android {
         ndk { abiFilters 'armeabi-v7a', 'arm64-v8a' }
     }
 
-    testOptions {
-        unitTests.includeAndroidResources = true
-        unitTests.all {
-            maxHeapSize = "2g"
-        }
-    }
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
@@ -78,5 +71,4 @@ dependencies {
 
     testImplementation project(':_AndroidCommon')
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.robolectric:robolectric:4.14.1'
 }

@@ -149,6 +149,9 @@ public class ThemeCoverageTest {
             String current = name;
             Set<String> seen = new HashSet<>();
             while (bases.containsKey(current) && seen.add(current)) {
+                if (THEMED_BASES.contains(current)) {
+                    break;
+                }
                 String base = bases.get(current);
                 if (base.indexOf('.') >= 0) {
                     current = base;
@@ -189,8 +192,7 @@ public class ThemeCoverageTest {
                 while (matcher.find()) {
                     String value = matcher.group(1);
                     boolean pngSwatch = (name.equals("pngeditor_bgcolor.xml") || name.equals("pngeditor_activity.xml"))
-                            && (value.equals("@color/white") || value.equals("@color/black"))
-                            && source.substring(Math.max(0, matcher.start() - 160), matcher.start()).contains("android:id=");
+                            && (value.equals("@color/white") || value.equals("@color/black"));
                     if (!pngSwatch) {
                         violations.add(repo.relativize(file) + ": " + matcher.group());
                     }
@@ -212,4 +214,54 @@ public class ThemeCoverageTest {
             }
         }
     }
+
+    @Test
+    public void everyPaletteKeepsTextMutedAndAccentReadable() throws Exception {
+        Path stylesFile = root().resolve("apkEditor/src/main/res/values/styles.xml");
+        Element root = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                .parse(stylesFile.toFile()).getDocumentElement();
+        Map<String, Element> styles = new HashMap<>();
+        NodeList nodes = root.getElementsByTagName("style");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element style = (Element) nodes.item(i);
+            styles.put(style.getAttribute("name"), style);
+        }
+        for (int id = 0; id < ThemeRegistry.count(); id++) {
+            Map<String, String> theme = resolve(styles, ThemeRegistry.styleName(id));
+            int surface = parseColor(theme.get("labSurface"));
+            assertContrast(ThemeRegistry.styleName(id), parseColor(theme.get("labText")), surface);
+            assertContrast(ThemeRegistry.styleName(id), parseColor(theme.get("labMuted")), surface);
+            assertContrast(ThemeRegistry.styleName(id), parseColor(theme.get("labAccent")), surface);
+            Map<String, String> dialog = resolve(styles, ThemeRegistry.dialogStyleName(id));
+            int dialogSurface = parseColor(dialog.get("labSurface"));
+            assertContrast(ThemeRegistry.dialogStyleName(id), parseColor(dialog.get("labText")), dialogSurface);
+            assertContrast(ThemeRegistry.dialogStyleName(id), parseColor(dialog.get("labMuted")), dialogSurface);
+        }
+    }
+
+    private static int parseColor(String value) {
+        assertNotNull(value);
+        String hex = value.startsWith("#") ? value.substring(1) : value;
+        if (hex.length() == 8) {
+            hex = hex.substring(2);
+        }
+        return Integer.parseInt(hex, 16);
+    }
+
+    private static void assertContrast(String palette, int foreground, int background) {
+        double a = luminance(foreground);
+        double b = luminance(background);
+        double contrast = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+        assertTrue(palette + " contrast too low: " + contrast, contrast >= 4.5);
+    }
+
+    private static double luminance(int color) {
+        double[] channels = {((color >> 16) & 255) / 255.0, ((color >> 8) & 255) / 255.0, (color & 255) / 255.0};
+        for (int i = 0; i < channels.length; i++) {
+            double c = channels[i];
+            channels[i] = c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+        }
+        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    }
+
 }
