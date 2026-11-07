@@ -1,0 +1,5 @@
+BUILD SUCCESSFUL — ошибок компиляции нет.
+Финальный прогон: gradle :apkEditorPro:assembleDebug (Gradle 9.8.2, AGP 9.5.1) завершился успешно,
+APK: apkEditorPro/build/outputs/apk/debug/apkEditorPro-debug.apk
+История исправления ошибок восстановления: 196 -> 0 (JADX-артефакты, недостающие ресурсы v175,
+двойной smali-стек, объявления parse_map/parse_list в jni/util.h).

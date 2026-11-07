@@ -1,0 +1,23 @@
+* text=auto eol=lf
+
+# Shell / gradle scripts
+*.sh            text eol=lf
+gradlew         text eol=lf
+gradlew.bat     text eol=crlf
+*.bat           text eol=crlf
+
+# Binaries (never convert, never diff as text)
+*.jar           binary
+*.so            binary
+*.zip           binary
+*.apk           binary
+*.dex           binary
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.webp          binary
+*.ttf           binary
+*.otf           binary
+*.pk8           binary
+*.pem           binary

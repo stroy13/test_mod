@@ -1,0 +1,6 @@
+# Copy to local.properties and adjust paths for your machine.
+# local.properties is ignored by git on purpose (it is machine specific).
+# On Windows use forward slashes or escaped backslashes.
+
+sdk.dir=/path/to/Android/Sdk
+ndk.dir=/path/to/Android/Sdk/ndk/30.0.16248370
