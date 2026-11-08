@@ -100,9 +100,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.text.DateFormat;
@@ -240,6 +238,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         final AtomicBoolean cancelled;
         AlertDialog dialog;
         long lastUpdateNanos;
+        ProgressBar progressBar;
         TextView progressText;
         Thread worker;
 
@@ -1522,6 +1521,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(-1, (int) (getResources().getDisplayMetrics().density * 5.0f));
         progressParams.topMargin = p / 2;
         content.addView(progress, progressParams);
+        job.progressBar = progress;
         job.dialog = new AlertDialog.Builder(this).setTitle(resource == null ? "Диагностика XML и smali" : "Поиск использования ресурса").setView(content).setCancelable(false).setNegativeButton("Отменить", (DialogInterface.OnClickListener) null).create();
         job.dialog.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override // android.content.DialogInterface.OnShowListener
@@ -1600,38 +1600,49 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     void m77x217ae9ca(final AnalysisJob job, String phase, int done, int total, String path) {
-        StringBuilder sb;
-        StringBuilder append;
         long now = System.nanoTime();
-        if (now - job.lastUpdateNanos >= 200000000 || (total > 0 && done == total)) {
+        if (now - job.lastUpdateNanos >= 200000000 || done == 0 || (total > 0 && done == total)) {
             job.lastUpdateNanos = now;
             String name = path == null ? "" : path;
             if (name.length() > 110) {
                 name = "…" + name.substring(name.length() - 109);
             }
-            StringBuilder append2 = new StringBuilder().append(phase);
+            StringBuilder message = new StringBuilder(phase);
             if (total > 0) {
-                sb = new StringBuilder();
-                append = sb.append(": ").append(done).append(" / ").append(total);
+                message.append(": ").append(done).append(" / ").append(total)
+                        .append(" (").append(done * 100 / total).append("%)");
             } else {
-                sb = new StringBuilder();
-                append = sb.append(": ").append(done);
+                message.append(": ").append(done);
             }
-            final String message = append2.append(append.toString()).append(name.isEmpty() ? "" : "\n" + name).toString();
+            if (!name.isEmpty()) {
+                message.append('\n').append(name);
+            }
+            final String text = message.toString();
+            final int current = done;
+            final int count = total;
             runOnUiThread(new Runnable() {
                 @Override // java.lang.Runnable
                 public final void run() {
-                    ApkInfoActivity.this.m76x5e8e806b(job, message);
+                    ApkInfoActivity.this.m76x5e8e806b(job, text, current, count);
                 }
             });
         }
     }
 
-    void m76x5e8e806b(AnalysisJob job, String message) {
+    void m76x5e8e806b(AnalysisJob job, String message, int done, int total) {
         if (this.analysisJob != job || job.cancelled.get() || isFinishing() || isDestroyed()) {
             return;
         }
         job.progressText.setText(message);
+        if (job.progressBar != null) {
+            if (total > 0) {
+                job.progressBar.setIndeterminate(false);
+                job.progressBar.setMax(total);
+                job.progressBar.setProgress(Math.min(done, total));
+            } else {
+                job.progressBar.setIndeterminate(true);
+            }
+        }
     }
 
     void m78xe4675329(AnalysisJob job, String failure, ProjectAnalysis.Report result, File root, String resource) {
@@ -1742,275 +1753,276 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             return;
         }
         final List<String> configs = new ArrayList<>(this.allStringValues.keySet());
-        Collections.sort(configs);
-        final String[] names = new String[configs.size()];
+        configs.sort(Comparator.comparing(ResourceLocales::sortKey));
+        if (configs.size() < 2) {
+            new AlertDialog.Builder(this).setTitle("Сравнение переводов")
+                    .setMessage("В проекте только одна конфигурация строк. Добавьте другой язык, чтобы сравнить оригинал и перевод.")
+                    .setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+            return;
+        }
+        String[] names = new String[configs.size()];
         for (int i = 0; i < names.length; i++) {
-            names[i] = configs.get(i).isEmpty() ? "По умолчанию" : configs.get(i);
+            names[i] = ResourceLocales.choice(configs.get(i));
         }
-        new AlertDialog.Builder(this).setTitle("Базовый язык").setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() {
-            @Override // android.content.DialogInterface.OnClickListener
-            public final void onClick(DialogInterface dialogInterface, int i2) {
-                ApkInfoActivity.this.m52x23d1a179(names, configs, dialogInterface, i2);
-            }
-        }).show();
-    }
-
-    void m50xa09429f0(List configs, int baseIndex, int targetIndex, DialogInterface d3, int mode) {
-        showLocaleDifferences((String) configs.get(baseIndex), (String) configs.get(targetIndex), mode == 1);
-    }
-
-    void m51x6380934f(final List configs, final int baseIndex, DialogInterface d2, final int targetIndex) {
-        new AlertDialog.Builder(this).setTitle("Показать").setAdapter(dialogChoiceAdapter(new String[]{"Только отсутствующие и ошибки", "Все строки"}), new DialogInterface.OnClickListener() {
-            @Override // android.content.DialogInterface.OnClickListener
-            public final void onClick(DialogInterface dialogInterface, int i) {
-                ApkInfoActivity.this.m50xa09429f0(configs, baseIndex, targetIndex, dialogInterface, i);
-            }
-        }).show();
-    }
-
-    void m52x23d1a179(String[] names, final List configs, DialogInterface d, final int baseIndex) {
-        new AlertDialog.Builder(this).setTitle("Сравнить с языком").setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() {
-            @Override // android.content.DialogInterface.OnClickListener
-            public final void onClick(DialogInterface dialogInterface, int i) {
-                ApkInfoActivity.this.m51x6380934f(configs, baseIndex, dialogInterface, i);
-            }
-        }).show();
-    }
-
-    private void showLocaleDifferences(String base, final String target, boolean showAll) {
-        StringBuilder append = null;
-        String str = null;
-        StringBuilder sb;
-        final Map<String, StringItem> t = new HashMap<>();
-        Iterator<StringItem> it = this.allStringValues.get(target).iterator();
-        while (it.hasNext()) {
-            StringItem item = it.next();
-            t.put(item.name, item);
-        }
-        final List<StringItem> entries = new ArrayList<>();
-        List<String> labels = new ArrayList<>();
-        Iterator<StringItem> it2 = this.allStringValues.get(base).iterator();
-        while (it2.hasNext()) {
-            StringItem item2 = it2.next();
-            StringItem v = t.get(item2.name);
-            if (v == null) {
-                entries.add(item2);
-                append = new StringBuilder().append(item2.name);
-                str = " — перевод отсутствует";
-            } else if (!LocalizationChecks.tokens(item2.value).equals(LocalizationChecks.tokens(v.value))) {
-                entries.add(item2);
-                sb = new StringBuilder().append(item2.name).append(" — плейсхолдеры ").append(LocalizationChecks.tokens(item2.value)).append(" / ").append(LocalizationChecks.tokens(v.value));
-                labels.add(sb.toString());
-            } else if (showAll) {
-                entries.add(item2);
-                append = new StringBuilder().append(item2.name).append(" — ");
-                str = v.value;
-            }
-            sb = append.append(str);
-            labels.add(sb.toString());
-        }
-        AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle("Переводы: " + (base.isEmpty() ? "по умолчанию" : base) + " → " + (target.isEmpty() ? "по умолчанию" : target)).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null);
-        if (labels.isEmpty()) {
-            b.setMessage("Отсутствующие строки и несовпадения простых плейсхолдеров не найдены.");
-        } else {
-            labels.add(0, "Сравниваются строковые ресурсы; plurals, arrays и нестандартные форматы не проверяются. Нажмите на строку для редактирования.");
-            b.setAdapter(dialogChoiceAdapter((String[]) labels.toArray(new String[0])), new DialogInterface.OnClickListener() {
-                @Override // android.content.DialogInterface.OnClickListener
-                public final void onClick(DialogInterface dialogInterface, int i) {
-                    ApkInfoActivity.this.m88x613d8627(entries, t, target, dialogInterface, i);
-                }
-            });
-        }
-        b.show();
-    }
-
-    void m86xdb64b369(String target, StringItem source, EditText translation, DialogInterface q, int w) {
-        addMissingTranslation(target, source.name, translation.getText().toString());
-    }
-
-    void m87x9e511cc8(String target, StringItem dest, EditText edit, DialogInterface x, int w) {
-        writeTranslation(target, dest, edit.getText().toString());
-    }
-
-    void m88x613d8627(List<StringItem> entries, Map<String, StringItem> t, final String target, DialogInterface d, int i) {
-        if (i == 0) {
-            return;
-        }
-        final StringItem source = entries.get(i - 1);
-        final StringItem dest = t.get(source.name);
-        final EditText translation = new EditText(this);
-        if (dest == null) {
-            translation.setHint(source.value);
-            new AlertDialog.Builder(this)
-                    .setTitle("Добавить: " + source.name)
-                    .setMessage("Базовое значение: " + source.value + "\nПеревод будет записан в отдельный XML-файл ресурсов.")
-                    .setView(translation)
-                    .setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null)
-                    .setPositiveButton("Добавить", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            ApkInfoActivity.this.m86xdb64b369(target, source, translation, dialog, which);
-                        }
-                    })
-                    .show();
-            return;
-        }
-        translation.setText(dest.value);
-        new AlertDialog.Builder(this)
-                .setTitle(dest.name)
-                .setMessage("Базовое значение: " + source.value + (dest.styledValue == null ? "\nВнимание: форматирование существующего перевода может быть потеряно." : ""))
-                .setView(translation)
-                .setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null)
-                .setPositiveButton("Сохранить", new DialogInterface.OnClickListener() {
+        new AlertDialog.Builder(this).setTitle("Базовый язык (оригинал)")
+                .setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        ApkInfoActivity.this.m87x9e511cc8(target, dest, translation, dialog, which);
+                        chooseTargetLocale(configs.get(which));
                     }
-                })
-                .show();
+                }).setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).show();
     }
 
-    private void writeTranslation(String qualifier, StringItem item, String value) {
-        char c;
-        int i;
-        Map<String, String> staged;
+    private void chooseTargetLocale(final String base) {
+        final List<String> targets = new ArrayList<>();
+        for (String qualifier : this.allStringValues.keySet()) {
+            if (!qualifier.equals(base)) {
+                targets.add(qualifier);
+            }
+        }
+        targets.sort(Comparator.comparing(ResourceLocales::sortKey));
+        if (targets.isEmpty()) {
+            Toast.makeText((Context) this, (CharSequence) "Нет другого языка для сравнения", 0).show();
+            return;
+        }
+        String[] names = new String[targets.size()];
+        for (int i = 0; i < names.length; i++) {
+            names[i] = ResourceLocales.choice(targets.get(i));
+        }
+        new AlertDialog.Builder(this).setTitle("Язык перевода")
+                .setAdapter(dialogChoiceAdapter(names), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        chooseComparisonMode(base, targets.get(which));
+                    }
+                }).setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).show();
+    }
+
+    private void chooseComparisonMode(final String base, final String target) {
+        String[] choices = {
+                "Только замечания — нет перевода, лишние строки, плейсхолдеры",
+                "Все строки — оригинал и перевод"
+        };
+        new AlertDialog.Builder(this).setTitle("Что показать")
+                .setAdapter(dialogChoiceAdapter(choices), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        showLocaleDifferences(base, target, which == 1);
+                    }
+                }).setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null).show();
+    }
+
+    private void showLocaleDifferences(String base, String target, boolean showAll) {
+        if (base.equals(target)) {
+            Toast.makeText((Context) this, (CharSequence) "Выберите разные языки для сравнения", 0).show();
+            return;
+        }
+        List<StringItem> source = this.allStringValues.get(base);
+        List<StringItem> translated = this.allStringValues.get(target);
+        if (source == null || translated == null) {
+            Toast.makeText((Context) this, (CharSequence) "Строковые ресурсы ещё не подготовлены", 0).show();
+            return;
+        }
+        TranslationComparison.Result result = TranslationComparison.compare(source, translated, showAll);
+        final TranslationComparisonAdapter adapter = new TranslationComparisonAdapter(
+                this, TranslationComparison.summary(result, base, target), result);
+        final String sourceQualifier = base;
+        final String targetQualifier = target;
+        final boolean all = showAll;
+        new AlertDialog.Builder(this).setTitle("Сравнение переводов")
+                .setAdapter(adapter, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (which > 0) {
+                            openTranslationEditor(sourceQualifier, targetQualifier,
+                                    (TranslationComparison.Row) adapter.getItem(which), all, adapter);
+                        }
+                    }
+                }).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+    }
+
+    private void refreshTranslationComparison(String base, String target, boolean showAll,
+                                              TranslationComparisonAdapter adapter) {
+        TranslationComparison.Result result = TranslationComparison.compare(
+                this.allStringValues.get(base), this.allStringValues.get(target), showAll);
+        adapter.update(TranslationComparison.summary(result, base, target), result);
+    }
+
+    private void openTranslationEditor(String base, String target, TranslationComparison.Row row,
+                                       boolean showAll, TranslationComparisonAdapter adapter) {
+        final StringItem source = row.source;
+        final StringItem dest = row.target;
+        final EditText translation = new EditText(this);
+        translation.setSingleLine(false);
+        if (dest == null) {
+            translation.setHint(source == null ? "" : source.value);
+        } else {
+            translation.setText(dest.value);
+        }
+        StringBuilder message = new StringBuilder();
+        message.append("Язык перевода: ").append(ResourceLocales.label(target)).append('\n')
+                .append(ResourceLocales.folder(target)).append("\n\n");
+        if (source != null) {
+            message.append("Оригинал (").append(ResourceLocales.label(base)).append("):\n")
+                    .append(source.value == null ? "" : source.value).append("\n\n");
+        } else {
+            message.append("В базовом языке такой строки нет.\n\n");
+        }
+        if (dest != null) {
+            message.append("Текущий перевод:\n").append(dest.value == null ? "" : dest.value).append("\n\n");
+        }
+        if (row.status == TranslationComparison.Status.PLACEHOLDERS) {
+            message.append("Плейсхолдеры оригинала: ").append(row.sourceTokens).append('\n')
+                    .append("Плейсхолдеры перевода: ").append(row.targetTokens).append("\n\n");
+        } else if (!"нет".equals(row.sourceTokens)) {
+            message.append("Плейсхолдеры оригинала: ").append(row.sourceTokens).append("\n\n");
+        }
+        if (dest != null && dest.styledValue != null) {
+            message.append("Внимание: форматирование существующего перевода может быть потеряно.\n\n");
+        }
+        message.append(dest == null
+                ? "Перевод будет записан в отдельный XML-файл ресурсов."
+                : "Изменение будет записано в существующий XML-файл проекта.");
+        final String qualifier = target;
+        final boolean all = showAll;
+        final TranslationComparisonAdapter comparisonAdapter = adapter;
+        new AlertDialog.Builder(this)
+                .setTitle((dest == null ? "Добавить перевод: " : "Изменить перевод: ") + row.name)
+                .setMessage(message.toString())
+                .setView(translation)
+                .setNegativeButton(android.R.string.cancel, (DialogInterface.OnClickListener) null)
+                .setPositiveButton(dest == null ? "Добавить" : "Сохранить", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        boolean saved = dest == null
+                                ? addMissingTranslation(qualifier, source.name, translation.getText().toString())
+                                : writeTranslation(qualifier, dest, translation.getText().toString());
+                        if (saved) {
+                            refreshTranslationComparison(base, qualifier, all, comparisonAdapter);
+                        }
+                    }
+                }).show();
+    }
+
+    private boolean writeTranslation(String qualifier, StringItem item, String value) {
         try {
-            Map<String, String> staged2 = this.stringListAdapter.getChangedValues().get(qualifier);
-            if (staged2 != null && staged2.containsKey(item.name)) {
+            Map<String, String> staged = this.stringListAdapter.getChangedValues().get(qualifier);
+            if (staged != null && staged.containsKey(item.name)) {
                 throw new IOException("Для этой строки уже есть несохранённая правка в визуальной форме. Сначала сохраните проект.");
             }
-            if (item.name.matches("[a-z][a-z0-9_]*") && (qualifier.isEmpty() || qualifier.matches("-[A-Za-z0-9-]+"))) {
-                File dir = new File(this.decodeRootPath, "res/values" + qualifier);
-                File[] files = dir.listFiles(new FilenameFilter() {
-                    @Override // java.io.FilenameFilter
-                    public final boolean accept(File file, String str) {
-                        boolean endsWith;
-                        endsWith = str.endsWith(".xml");
-                        return endsWith;
-                    }
-                });
-                if (files == null) {
-                    throw new IOException("Нет папки ресурсов");
-                }
-                Pattern pat = Pattern.compile("(?s)(<string\\b(?=[^>]*\\bname\\s*=\\s*[\"']" + Pattern.quote(item.name) + "[\"'])[^>]*>)([^<]*)(</string\\s*>)");
-                File matchFile = null;
-                String matchText = null;
-                int begin = 0;
-                int end = 0;
-                int count = 0;
-                int length = files.length;
-                int i2 = 0;
-                while (i2 < length) {
-                    File f = files[i2];
-                    if (Files.isSymbolicLink(f.toPath())) {
-                        i = i2;
-                        staged = staged2;
-                    } else if (f.length() > 4194304) {
-                        i = i2;
-                        staged = staged2;
-                    } else {
-                        i = i2;
-                        staged = staged2;
-                        String text = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
-                        Matcher matcher = pat.matcher(text);
-                        while (matcher.find()) {
-                            count++;
-                            matchFile = f;
-                            matchText = text;
-                            begin = matcher.start(2);
-                            end = matcher.end(2);
-                        }
-                    }
-                    i2 = i + 1;
-                    staged2 = staged;
-                }
-                if (count != 1) {
-                    throw new IOException("Строка не найдена однозначно или содержит форматирование; используйте редактор XML.");
-                }
-                String relative = new File(this.decodeRootPath).toPath().relativize(matchFile.toPath()).toString().replace(File.separatorChar, '/');
-                String stagedPath = this.resListAdapter.getReplacedFilePath(relative);
-                if (!this.resListAdapter.getDeletedFiles().contains(relative)) {
-                    if (stagedPath != null) {
-                        c = 1;
-                        if (!new File(stagedPath).getCanonicalFile().equals(matchFile.getCanonicalFile())) {
-                        }
-                    } else {
-                        c = 1;
-                    }
-                    String encoded = StringItem.toString(item.name, value, (String) null);
-                    if (encoded.contains("formatted=\"false\"") && !matchText.substring(Math.max(0, matchText.lastIndexOf("<string", begin)), begin).contains("formatted=\"false\"")) {
-                        throw new IOException("Несколько непозиционных плейсхолдеров: используйте %1$s, %2$d или редактор XML.");
-                    }
-                    int a = encoded.indexOf(62);
-                    int b = encoded.lastIndexOf("</string>");
-                    if (a < 0 || b < a) {
-                        throw new IOException("Не удалось закодировать строку");
-                    }
-                    String result = matchText.substring(0, begin) + encoded.substring(a + 1, b) + matchText.substring(end);
-                    File temp = File.createTempFile(".translation-", ".tmp", dir);
-                    try {
-                        try {
-                            try {
-                                Files.write(temp.toPath(), result.getBytes(StandardCharsets.UTF_8), new OpenOption[0]);
-                                Path path = temp.toPath();
-                                Path path2 = matchFile.toPath();
-                                CopyOption[] copyOptionArr = new CopyOption[2];
-                                copyOptionArr[0] = StandardCopyOption.ATOMIC_MOVE;
-                                copyOptionArr[c] = StandardCopyOption.REPLACE_EXISTING;
-                                Files.move(path, path2, copyOptionArr);
-                                temp.delete();
-                                this.resListAdapter.fileModified(relative, matchFile.getAbsolutePath());
-                                item.value = value;
-                                item.styledValue = null;
-                                updateStringList();
-                                Toast.makeText((Context) this, (CharSequence) "Перевод сохранён в файле проекта", 0).show();
-                                return;
-                            } catch (Throwable th) {
-                                th = th;
-                                temp.delete();
-                                throw th;
-                            }
-                        } catch (Throwable th2) {
-                        }
-                    } catch (Throwable th3) {
-                    }
-                }
-                throw new IOException("Файл содержит отложенную замену или удалён; откройте его через редактор ресурсов.");
+            if (!item.name.matches("[a-z][a-z0-9_]*")
+                    || (!qualifier.isEmpty() && !qualifier.matches("-[A-Za-z0-9+-]+"))) {
+                throw new IOException("Неподдерживаемое имя или квалификатор");
             }
-            throw new IOException("Неподдерживаемое имя или квалификатор");
+            File dir = new File(this.decodeRootPath, "res/values" + qualifier);
+            File[] files = dir.listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File folder, String name) {
+                    return name.endsWith(".xml");
+                }
+            });
+            if (files == null) {
+                throw new IOException("Нет папки ресурсов: res/values" + qualifier);
+            }
+            Pattern pat = Pattern.compile("(?s)(<string\\b(?=[^>]*\\bname\\s*=\\s*[\"']"
+                    + Pattern.quote(item.name) + "[\"'])[^>]*>)([^<]*)(</string\\s*>)");
+            File matchFile = null;
+            String matchText = null;
+            int begin = 0;
+            int end = 0;
+            int count = 0;
+            for (File file : files) {
+                if (Files.isSymbolicLink(file.toPath()) || file.length() > 4194304) {
+                    continue;
+                }
+                String text = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+                Matcher matcher = pat.matcher(text);
+                while (matcher.find()) {
+                    count++;
+                    matchFile = file;
+                    matchText = text;
+                    begin = matcher.start(2);
+                    end = matcher.end(2);
+                }
+            }
+            if (count != 1 || matchFile == null || matchText == null) {
+                throw new IOException("Строка не найдена однозначно или содержит форматирование; используйте редактор XML.");
+            }
+            String relative = new File(this.decodeRootPath).toPath().relativize(matchFile.toPath())
+                    .toString().replace(File.separatorChar, '/');
+            if (this.resListAdapter.getDeletedFiles().contains(relative)) {
+                throw new IOException("Файл удалён; откройте его через редактор ресурсов.");
+            }
+            String stagedPath = this.resListAdapter.getReplacedFilePath(relative);
+            if (stagedPath != null && !new File(stagedPath).getCanonicalFile().equals(matchFile.getCanonicalFile())) {
+                throw new IOException("Файл содержит отложенную замену; откройте его через редактор ресурсов.");
+            }
+            String encoded = StringItem.toString(item.name, value, (String) null);
+            String opening = matchText.substring(Math.max(0, matchText.lastIndexOf("<string", begin)), begin);
+            if (encoded.contains("formatted=\"false\"") && !opening.contains("formatted=\"false\"")) {
+                throw new IOException("Несколько непозиционных плейсхолдеров: используйте %1$s, %2$d или редактор XML.");
+            }
+            int openEnd = encoded.indexOf('>');
+            int closeStart = encoded.lastIndexOf("</string>");
+            if (openEnd < 0 || closeStart < openEnd) {
+                throw new IOException("Не удалось закодировать строку");
+            }
+            String result = matchText.substring(0, begin) + encoded.substring(openEnd + 1, closeStart)
+                    + matchText.substring(end);
+            File temp = File.createTempFile(".translation-", ".tmp", dir);
+            try {
+                Files.write(temp.toPath(), result.getBytes(StandardCharsets.UTF_8));
+                Files.move(temp.toPath(), matchFile.toPath(),
+                        StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } finally {
+                temp.delete();
+            }
+            this.resListAdapter.fileModified(relative, matchFile.getAbsolutePath());
+            item.value = value;
+            item.styledValue = null;
+            updateStringList();
+            Toast.makeText((Context) this, (CharSequence) "Перевод сохранён в файле проекта", 0).show();
+            return true;
         } catch (Exception e) {
-            new AlertDialog.Builder(this).setMessage("Не удалось сохранить перевод: " + e.getMessage()).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+            new AlertDialog.Builder(this).setMessage("Не удалось сохранить перевод: " + e.getMessage())
+                    .setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+            return false;
         }
     }
 
-    private void addMissingTranslation(String qualifier, String name, String value) {
+    private boolean addMissingTranslation(String qualifier, String name, String value) {
         try {
-            if (!name.matches("[a-z][a-z0-9_]*") || (!qualifier.isEmpty() && !qualifier.matches("-[A-Za-z0-9-]+"))) {
+            if (!name.matches("[a-z][a-z0-9_]*")
+                    || (!qualifier.isEmpty() && !qualifier.matches("-[A-Za-z0-9+-]+"))) {
                 throw new IOException("Неподдерживаемое имя ресурса или квалификатор");
             }
             File folder = new File(this.decodeRootPath, "res/values" + qualifier);
             String filename = "ae_translation_" + name + ".xml";
             File targetFile = new File(folder, filename);
-            if (!targetFile.exists()) {
-                String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n" + StringItem.toString(name, value, (String) null) + "\n</resources>\n";
-                byte[] data = xml.getBytes(StandardCharsets.UTF_8);
-                InputStream in = new ByteArrayInputStream(data);
-                try {
-                    this.resListAdapter.addFile(targetFile.getAbsolutePath(), in);
-                    in.close();
-                    this.allStringValues.get(qualifier).add(new StringItem(name, value));
-                    this.resListAdapter.notifyDataSetChanged();
-                    if (qualifier.equals(this.curConfig)) {
-                        updateStringList();
-                    }
-                    Toast.makeText((Context) this, (CharSequence) ("Добавлено в " + filename), 1).show();
-                    return;
-                } finally {
-                }
+            if (targetFile.exists()) {
+                throw new IOException("Файл уже существует: " + targetFile);
             }
-            throw new IOException("Файл уже существует: " + targetFile);
+            String xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n"
+                    + StringItem.toString(name, value, (String) null) + "\n</resources>\n";
+            byte[] data = xml.getBytes(StandardCharsets.UTF_8);
+            try (InputStream in = new ByteArrayInputStream(data)) {
+                this.resListAdapter.addFile(targetFile.getAbsolutePath(), in);
+            }
+            ArrayList<StringItem> values = this.allStringValues.get(qualifier);
+            if (values == null) {
+                throw new IOException("Язык не загружен: " + qualifier);
+            }
+            values.add(new StringItem(name, value));
+            this.resListAdapter.notifyDataSetChanged();
+            if (qualifier.equals(this.curConfig)) {
+                updateStringList();
+            }
+            Toast.makeText((Context) this, (CharSequence) ("Добавлено в " + filename), 1).show();
+            return true;
         } catch (Exception e) {
-            new AlertDialog.Builder(this).setMessage("Не удалось добавить перевод: " + e).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+            new AlertDialog.Builder(this).setMessage("Не удалось добавить перевод: " + e)
+                    .setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null).show();
+            return false;
         }
     }
 

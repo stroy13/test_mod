@@ -1,10 +1,10 @@
-# APK Editor Plus v1.10.0.182
+# APK Editor Plus v1.10.0.183
 
 [![Сборка](https://github.com/stroy13/test_mod/actions/workflows/build.yml/badge.svg)](https://github.com/stroy13/test_mod/actions/workflows/build.yml)
 
 Полноценный форк Android-приложения **APK Editor Plus** (`ru.apkeditor.plus`)
 с собственными исправлениями и развитием кодовой базы. Актуальная версия —
-**182** / **1.10.0.182**, история изменений — в [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
+**183** / **1.10.0.183**, история изменений — в [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
 Проект собирается штатным Gradle: `:apkEditorPro:assembleDebug` →
 `apkEditorPro/build/outputs/apk/debug/apkEditorPro-debug.apk`.
@@ -15,12 +15,12 @@
 | Параметр | Значение |
 |---|---|
 | Package / applicationId | `ru.apkeditor.plus` |
-| versionCode / versionName | `182` / `1.10.0.182` (см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
+| versionCode / versionName | `183` / `1.10.0.183` (см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
 | minSdk / targetSdk / compileSdk | 26 / 37 / 37 |
 | Gradle / AGP | 9.8.2 / 9.5.1 |
 | JDK | 17 |
 | NDK | 30.0.16248370 (ndkBuild, ABI: `armeabi-v7a`, `arm64-v8a`) |
-| Язык | Java (788 файлов), нативный код C/C++ в `jni/` |
+| Язык | Java (794 файлов), нативный код C/C++ в `jni/` |
 
 ## Структура проекта
 
@@ -82,7 +82,7 @@
 
 `.github/workflows/build.yml` («Сборка») на каждый push прогоняет юнит-тесты шести
 модулей (`_AndroidCommon`, `appListUtil`, `appDataEditor`, `httpServer`, `apkEditor`,
-`apkEditorPro`: регрессии манифеста, счётчика классов DEX, тем, сортировки и диагностики XML/smali), затем
+`apkEditorPro`: регрессии манифеста, счётчика классов DEX, тем, сортировки, диагностики XML/smali и сравнения переводов), затем
 собирает `:apkEditorPro:assembleDebug`
 (JDK 17, Android SDK platform 37.0, build-tools 37.0.0, NDK 30.0.16248370):
 

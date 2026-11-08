@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
+import java.util.function.BooleanSupplier;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.Token;
@@ -24,40 +25,50 @@ import org.antlr.runtime.tree.CommonTreeNodeStream;
 
 public final class SmaliCheck {
 
+    private static final BooleanSupplier NEVER = () -> false;
+
     private static final class InterruptibleReader extends FilterReader {
-        InterruptibleReader(Reader in) {
+        private final BooleanSupplier cancelled;
+
+        InterruptibleReader(Reader in, BooleanSupplier cancelled) {
             super(in);
+            this.cancelled = cancelled;
         }
 
         @Override // java.io.FilterReader, java.io.Reader
         public int read(char[] chars, int start, int len) throws IOException {
-            if (Thread.currentThread().isInterrupted()) {
-                throw new InterruptedIOException("Smali check cancelled");
-            }
+            checkInterrupted(cancelled);
             return super.read(chars, start, len);
         }
 
         @Override // java.io.FilterReader, java.io.Reader
         public int read() throws IOException {
-            if (Thread.currentThread().isInterrupted()) {
-                throw new InterruptedIOException("Smali check cancelled");
-            }
+            checkInterrupted(cancelled);
             return super.read();
         }
     }
 
     public static void checkInterrupted() {
-        if (Thread.currentThread().isInterrupted()) {
+        checkInterrupted(NEVER);
+    }
+
+    public static void checkInterrupted(BooleanSupplier cancelled) {
+        if (Thread.currentThread().isInterrupted() || (cancelled != null && cancelled.getAsBoolean())) {
             throw new CancellationException("Smali check cancelled");
         }
     }
 
     public static String[] check(String path, int api) throws Exception {
-        checkInterruptedAtEntry();
+        return check(path, api, NEVER);
+    }
+
+    public static String[] check(String path, int api, BooleanSupplier cancelled) throws Exception {
+        BooleanSupplier stop = cancelled == null ? NEVER : cancelled;
+        checkInterruptedAtEntry(stop);
         final List<String> errors = new ArrayList<>();
         File file = new File(path);
         try (Reader reader = new InterruptibleReader(
-                new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+                new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8), stop)) {
             final smaliFlexLexer lexer = new smaliFlexLexer(reader, api);
             lexer.setSourceFile(file);
             TokenSource cancellableTokens = new TokenSource() {
@@ -68,9 +79,9 @@ public final class SmaliCheck {
 
                 @Override
                 public Token nextToken() {
-                    SmaliCheck.checkInterrupted();
+                    SmaliCheck.checkInterrupted(stop);
                     Token token = lexer.nextToken();
-                    SmaliCheck.checkInterrupted();
+                    SmaliCheck.checkInterrupted(stop);
                     return token;
                 }
             };
@@ -97,7 +108,7 @@ public final class SmaliCheck {
             CommonTreeNodeStream tree = new CommonTreeNodeStream(parsed.getTree()) {
                 @Override
                 public Object nextElement() {
-                    SmaliCheck.checkInterrupted();
+                    SmaliCheck.checkInterrupted(stop);
                     return super.nextElement();
                 }
             };
@@ -115,7 +126,7 @@ public final class SmaliCheck {
             if (walker.getNumberOfSyntaxErrors() > 0 && errors.isEmpty()) {
                 errors.add("0:Ошибка сборки smali");
             }
-            checkInterrupted();
+            checkInterrupted(stop);
             return errors.toArray(new String[0]);
         } catch (CancellationException cancelled) {
             InterruptedIOException stop = new InterruptedIOException("Smali check cancelled");
@@ -124,8 +135,8 @@ public final class SmaliCheck {
         }
     }
 
-    private static void checkInterruptedAtEntry() throws InterruptedIOException {
-        if (Thread.currentThread().isInterrupted()) {
+    private static void checkInterruptedAtEntry(BooleanSupplier cancelled) throws InterruptedIOException {
+        if (Thread.currentThread().isInterrupted() || (cancelled != null && cancelled.getAsBoolean())) {
             throw new InterruptedIOException("Smali check cancelled");
         }
     }
