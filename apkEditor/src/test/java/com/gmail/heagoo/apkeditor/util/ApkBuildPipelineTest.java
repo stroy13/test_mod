@@ -33,6 +33,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ApkBuildPipelineTest {
+    private static final byte[] MANIFEST = java.util.Base64.getDecoder().decode(
+            "AwAIAD8CAAABABwAQAEAAAgAAAAAAAAAAAAAADwAAAAAAAAAAAAAABQAAAAmAAAAOAAAAJAAAACkAAAAwgAAAOYAAAAIAG0AYQBuAGkAZgBlAHMAdAAAAAcAcABhAGMAawBhAGcAZQAAAAcAYQBuAGQAcgBvAGkAZAAAACoAaAB0AHQAcAA6AC8ALwBzAGMAaABlAG0AYQBzAC4AYQBuAGQAcgBvAGkAZAAuAGMAbwBtAC8AYQBwAGsALwByAGUAcwAvAGEAbgBkAHIAbwBpAGQAAAAIAHUAcwBlAHMALQBzAGQAawAAAA0AbQBpAG4AUwBkAGsAVgBlAHIAcwBpAG8AbgAAABAAdABhAHIAZwBlAHQAUwBkAGsAVgBlAHIAcwBpAG8AbgAAAAwAYwBvAG0ALgB0AGUAcwB0AC4AYQBwAHAAAAAAAIABCAAQAAAADAIBAXACAQEAARAAGAAAAP//////////AgAAAAMAAAACARAAOAAAAP///////////////wAAAAAUABQAAQAAAAAAAAD/////AQAAAAcAAAAIAAAAAwcAAAACARAATAAAAP///////////////wQAAAAUABQAAgAAAAAAAAACAAAABQAAAP////8IAAAAEBoAAAACAAAABgAAAP////8IAAAAECMAAAADARAAGAAAAP///////////////wQAAAADARAAGAAAAP///////////////wAAAAABARAAGAAAAP//////////AgAAAAMAAAA=");
+
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
@@ -58,7 +61,7 @@ public class ApkBuildPipelineTest {
     private File sourceApk() throws Exception {
         File apk = folder.newFile("source.apk");
         try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(apk))) {
-            put(out, "AndroidManifest.xml", "manifest".getBytes(StandardCharsets.UTF_8), ZipEntry.DEFLATED);
+            put(out, "AndroidManifest.xml", MANIFEST, ZipEntry.DEFLATED);
             put(out, "classes.dex", "dex".getBytes(StandardCharsets.UTF_8), ZipEntry.DEFLATED);
             put(out, "resources.arsc", new byte[513], ZipEntry.STORED);
             put(out, "lib/arm64-v8a/libgame.so", new byte[70000], ZipEntry.STORED);
@@ -87,10 +90,11 @@ public class ApkBuildPipelineTest {
     public void signsVerifiesAndPublishesAtomically() throws Exception {
         File source = sourceApk();
         File target = new File(folder.getRoot(), "gen_signed.apk");
-        File replacement = folder.newFile("manifest.xml");
-        Files.write(replacement.toPath(), "new-manifest".getBytes(StandardCharsets.UTF_8));
+        File replacement = folder.newFile("big.bin");
+        byte[] replacementBytes = "replacement-payload".getBytes(StandardCharsets.UTF_8);
+        Files.write(replacement.toPath(), replacementBytes);
         Map<String, String> replaces = new HashMap<>();
-        replaces.put("AndroidManifest.xml", replacement.getAbsolutePath());
+        replaces.put("assets/big.bin", replacement.getAbsolutePath());
         ApkBuildPipeline.build(source, target, replaces, null, null, options(), null, null);
         assertTrue(target.isFile());
         try (ZipFile zip = new ZipFile(target)) {
@@ -98,12 +102,12 @@ public class ApkBuildPipelineTest {
             assertEquals(ZipEntry.STORED, zip.getEntry("lib/arm64-v8a/libgame.so").getMethod());
             assertFalse("old signature must be stripped", zip.getEntry("META-INF/CERT.RSA") != null
                     && zip.getEntry("META-INF/CERT.RSA").getSize() == 10);
-            try (InputStream in = zip.getInputStream(zip.getEntry("AndroidManifest.xml"))) {
+            try (InputStream in = zip.getInputStream(zip.getEntry("assets/big.bin"))) {
                 java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
                 byte[] buf = new byte[128];
                 int n;
                 while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
-                assertArrayEquals("new-manifest".getBytes(StandardCharsets.UTF_8), bos.toByteArray());
+                assertArrayEquals(replacementBytes, bos.toByteArray());
             }
         }
         ApkVerifier.Result result = new ApkVerifier.Builder(target).build().verify();

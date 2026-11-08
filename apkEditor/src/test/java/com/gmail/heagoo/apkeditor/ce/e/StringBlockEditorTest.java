@@ -61,12 +61,10 @@ public class StringBlockEditorTest {
         return b.array();
     }
 
-    private static ResourceEditor.ResChunkHeader header(byte[] pool) {
+    private static ResourceEditor.ResChunkHeader header(byte[] pool) throws IOException {
         ResourceEditor.ResChunkHeader h = new ResourceEditor.ResChunkHeader();
-        ByteBuffer b = ByteBuffer.wrap(pool).order(ByteOrder.LITTLE_ENDIAN);
-        h.type = b.getShort();
-        h.headerSize = b.getShort();
-        h.chunkSize = b.getInt();
+        h.readFrom(new com.google.common.io.LittleEndianDataInputStream(
+                new java.io.ByteArrayInputStream(pool)));
         return h;
     }
 
