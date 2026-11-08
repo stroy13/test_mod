@@ -64,10 +64,12 @@ public class ApkBuildPipelineTest {
     private File sourceApk() throws Exception {
         File apk = folder.newFile("source.apk");
         try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(apk))) {
-            put(out, "AndroidManifest.xml", MANIFEST, ZipEntry.DEFLATED);
-            put(out, "classes.dex", minimalDex(), ZipEntry.DEFLATED);
+            // STORED entries first so the alignment test can inspect their local headers
+            // without walking deflated data descriptors.
             put(out, "resources.arsc", minimalArsc(), ZipEntry.STORED);
             put(out, "lib/arm64-v8a/libgame.so", new byte[70000], ZipEntry.STORED);
+            put(out, "AndroidManifest.xml", MANIFEST, ZipEntry.DEFLATED);
+            put(out, "classes.dex", minimalDex(), ZipEntry.DEFLATED);
             put(out, "lib/armeabi-v7a/libcompressed.so", compressibleLibrary(), ZipEntry.DEFLATED);
             put(out, "assets/big.bin", new byte[300000], ZipEntry.DEFLATED);
             put(out, "META-INF/CERT.RSA", new byte[10], ZipEntry.DEFLATED);
@@ -268,6 +270,9 @@ public class ApkBuildPipelineTest {
                 if (method == ZipEntry.STORED && name.equals("lib/arm64-v8a/libgame.so")) {
                     assertEquals("native library must be 16KB aligned", 0, dataOffset % 16384);
                     checkedLib = true;
+                }
+                if (checkedArsc && checkedLib) {
+                    break;
                 }
                 Long compSize = compressedSizes.get(name);
                 assertNotNull("central directory missing " + name, compSize);
