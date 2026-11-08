@@ -113,7 +113,7 @@ public class StringBlockEditorTest {
     @Test
     public void sharedOffsetsArePreserved() throws Exception {
         String[] strings = {"same", "same", "other"};
-        byte[] original = pool(strings, true, new int[]{0, 0, 5});
+        byte[] original = pool(strings, true, new int[]{0, 0, 7});
         ResourceEditor.ResChunkHeader h = header(original);
         byte[] data = new byte[original.length - 8];
         System.arraycopy(original, 8, data, 0, data.length);
