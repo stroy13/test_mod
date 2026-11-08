@@ -196,6 +196,7 @@ public final class SignHelper {
                 if (parsed == null || parsed.packageName == null) {
                     throw new IOException("Generated manifest has no package name");
                 }
+                ApkStructureValidator.validatePackageName(parsed.packageName);
                 if (!parsed.packageName.equals(info.packageName)) {
                     throw new IOException("Manifest package mismatch: binary=" + parsed.packageName
                             + ", framework=" + info.packageName);

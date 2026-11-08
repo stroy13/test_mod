@@ -174,6 +174,25 @@ public final class ApkStructureValidator {
         }
     }
 
+    /**
+     * A package name is plain ASCII. A byte-swapped or BOM-prefixed string pool turns
+     * it into U+FFFE followed by CJK-looking code units, which Android's package
+     * parser rejects. Fail the build with a precise reason instead of shipping it.
+     */
+    public static void validatePackageName(String name) throws IOException {
+        if (name == null || name.isEmpty()) {
+            throw new IOException("Manifest has no package name");
+        }
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c < 0x20 || c > 0x7e) {
+                throw new IOException("Manifest package name contains non-ASCII character U+"
+                        + String.format("%04X", (int) c) + " at index " + i
+                        + "; the string pool is corrupted (wrong endianness or a BOM)");
+            }
+        }
+    }
+
     private static void checkStringIndex(int index, int stringCount, String what, int pos)
             throws IOException {
         if (index != -1 && (index < 0 || index >= stringCount)) {
@@ -220,6 +239,11 @@ public final class ApkStructureValidator {
                 if (pos + byteLen >= dataEnd || raw[pos + byteLen] != 0) {
                     throw new IOException(what + ": unterminated UTF-8 string " + i);
                 }
+                if (byteLen >= 3 && (raw[pos] & 0xff) == 0xef
+                        && (raw[pos + 1] & 0xff) == 0xbf && (raw[pos + 2] & 0xff) == 0xbe) {
+                    throw new IOException(what + ": string " + i + " starts with U+FFFE "
+                            + "(byte-swapped BOM); the string pool was written with the wrong endianness");
+                }
             } else {
                 if (pos + 2 > dataEnd) throw new IOException(what + ": truncated UTF-16 length " + i);
                 int units = readLength16(raw, pos);
@@ -230,6 +254,10 @@ public final class ApkStructureValidator {
                 }
                 if (raw[pos + charLen * 2] != 0 || raw[pos + charLen * 2 + 1] != 0) {
                     throw new IOException(what + ": unterminated UTF-16 string " + i);
+                }
+                if (charLen > 0 && (raw[pos] & 0xff) == 0xfe && (raw[pos + 1] & 0xff) == 0xff) {
+                    throw new IOException(what + ": string " + i + " starts with U+FFFE "
+                            + "(byte-swapped BOM); the string pool was written with the wrong endianness");
                 }
             }
         }

@@ -41,6 +41,7 @@ import com.gmail.heagoo.apkeditor.ce.ManifestParser;
 import com.gmail.heagoo.apkeditor.ce.e.ResourceEditor;
 import com.gmail.heagoo.apkeditor.dex.DexStringEditor;
 import com.gmail.heagoo.apkeditor.util.ApkBuildPipeline;
+import com.gmail.heagoo.apkeditor.util.ApkStructureValidator;
 import com.gmail.heagoo.apkeditor.util.BuildLog;
 import com.gmail.heagoo.apkeditor.util.SignHelper;
 import com.gmail.heagoo.apklib.sign.ImageTools;
@@ -664,6 +665,7 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
                             throw new IOException("Edited AndroidManifest.xml has no package name");
                         }
                         log.log(ManifestParser.describe(editedInfo));
+                        ApkStructureValidator.validatePackageName(editedInfo.packageName);
                         if (editedInfo.isSplitRequired
                                 || (editedInfo.requiredSplitTypes != null
                                 && !editedInfo.requiredSplitTypes.isEmpty())) {

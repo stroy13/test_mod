@@ -108,7 +108,11 @@ public class ApkStructureValidatorTest {
     }
 
     private static byte[] minimalManifest(boolean utf8) {
-        byte[] pool = stringPool(new String[]{"manifest", "package", "com.test.app"}, utf8);
+        return minimalManifest(utf8, "com.test.app");
+    }
+
+    private static byte[] minimalManifest(boolean utf8, String packageName) {
+        byte[] pool = stringPool(new String[]{"manifest", "package", packageName}, utf8);
         byte[] start = new byte[56];
         ByteBuffer t = ByteBuffer.wrap(start).order(ByteOrder.LITTLE_ENDIAN);
         t.putShort((short) 0x0102);
@@ -207,6 +211,62 @@ public class ApkStructureValidatorTest {
             fail("Expected attribute name index error");
         } catch (IOException expected) {
             assertTrue(expected.getMessage().contains("attribute name"));
+        }
+    }
+
+    /**
+     * The v188 installer failure: the renamed package was written as big-endian
+     * UTF-16 with a BOM, so Android read "\uFFFE\u7200\u7500..." and refused the APK.
+     * Both pool encodings must now be rejected at build time.
+     */
+    @Test
+    public void rejectsByteSwappedBomInUtf16Pool() {
+        byte[] data = minimalManifest(false, "\uFFFEru.apkeditor.pluk");
+        try {
+            ApkStructureValidator.validateManifest(data);
+            fail("Expected byte-swapped BOM error");
+        } catch (IOException expected) {
+            assertTrue(expected.getMessage(), expected.getMessage().contains("byte-swapped BOM"));
+        }
+    }
+
+    @Test
+    public void rejectsByteSwappedBomInUtf8Pool() {
+        byte[] data = minimalManifest(true, "\uFFFEru.apkeditor.pluk");
+        try {
+            ApkStructureValidator.validateManifest(data);
+            fail("Expected byte-swapped BOM error");
+        } catch (IOException expected) {
+            assertTrue(expected.getMessage(), expected.getMessage().contains("byte-swapped BOM"));
+        }
+    }
+
+    @Test
+    public void acceptsAsciiPackageName() throws Exception {
+        ApkStructureValidator.validatePackageName("ru.apkeditor.pluk");
+        ApkStructureValidator.validatePackageName("com.plarium.raidlegendt");
+    }
+
+    @Test
+    public void rejectsCorruptedPackageName() {
+        String corrupted = "\uFFFE\u7200\u7500\u2E00\u6100\u7000\u6B00";
+        try {
+            ApkStructureValidator.validatePackageName(corrupted);
+            fail("Expected non-ASCII package name error");
+        } catch (IOException expected) {
+            assertTrue(expected.getMessage(), expected.getMessage().contains("non-ASCII"));
+        }
+    }
+
+    @Test
+    public void rejectsEmptyPackageName() {
+        for (String value : new String[]{null, ""}) {
+            try {
+                ApkStructureValidator.validatePackageName(value);
+                fail("Expected missing package name error");
+            } catch (IOException expected) {
+                assertTrue(expected.getMessage().contains("no package name"));
+            }
         }
     }
 
