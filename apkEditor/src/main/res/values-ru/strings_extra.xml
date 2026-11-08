@@ -4,4 +4,5 @@
     <string name="lab_package_help">Нажмите на поле, чтобы изменить идентификатор приложения. Это не видимое название приложения.</string>
     <string name="build_failed_no_new_apk">Новый APK не создан. Старый gen_signed.apk в этой папке — предыдущий результат, а не эта сборка.</string>
     <string name="build_error_log">Подробности: %1$s</string>
+    <string name="build_log_path">Полный лог сборки: %1$s</string>
 </resources>

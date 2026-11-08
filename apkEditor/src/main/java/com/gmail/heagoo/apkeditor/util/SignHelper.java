@@ -43,8 +43,63 @@ public final class SignHelper {
                             Set<String> deletedFiles,
                             ApkBuildPipeline.Progress progress,
                             ApkBuildPipeline.Cancellation cancellation) throws Exception {
+        sign(ctx, srcApkPath, targetApkPath, replacedFiles, addedFiles, deletedFiles, progress, cancellation, null);
+    }
+
+    public static void sign(Context ctx, String srcApkPath, String targetApkPath,
+                            Map<String, String> replacedFiles,
+                            Map<String, String> addedFiles,
+                            Set<String> deletedFiles,
+                            ApkBuildPipeline.Progress progress,
+                            ApkBuildPipeline.Cancellation cancellation,
+                            ApkBuildPipeline.Logger logger) throws Exception {
+        // When the caller does not provide a log, still write a visible build-log.txt
+        // next to the target APK so every signing/assembly path is diagnosable.
+        BuildLog ownLog = null;
+        ApkBuildPipeline.Logger out = logger;
+        if (out == null) {
+            try {
+                File target = new File(targetApkPath);
+                File parent = target.getAbsoluteFile().getParentFile();
+                if (parent != null) {
+                    ownLog = new BuildLog(new File(parent, "build-log.txt"));
+                    out = ownLog;
+                }
+            } catch (IOException ignored) {
+                out = null;
+            }
+        }
+        try {
+            signInternal(ctx, srcApkPath, targetApkPath, replacedFiles, addedFiles, deletedFiles,
+                    progress, cancellation, out);
+            if (out != null) {
+                out.log("SignHelper finished successfully");
+            }
+        } catch (Exception e) {
+            if (out != null) {
+                out.log("SignHelper failed: " + e);
+            }
+            throw e;
+        } finally {
+            if (ownLog != null) {
+                ownLog.close();
+            }
+        }
+    }
+
+    private static void signInternal(Context ctx, String srcApkPath, String targetApkPath,
+                                     Map<String, String> replacedFiles,
+                                     Map<String, String> addedFiles,
+                                     Set<String> deletedFiles,
+                                     ApkBuildPipeline.Progress progress,
+                                     ApkBuildPipeline.Cancellation cancellation,
+                                     ApkBuildPipeline.Logger out) throws Exception {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         String keyName = prefs.getString("SignApkWith", "testkey");
+        if (out != null) {
+            out.log("SignHelper: source=" + srcApkPath + ", target=" + targetApkPath);
+            out.log("Signing key preference: " + keyName);
+        }
         PrivateKey privateKey;
         X509Certificate certificate;
         if ("customkey".equals(keyName)) {
@@ -70,6 +125,11 @@ public final class SignHelper {
         }
 
         ManifestInfo manifest = readManifest(new File(srcApkPath));
+        if (out != null) {
+            out.log("Source manifest: package=" + manifest.packageName
+                    + ", minSdk=" + manifest.minSdkVersion
+                    + ", targetSdk=" + manifest.targetSdkVersion);
+        }
         String schemes = prefs.getString("SignSchemes", "v123");
         boolean v1 = schemes.contains("1");
         boolean v2 = schemes.contains("2");
@@ -83,10 +143,14 @@ public final class SignHelper {
         int minSdk = manifest.minSdkVersion > 0 ? manifest.minSdkVersion : 26;
         int targetSdk = manifest.targetSdkVersion > 0 ? manifest.targetSdkVersion : minSdk;
         int compressionLevel = SettingActivity.getCompressionLevel(ctx);
+        if (out != null) {
+            out.log("Signature schemes preference: " + schemes + " -> v1=" + v1 + ", v2=" + v2
+                    + ", v3=" + v3 + ", v4=" + v4 + "; compressionLevel=" + compressionLevel);
+        }
         ApkBuildPipeline.SigningOptions options = new ApkBuildPipeline.SigningOptions(
                 privateKey, certificate, minSdk, targetSdk, v1, v2, v3, v4, compressionLevel);
         ApkBuildPipeline.build(new File(srcApkPath), new File(targetApkPath),
-                replacedFiles, addedFiles, deletedFiles, options, progress, cancellation);
+                replacedFiles, addedFiles, deletedFiles, options, progress, cancellation, out);
     }
 
     private static ManifestInfo readManifest(File apk) throws Exception {

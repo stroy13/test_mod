@@ -9,6 +9,7 @@ import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -38,6 +39,7 @@ import com.gmail.heagoo.apkeditor.ce.IDescriptionUpdate;
 import com.gmail.heagoo.apkeditor.ce.e.ResourceEditor;
 import com.gmail.heagoo.apkeditor.dex.DexStringEditor;
 import com.gmail.heagoo.apkeditor.util.ApkBuildPipeline;
+import com.gmail.heagoo.apkeditor.util.BuildLog;
 import com.gmail.heagoo.apkeditor.util.SignHelper;
 import com.gmail.heagoo.apklib.sign.ImageTools;
 import com.gmail.heagoo.common.ActivityUtil;
@@ -116,6 +118,9 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
     // Directory to save temp files
     private String workingDir;
 
+    // Visible full build log (build-log.txt) written for every build outcome
+    private String buildLogPath;
+
     // Time when the compose started
     private long startTime;
 
@@ -144,6 +149,7 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
             this.succeed = savedInstanceState.getBoolean("succeed");
             this.outApkPath = savedInstanceState.getString("outApkPath");
             this.errorMessage = savedInstanceState.getString("errorMessage");
+            this.buildLogPath = savedInstanceState.getString("buildLogPath");
         } else {
             Intent intent = getIntent();
             this.apkPath = ActivityUtil.getParam(intent, "apkPath");
@@ -198,6 +204,7 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
         outState.putString("packageName", this.packageName);
         outState.putString("outApkPath", this.outApkPath);
         outState.putString("errorMessage", this.errorMessage);
+        outState.putString("buildLogPath", this.buildLogPath);
         outState.putBoolean("modifyFinished", this.modifyFinished);
         outState.putBoolean("succeed", this.succeed);
 
@@ -298,9 +305,16 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
         return false;
     }
 
-    private void prepareImages() throws IOException {
+    private void prepareImages(BuildLog log) throws IOException {
         if (imgReplaces == null || imgReplaces.isEmpty()) {
+            if (log != null) {
+                log.log("No launcher/image replacements");
+            }
             return;
+        }
+        if (log != null) {
+            log.section("Image replacements");
+            log.key("Image replacement count", imgReplaces.size());
         }
 
         ZipFile zfile = new ZipFile(apkPath);
@@ -322,6 +336,10 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
         for (String filePath : filePath2Entries.keySet()) {
             List<String> entryList = filePath2Entries.get(filePath);
             Bitmap bitmap = BitmapFactory.decodeFile(filePath);
+            if (log != null) {
+                log.log("Decode image " + filePath + ": " + (bitmap == null ? "FAILED"
+                        : bitmap.getWidth() + "x" + bitmap.getHeight()));
+            }
             if (bitmap == null) {
                 zfile.close();
                 throw new IOException("Cannot decode replacement image: " + filePath);
@@ -341,6 +359,9 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
 
                 int width = options.outWidth;
                 int height = options.outHeight;
+                if (log != null) {
+                    log.log("Target entry " + entryName + ": original bounds " + width + "x" + height);
+                }
 
                 // Log.d("DEBUG", String.format(
                 // "entry=%s, ewidth=%d, height=%d\n", entryName, width,
@@ -362,6 +383,10 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
                 }
 
                 os.close();
+                if (log != null) {
+                    log.log("Wrote replacement image " + outFilePath + " ("
+                            + new File(outFilePath).length() + " bytes) for " + entryName);
+                }
 
                 // Record to replaces
                 allReplaces.put(entryName, outFilePath);
@@ -378,6 +403,9 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
             String strPlace = String.format(str, outApkPath);
             String strSucceed = getResources().getString(R.string.succeed);
             String message = strSucceed + "!\n" + strPlace + "\n\n";
+            if (buildLogPath != null) {
+                message += getResources().getString(R.string.build_log_path, buildLogPath) + "\n\n";
+            }
 
             // Check need reinstall or not
             boolean needReinstall = false;
@@ -430,6 +458,7 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
     public void modifyFinished(boolean result) {
         this.succeed = result;
 
+        this.buildLogPath = thread.buildLogPath;
         if (result) {
             this.outApkPath = thread.outputApkPath;
         } else {
@@ -489,6 +518,35 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
         this.handler.updateDescription(strDesc);
     }
 
+    /** Copy the visible build log to the editor root so it survives tmp cleanup. */
+    private static File publishBuildLog(String logPath) {
+        if (logPath == null) {
+            return null;
+        }
+        try {
+            File src = new File(logPath);
+            if (!src.isFile()) {
+                return null;
+            }
+            File dir = new File(SDCard.getEditorDirectory());
+            if (!dir.isDirectory() && !dir.mkdirs()) {
+                return null;
+            }
+            File dst = new File(dir, "build-log.txt");
+            try (InputStream in = new java.io.BufferedInputStream(new java.io.FileInputStream(src));
+                 java.io.OutputStream out = new java.io.BufferedOutputStream(new FileOutputStream(dst))) {
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    out.write(buf, 0, n);
+                }
+            }
+            return dst;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     private void updateBuildProgress(String stage, int percent) {
         if (handler != null) {
             handler.sendMessage(handler.obtainMessage(102, percent, 0, stage));
@@ -499,6 +557,7 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
 
         WeakReference<ApkCreateActivity> activityRef;
         private String outputApkPath;
+        private String buildLogPath;
         private String error;
 
         private boolean finished = false;
@@ -510,25 +569,53 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
         @Override
         public void run() {
             ApkCreateActivity activity = activityRef.get();
+            BuildLog log = null;
 
             try {
                 if (activity == null || activity.cancelled) {
                     throw new java.io.InterruptedIOException("APK build cancelled");
                 }
+                if (activity.workingDir == null) {
+                    activity.workingDir = SDCard.makeWorkingDir(activity);
+                }
+                log = new BuildLog(new File(activity.workingDir, "build-log.txt"));
+                this.buildLogPath = log.getPath();
+                activity.buildLogPath = this.buildLogPath;
+
+                log.section("Environment");
+                log.key("App package", activity.getPackageName());
+                log.key("Android SDK", Build.VERSION.SDK_INT);
+                log.key("Device", Build.MANUFACTURER + " " + Build.MODEL);
+                log.key("Source APK", activity.apkPath);
+                File sourceFile = new File(activity.apkPath);
+                log.key("Source APK size", sourceFile.isFile() ? sourceFile.length() + " bytes" : "MISSING");
+                log.key("Package name", activity.packageName);
+                log.key("Working dir", activity.workingDir);
+                log.key("Old app name (ARSC)", activity.oldAppNameInArsc);
+                log.key("New app name (ARSC)", activity.newAppNameInArsc);
+                log.key("New package name (ARSC)", activity.newPackageNameInArsc);
+                log.key("Class renames", activity.clsNameReplaces == null ? 0 : activity.clsNameReplaces.size());
+                log.key("Extra interfaces", activity.makeInterfaces == null ? 0 : activity.makeInterfaces.size());
+                log.map("Initial replaces", activity.allReplaces);
+
                 activity.updateBuildProgress("prepare", -1);
+                log.section("Prepare interfaces");
                 // Call extra preparing interface
                 if (activity.makeInterfaces != null) {
                     for (IApkMaking interf : activity.makeInterfaces) {
                         if (activity.cancelled) {
                             throw new java.io.InterruptedIOException("APK build cancelled");
                         }
+                        log.log("prepareReplaces: " + interf.getClass().getName());
                         interf.prepareReplaces(activity, activity.apkPath,
                                 activity.allReplaces, activity);
                     }
                 }
+                log.map("Replaces after interfaces", activity.allReplaces);
 
                 // To modify the class name in DEX file
                 if (activity.clsNameReplaces != null && !activity.clsNameReplaces.isEmpty()) {
+                    log.section("DEX class renames");
                     try (ZipFile zip = new ZipFile(activity.apkPath)) {
                         Enumeration<? extends ZipEntry> entries = zip.entries();
                         int dexIndex = 0;
@@ -537,24 +624,29 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
                             String name = entry.getName();
                             if (name.equals("classes.dex") || name.matches("classes[0-9]+\\.dex")) {
                                 String targetPath = activity.workingDir + ".cls" + dexIndex + ".dex";
+                                log.log("Rename classes in " + name + " -> " + targetPath);
                                 DexStringEditor dexEditor = new DexStringEditor(activity.apkPath, name);
                                 dexEditor.replaceDexString(activity.clsNameReplaces, targetPath);
                                 activity.allReplaces.put(name, targetPath);
+                                log.log("Wrote " + targetPath + " (" + new File(targetPath).length() + " bytes)");
                                 dexIndex++;
                             }
                         }
+                        log.key("DEX files processed", dexIndex);
                     }
                 }
 
                 // To modify resources.arsc
                 if ((activity.newPackageNameInArsc != null)
                         || toModifyAppName(activity)) {
-                    modifyResourceFile();
+                    modifyResourceFile(log);
+                } else {
+                    log.log("resources.arsc modification not requested");
                 }
 
                 // To prepare/zoom all the images
-                activity.prepareImages();
-
+                activity.prepareImages(log);
+                log.map("Final replaces", activity.allReplaces);
 
                 String outApkName;
                 String strTail = (BuildConfig.WITH_SIGN ? "_signed" : "_unsigned");
@@ -573,6 +665,9 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
                 String apkPath = activity.apkPath;
                 this.outputApkPath = ApkInfoActivity.createOutputPath(
                         apkPath, activity.workingDir, outApkName);
+                log.section("Output");
+                log.key("Output name rule", nameRule);
+                log.key("Output APK", this.outputApkPath);
 
                 Map<String, String> replaces = activity.allReplaces;
 
@@ -583,8 +678,9 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
                 if (BuildConfig.WITH_SIGN) {
                     SignHelper.sign(activity, apkPath, outputApkPath,
                             jarPath2FilePath, null, null,
-                            activity::updateBuildProgress, () -> activity.cancelled);
+                            activity::updateBuildProgress, () -> activity.cancelled, log);
                 } else {
+                    log.section("Unsigned merge (native)");
                     StringBuilder sb = new StringBuilder();
                     int replaceLen = 0;
                     for (Map.Entry<String, String> entry : jarPath2FilePath.entrySet()) {
@@ -599,9 +695,34 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
                     MainActivity.md(outputApkPath, apkPath, "", 0, "", 0, sb.toString(), replaceLen);
                 }
 
+                log.section("Result");
+                File outFile = new File(this.outputApkPath);
+                log.key("Output exists", outFile.isFile());
+                log.key("Output size", outFile.isFile() ? outFile.length() + " bytes" : "MISSING");
+                log.log("Build succeeded");
+                log.close();
+                log = null;
+                File published = publishBuildLog(this.buildLogPath);
+                if (published != null) {
+                    this.buildLogPath = published.getAbsolutePath();
+                    activity.buildLogPath = this.buildLogPath;
+                }
                 activity.handler.sendEmptyMessage(0);
 
             } catch (Throwable e) {
+                if (log != null) {
+                    log.section("Failure");
+                    log.error(e);
+                    log.close();
+                    log = null;
+                }
+                if (activity != null) {
+                    File published = publishBuildLog(this.buildLogPath);
+                    if (published != null) {
+                        this.buildLogPath = published.getAbsolutePath();
+                        activity.buildLogPath = this.buildLogPath;
+                    }
+                }
                 String clsName = e.getClass().getSimpleName();
                 String msg = e.getMessage();
                 if (msg == null) {
@@ -611,20 +732,16 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
                 }
                 if (activity != null) {
                     this.error += "\n" + activity.getString(R.string.build_failed_no_new_apk);
-                    try {
-                        java.io.File log = new java.io.File(activity.workingDir + ".build-error.txt");
-                        try (java.io.PrintWriter writer = new java.io.PrintWriter(log, "UTF-8")) {
-                            writer.println("Source APK: " + activity.apkPath);
-                            writer.println("Intended output: " + this.outputApkPath);
-                            writer.println("Time: " + new java.util.Date());
-                            e.printStackTrace(writer);
-                        }
-                        this.error += "\n" + activity.getString(R.string.build_error_log, log.getAbsolutePath());
-                    } catch (Exception ignored) {
+                    if (this.buildLogPath != null) {
+                        this.error += "\n" + activity.getString(R.string.build_log_path, this.buildLogPath);
                     }
+                    activity.handler.sendEmptyMessage(1);
                 }
-                activity.handler.sendEmptyMessage(1);
                 e.printStackTrace();
+            } finally {
+                if (log != null) {
+                    log.close();
+                }
             }
 
             finished = true;
@@ -638,14 +755,23 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
         }
 
         // Modify resources.arsc
-        private void modifyResourceFile() throws Exception {
+        private void modifyResourceFile(BuildLog log) throws Exception {
             ZipFile zipFile = null;
             InputStream is = null;
             try {
                 ApkCreateActivity activity = activityRef.get();
+                if (log != null) {
+                    log.section("resources.arsc modification");
+                }
 
                 zipFile = new ZipFile(activity.apkPath);
                 ZipEntry entry = zipFile.getEntry("resources.arsc");
+                if (entry == null) {
+                    throw new IOException("Source APK has no resources.arsc");
+                }
+                if (log != null) {
+                    log.key("Source resources.arsc size", entry.getSize());
+                }
                 is = zipFile.getInputStream(entry);
 
                 String targetPath = activity.workingDir + ".arsc";
@@ -653,20 +779,32 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
 
                 // Modify package name in resources.arsc
                 if (activity.newPackageNameInArsc != null) {
-                    resEditor.modifyPackageName(activity.newPackageNameInArsc);
+                    boolean ok = resEditor.modifyPackageName(activity.newPackageNameInArsc);
+                    if (log != null) {
+                        log.log("modifyPackageName(" + activity.newPackageNameInArsc + ") = " + ok);
+                    }
                 }
 
                 // Modify app name and package name
                 if (activity.newAppNameInArsc != null || activity.newPackageNameInArsc != null) {
-                    resEditor.modifyString(activity.oldAppNameInArsc,
+                    boolean ok = resEditor.modifyString(activity.oldAppNameInArsc,
                             activity.newAppNameInArsc,
                             activity.apkInfo.packageName,
                             activity.newPackageNameInArsc);
+                    if (log != null) {
+                        log.log("modifyString(oldApp=" + activity.oldAppNameInArsc
+                                + ", newApp=" + activity.newAppNameInArsc
+                                + ", oldPkg=" + activity.apkInfo.packageName
+                                + ", newPkg=" + activity.newPackageNameInArsc + ") = " + ok);
+                    }
                 }
 
                 // Save and record the replace
                 resEditor.save();
                 activity.allReplaces.put("resources.arsc", targetPath);
+                if (log != null) {
+                    log.log("Saved " + targetPath + " (" + new File(targetPath).length() + " bytes)");
+                }
 
             } catch (Exception e) {
                 throw e;
