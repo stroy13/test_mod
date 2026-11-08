@@ -194,6 +194,11 @@ public final class ApkBuildPipeline {
                               Map<String, String> replaces, Map<String, String> added,
                               Set<String> deleted, SigningOptions options,
                               Progress report, Cancellation cancel) throws IOException {
+        replaces = safeMap(replaces);
+        added = safeMap(added);
+        deleted = deleted == null ? Collections.emptySet() : deleted;
+        report = report == null ? NO_PROGRESS : report;
+        cancel = cancel == null ? NEVER_CANCELLED : cancel;
         try (ZipFile zip = new ZipFile(source)) {
             List<ZipEntry> entries = new ArrayList<>();
             long totalBytes = 0;

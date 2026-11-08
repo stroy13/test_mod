@@ -233,7 +233,7 @@ public class ApkBuildPipelineTest {
     public void storedEntriesAreAlignedAtRealDataOffset() throws Exception {
         File source = sourceApk();
         // Check alignment on the merged archive before apksig inserts its signing block
-        // and rewrit es the central directory; then confirm the signed APK still exposes
+        // and rewrites the central directory; then confirm the signed APK still exposes
         // the same entries/compression through ZipFile.
         File unsigned = new File(folder.getRoot(), "unsigned.apk");
         ApkBuildPipeline.merge(source, unsigned, null, null, null, options(), null, null);
