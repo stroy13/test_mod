@@ -2,6 +2,9 @@ package com.gmail.heagoo.common;
 
 /* loaded from: /tmp/apkx/classes7.dex */
 public final class ThemeRegistry {
+    /** "Dark Theme 1" (EditorThemeDark) -- the palette used when nothing is saved yet. */
+    public static final int DEFAULT_THEME = 1;
+
     private static final String[] STYLES = {"EditorThemeLight", "EditorThemeDark", "EditorThemeDarkAlt", "EditorThemeAmoled", "EditorThemeViolet", "EditorThemeOcean", "EditorThemeWine", "EditorThemeGraphite", "EditorThemeRose", "EditorThemeIce", "EditorThemeMint", "EditorThemeSand"};
     private static final int[] ACCENTS = {-13214523, -6571777, -7940673, -2039584, -3033857, -8333067, -20803, -13953, -19504, -13013308, -14386072, -5939662};
 
@@ -17,7 +20,7 @@ public final class ThemeRegistry {
     }
 
     public static String styleName(int id) {
-        return STYLES[valid(id) ? id : 2];
+        return STYLES[valid(id) ? id : DEFAULT_THEME];
     }
 
     public static String dialogStyleName(int id) {
@@ -30,7 +33,7 @@ public final class ThemeRegistry {
     }
 
     public static int accent(int id) {
-        return ACCENTS[valid(id) ? id : 2];
+        return ACCENTS[valid(id) ? id : DEFAULT_THEME];
     }
 
     public static int swatch(int id) {

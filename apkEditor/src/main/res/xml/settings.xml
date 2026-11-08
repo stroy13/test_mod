@@ -4,7 +4,7 @@
     <PreferenceCategory android:title="@string/appearance" android:key="Appearance">
         <com.gmail.heagoo.apkeditor.util.IconPickerPreference android:entries="@array/appicon_key" android:layout="@layout/item_iconlistpref" android:title="@string/launcher_icon" android:key="MyIcon" android:entryValues="@array/appicon_value" />
         <CheckBoxPreference android:title="@string/full_screen" android:key="FullScreen" android:summary="@string/full_screen_desc" />
-        <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/theme_key" android:title="@string/app_theme" android:key="AppTheme" android:defaultValue="2" android:summary="@string/select_theme_desc" android:entryValues="@array/theme_value" />
+        <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/theme_key" android:title="@string/app_theme" android:key="AppTheme" android:defaultValue="1" android:summary="@string/select_theme_desc" android:entryValues="@array/theme_value" />
         <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/language_key" android:title="@string/preferred_language" android:key="Language" android:summary="@string/select_language_desc" android:entryValues="@array/language_value" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/app_display">
