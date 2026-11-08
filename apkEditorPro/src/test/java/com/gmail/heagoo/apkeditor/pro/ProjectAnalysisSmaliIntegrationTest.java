@@ -3,12 +3,15 @@ package com.gmail.heagoo.apkeditor.pro;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.gmail.heagoo.apkeditor.ProjectAnalysis;
 import java.io.File;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -91,6 +94,66 @@ public class ProjectAnalysisSmaliIntegrationTest {
             }
         }
         assertTrue("expected a line number for the smali error", lined);
+    }
+
+
+    @Test(timeout = 60000)
+    public void fullParserHandlesLargeProjectWithMonotonicProgressAndNoStructuralFallback() throws Exception {
+        for (int i = 0; i < 120; i++) {
+            String name = String.format(java.util.Locale.ROOT, "Parallel%03d", i);
+            write("smali_classes2/test/" + name + ".smali", validSmali(name));
+        }
+        write("smali_classes2/test/Broken.smali", ".class public Ltest/Broken;\n"
+                + ".super Ljava/lang/Object;\n"
+                + ".method public static broken()V\n"
+                + "    .registers 1\n"
+                + "    const/4 v0,\n"
+                + ".end method\n");
+        write("AndroidManifest.xml", "<manifest package=\"test.app\"/>\n");
+        AtomicInteger lastDone = new AtomicInteger();
+        AtomicInteger total = new AtomicInteger();
+
+        ProjectAnalysis.Report report = ProjectAnalysis.diagnose(temporary.getRoot(),
+                (stage, done, count, path) -> {
+                    if ("Проверка XML и smali".equals(stage)) {
+                        assertTrue(done >= lastDone.get());
+                        lastDone.set(done);
+                        total.set(count);
+                    }
+                }, () -> false);
+
+        assertEquals(122, report.checked);
+        assertEquals(121, report.smaliChecked);
+        assertEquals(1, report.xmlChecked);
+        assertEquals(0, report.smaliNotParsed);
+        assertFalse(report.smaliSyntaxUnavailable);
+        assertEquals(122, total.get());
+        assertEquals(122, lastDone.get());
+        assertTrue(hasFinding(report, "smali_classes2/test/Broken.smali", "smali:"));
+    }
+
+    @Test(timeout = 15000)
+    public void fullParserStopsWhenSupplierIsCancelled() throws Exception {
+        File file = write("smali/test/Cancelled.smali", validSmali("Cancelled"));
+        try {
+            SmaliCheck.check(file.getAbsolutePath(), 26, () -> true);
+            fail("expected cancellation");
+        } catch (InterruptedIOException expected) {
+            assertTrue(expected.getMessage().contains("cancelled"));
+        }
+    }
+
+    @Test(timeout = 30000)
+    public void projectCancellationStopsParallelFullParser() throws Exception {
+        for (int i = 0; i < 40; i++) {
+            write("smali/test/Cancel" + i + ".smali", validSmali("Cancel" + i));
+        }
+        try {
+            ProjectAnalysis.diagnose(temporary.getRoot(), null, () -> true);
+            fail("expected cancellation");
+        } catch (InterruptedIOException expected) {
+            assertTrue(expected.getMessage().contains("отменена"));
+        }
     }
 
     @Test(timeout = 30000)

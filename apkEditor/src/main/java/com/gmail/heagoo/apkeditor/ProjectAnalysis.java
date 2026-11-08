@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,6 +24,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -74,6 +83,11 @@ public final class ProjectAnalysis {
         }
     }
 
+    private static final Comparator<Finding> FINDING_ORDER = Comparator
+            .comparing((Finding finding) -> finding.path)
+            .thenComparingInt(finding -> finding.line)
+            .thenComparing(finding -> finding.message);
+
     public static final class Report {
         public int checked;
         public int xmlFound;
@@ -87,11 +101,20 @@ public final class ProjectAnalysis {
         public boolean truncated;
         public int xmlChecked;
 
-        void add(String path, int line, String message) {
+        synchronized void add(String path, int line, String message) {
+            Finding finding = new Finding(path, line, message);
+            int index = Collections.binarySearch(this.findings, finding, FINDING_ORDER);
+            if (index < 0) {
+                index = -index - 1;
+            }
             if (this.findings.size() < MAX_FINDINGS) {
-                this.findings.add(new Finding(path, line, message));
+                this.findings.add(index, finding);
             } else {
                 this.truncated = true;
+                if (FINDING_ORDER.compare(finding, this.findings.get(this.findings.size() - 1)) < 0) {
+                    this.findings.remove(this.findings.size() - 1);
+                    this.findings.add(index, finding);
+                }
             }
         }
     }
@@ -105,9 +128,13 @@ public final class ProjectAnalysis {
         }
     }
 
+    private static final Object PROGRESS_LOCK = new Object();
+
     private static void progress(Progress listener, String stage, int done, int total, String path) {
         if (listener != null) {
-            listener.update(stage, done, total, path);
+            synchronized (PROGRESS_LOCK) {
+                listener.update(stage, done, total, path);
+            }
         }
     }
 
@@ -291,52 +318,45 @@ public final class ProjectAnalysis {
         }
     }
 
-    private static Set<String> resourceIndex(File root, List<File> files, Report report, Progress listener,
+    private static Set<String> resourceIndex(File root, List<File> resourceFiles, Report report, Progress listener,
                                              BooleanSupplier cancelled) throws IOException {
         Set<String> definitions = new HashSet<>();
         int done = 0;
-        progress(listener, "Поиск ресурсов", 0, files.size(), "");
-        for (File file : files) {
+        progress(listener, "Поиск ресурсов", 0, resourceFiles.size(), "");
+        for (File file : resourceFiles) {
             cancel(cancelled);
             String path = relative(root, file);
-            if (path.startsWith("res/")) {
-                String[] parts = path.split("/");
-                if (parts.length == 3 && !parts[1].startsWith("values")) {
-                    String type = parts[1].split("-")[0];
-                    String name = parts[2];
-                    int dot = name.indexOf('.');
-                    if (dot > 0) {
-                        definitions.add(type + "/" + name.substring(0, dot));
-                    }
+            String[] parts = path.split("/");
+            if (parts.length == 3 && !parts[1].startsWith("values")) {
+                String type = parts[1].split("-")[0];
+                String name = parts[2];
+                int dot = name.indexOf('.');
+                if (dot > 0) {
+                    definitions.add(type + "/" + name.substring(0, dot));
                 }
             }
             if (path.toLowerCase(Locale.ROOT).endsWith(".xml")) {
-                boolean resourceXml = path.startsWith("res/");
                 if (!textAllowed(file)) {
-                    if (resourceXml) {
-                        report.resourceIndexIncomplete = true;
-                    }
+                    report.resourceIndexIncomplete = true;
                 } else {
                     try {
                         byte[] bytes = Files.readAllBytes(file.toPath());
                         cancel(cancelled);
                         String text = new String(bytes, StandardCharsets.UTF_8);
                         if (isBinaryXml(bytes, text) || hasDtd(text)) {
-                            if (resourceXml) {
-                                report.resourceIndexIncomplete = true;
-                            }
+                            report.resourceIndexIncomplete = true;
                         } else {
                             collectDefinitions(text, definitions);
                         }
                     } catch (IOException error) {
-                        if (resourceXml) {
-                            report.resourceIndexIncomplete = true;
-                        }
+                        report.resourceIndexIncomplete = true;
                     }
                 }
             }
             done++;
-            progress(listener, "Поиск ресурсов", done, files.size(), path);
+            if (done % 32 == 0 || done == resourceFiles.size()) {
+                progress(listener, "Поиск ресурсов", done, resourceFiles.size(), path);
+            }
         }
         return definitions;
     }
@@ -348,6 +368,24 @@ public final class ProjectAnalysis {
             // The parser still blocks external entities through its EntityResolver below.
         }
     }
+
+    private static SAXParserFactory newXmlFactory() {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        factory.setNamespaceAware(true);
+        factory.setValidating(false);
+        setFeature(factory, "http://apache.org/xml/features/disallow-doctype-decl", true);
+        setFeature(factory, "http://xml.org/sax/features/external-general-entities", false);
+        setFeature(factory, "http://xml.org/sax/features/external-parameter-entities", false);
+        setFeature(factory, "http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        return factory;
+    }
+
+    private static final ThreadLocal<SAXParserFactory> XML_FACTORY = new ThreadLocal<SAXParserFactory>() {
+        @Override
+        protected SAXParserFactory initialValue() {
+            return newXmlFactory();
+        }
+    };
 
     private static boolean checkXml(File root, File file, Report report, Set<String> definitions,
                                     BooleanSupplier cancelled) throws InterruptedIOException {
@@ -370,14 +408,7 @@ public final class ProjectAnalysis {
             return false;
         }
         try {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            factory.setNamespaceAware(true);
-            factory.setValidating(false);
-            setFeature(factory, "http://apache.org/xml/features/disallow-doctype-decl", true);
-            setFeature(factory, "http://xml.org/sax/features/external-general-entities", false);
-            setFeature(factory, "http://xml.org/sax/features/external-parameter-entities", false);
-            setFeature(factory, "http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            XMLReader xml = factory.newSAXParser().getXMLReader();
+            XMLReader xml = XML_FACTORY.get().newSAXParser().getXMLReader();
             xml.setEntityResolver((publicId, systemId) -> new InputSource(new StringReader("")));
             xml.setErrorHandler(new DefaultHandler() {
                 @Override
@@ -529,6 +560,91 @@ public final class ProjectAnalysis {
         }
     }
 
+    static int workerCount() {
+        int cores = Math.max(1, Runtime.getRuntime().availableProcessors());
+        long memory = Runtime.getRuntime().maxMemory();
+        int byMemory = memory <= 0 ? 4 : Math.max(1, (int) (memory / (128L * 1024L * 1024L)));
+        return Math.max(1, Math.min(4, Math.min(cores, byMemory)));
+    }
+
+    private static final class FileOutcome {
+        boolean checked;
+        int xmlChecked;
+        int smaliChecked;
+        int skipped;
+        int smaliNotParsed;
+        boolean syntaxUnavailable;
+    }
+
+    private static FileOutcome checkOne(File root, File file, Report report, Set<String> definitions,
+                                        Method smaliChecker, boolean checkerUsesSupplier,
+                                        AtomicBoolean parserAvailable, Map<File, Integer> apiCache,
+                                        BooleanSupplier cancelled) throws InterruptedIOException {
+        cancel(cancelled);
+        FileOutcome outcome = new FileOutcome();
+        String path = relative(root, file);
+        String name = file.getName().toLowerCase(Locale.ROOT);
+        if (!textAllowed(file)) {
+            outcome.skipped = 1;
+            report.add(path, 0, "Файл пропущен: размер больше 4 МБ");
+            return outcome;
+        }
+        if (name.endsWith(".xml")) {
+            if (checkXml(root, file, report, definitions, cancelled)) {
+                outcome.checked = true;
+                outcome.xmlChecked = 1;
+            } else {
+                outcome.skipped = 1;
+            }
+            return outcome;
+        }
+
+        if (smaliChecker != null && parserAvailable.get()) {
+            Integer api = apiCache.get(file.getParentFile());
+            if (api == null) {
+                api = DEFAULT_SMALI_API;
+            }
+            cancel(cancelled);
+            try {
+                String[] issues = checkerUsesSupplier
+                        ? (String[]) smaliChecker.invoke(null, file.getAbsolutePath(), api, cancelled)
+                        : (String[]) smaliChecker.invoke(null, file.getAbsolutePath(), api);
+                addSmaliIssues(report, path, issues);
+                outcome.checked = true;
+                outcome.smaliChecked = 1;
+                return outcome;
+            } catch (InvocationTargetException error) {
+                Throwable cause = error.getCause() == null ? error : error.getCause();
+                if (cause instanceof InterruptedIOException) {
+                    throw (InterruptedIOException) cause;
+                }
+                if (cause instanceof OutOfMemoryError) {
+                    throw (OutOfMemoryError) cause;
+                }
+                if (cause instanceof LinkageError) {
+                    parserAvailable.set(false);
+                    outcome.syntaxUnavailable = true;
+                } else {
+                    outcome.smaliNotParsed = 1;
+                    report.add(path, 0, "Не удалось проверить smali: " + cause);
+                }
+            } catch (IllegalAccessException | LinkageError unavailable) {
+                parserAvailable.set(false);
+                outcome.syntaxUnavailable = true;
+            }
+        }
+
+        if (checkSmaliStructure(root, file, report, cancelled)) {
+            outcome.checked = true;
+            outcome.smaliChecked = 1;
+            outcome.smaliNotParsed = 1;
+        } else {
+            outcome.skipped = 1;
+            outcome.smaliNotParsed = 0;
+        }
+        return outcome;
+    }
+
     public static Report diagnose(File root) throws Exception {
         return diagnose(root, null, NEVER);
     }
@@ -541,10 +657,15 @@ public final class ProjectAnalysis {
         if (report.truncated || report.skipped > 0) {
             report.resourceIndexIncomplete = true;
         }
-        Set<String> definitions = resourceIndex(base, files, report, listener, stop);
         List<File> selected = new ArrayList<>();
+        List<File> resourceFiles = new ArrayList<>();
+        Map<File, Integer> apiCache = new HashMap<>();
         for (File file : files) {
             cancel(stop);
+            String path = relative(base, file);
+            if (path.startsWith("res/")) {
+                resourceFiles.add(file);
+            }
             String name = file.getName().toLowerCase(Locale.ROOT);
             if (name.endsWith(".xml")) {
                 selected.add(file);
@@ -552,84 +673,114 @@ public final class ProjectAnalysis {
             } else if (name.endsWith(".smali")) {
                 selected.add(file);
                 report.smaliFound++;
+                File parent = file.getParentFile();
+                if (!apiCache.containsKey(parent)) {
+                    apiCache.put(parent, smaliApiFor(base, file));
+                }
             }
         }
+        Set<String> definitions = resourceIndex(base, resourceFiles, report, listener, stop);
         Method smaliChecker = null;
+        boolean checkerUsesSupplier = false;
         if (report.smaliFound > 0) {
             try {
                 smaliChecker = Class.forName("com.gmail.heagoo.apkeditor.pro.SmaliCheck")
-                        .getMethod("check", String.class, Integer.TYPE);
+                        .getMethod("check", String.class, Integer.TYPE, BooleanSupplier.class);
+                checkerUsesSupplier = true;
             } catch (ClassNotFoundException | NoSuchMethodException | LinkageError unavailable) {
+                try {
+                    smaliChecker = Class.forName("com.gmail.heagoo.apkeditor.pro.SmaliCheck")
+                            .getMethod("check", String.class, Integer.TYPE);
+                } catch (ClassNotFoundException | NoSuchMethodException | LinkageError missing) {
+                    report.smaliSyntaxUnavailable = true;
+                }
+            }
+        }
+        int total = selected.size();
+        progress(listener, "Проверка XML и smali", 0, total, "");
+        if (total == 0) {
+            return report;
+        }
+        int workers = Math.min(workerCount(), total);
+        ExecutorService pool = Executors.newFixedThreadPool(workers, new java.util.concurrent.ThreadFactory() {
+            private final AtomicInteger sequence = new AtomicInteger();
+
+            @Override
+            public Thread newThread(Runnable runnable) {
+                Thread thread = new Thread(runnable, "project-analysis-" + sequence.incrementAndGet());
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
+        AtomicInteger next = new AtomicInteger();
+        AtomicInteger done = new AtomicInteger();
+        FileOutcome[] outcomes = new FileOutcome[total];
+        AtomicBoolean parserAvailable = new AtomicBoolean(smaliChecker != null);
+        final Method checker = smaliChecker;
+        final boolean usesSupplier = checkerUsesSupplier;
+        CompletionService<Void> completion = new ExecutorCompletionService<>(pool);
+        try {
+            for (int i = 0; i < workers; i++) {
+                completion.submit(() -> {
+                    while (true) {
+                        cancel(stop);
+                        int index = next.getAndIncrement();
+                        if (index >= total) {
+                            return null;
+                        }
+                        File file = selected.get(index);
+                        outcomes[index] = checkOne(base, file, report, definitions, checker, usesSupplier,
+                                parserAvailable, apiCache, stop);
+                        synchronized (PROGRESS_LOCK) {
+                            int current = done.incrementAndGet();
+                            progress(listener, "Проверка XML и smali", current, total, relative(base, file));
+                        }
+                    }
+                });
+            }
+            for (int i = 0; i < workers; i++) {
+                try {
+                    Future<Void> future = completion.take();
+                    future.get();
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new InterruptedIOException("Проверка отменена");
+                } catch (ExecutionException failed) {
+                    Throwable cause = failed.getCause();
+                    if (cause instanceof InterruptedIOException) {
+                        throw (InterruptedIOException) cause;
+                    }
+                    if (cause instanceof IOException) {
+                        throw (IOException) cause;
+                    }
+                    if (cause instanceof RuntimeException) {
+                        throw (RuntimeException) cause;
+                    }
+                    if (cause instanceof Error) {
+                        throw (Error) cause;
+                    }
+                    throw new IOException(cause);
+                }
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+        for (FileOutcome outcome : outcomes) {
+            if (outcome == null) {
+                continue;
+            }
+            if (outcome.checked) {
+                report.checked++;
+            }
+            report.xmlChecked += outcome.xmlChecked;
+            report.smaliChecked += outcome.smaliChecked;
+            report.skipped += outcome.skipped;
+            report.smaliNotParsed += outcome.smaliNotParsed;
+            if (outcome.syntaxUnavailable) {
                 report.smaliSyntaxUnavailable = true;
             }
         }
-        Map<File, Integer> apiCache = new HashMap<>();
-        int done = 0;
-        progress(listener, "Проверка XML и smali", 0, selected.size(), "");
-        for (File file : selected) {
-            cancel(stop);
-            String path = relative(base, file);
-            String name = file.getName().toLowerCase(Locale.ROOT);
-            boolean checked = false;
-            if (!textAllowed(file)) {
-                report.skipped++;
-                report.add(path, 0, "Файл пропущен: размер больше 4 МБ");
-            } else if (name.endsWith(".xml")) {
-                checked = checkXml(base, file, report, definitions, stop);
-                if (checked) {
-                    report.xmlChecked++;
-                } else {
-                    report.skipped++;
-                }
-            } else {
-                checked = checkSmaliStructure(base, file, report, stop);
-                if (checked) {
-                    report.smaliChecked++;
-                    if (smaliChecker == null) {
-                        report.smaliNotParsed++;
-                    } else {
-                        File parent = file.getParentFile();
-                        Integer api = apiCache.get(parent);
-                        if (api == null) {
-                            api = smaliApiFor(base, file);
-                            apiCache.put(parent, api);
-                        }
-                        cancel(stop);
-                        try {
-                            String[] issues = (String[]) smaliChecker.invoke(null, file.getAbsolutePath(), api);
-                            addSmaliIssues(report, path, issues);
-                        } catch (InvocationTargetException error) {
-                            Throwable cause = error.getCause() == null ? error : error.getCause();
-                            if (cause instanceof InterruptedIOException) {
-                                throw (InterruptedIOException) cause;
-                            }
-                            if (cause instanceof OutOfMemoryError) {
-                                throw (OutOfMemoryError) cause;
-                            }
-                            if (cause instanceof LinkageError) {
-                                report.smaliSyntaxUnavailable = true;
-                                smaliChecker = null;
-                                report.smaliNotParsed++;
-                            } else {
-                                report.smaliNotParsed++;
-                                report.add(path, 0, "Не удалось проверить smali: " + cause);
-                            }
-                        } catch (IllegalAccessException | LinkageError unavailable) {
-                            report.smaliSyntaxUnavailable = true;
-                            smaliChecker = null;
-                            report.smaliNotParsed++;
-                        }
-                    }
-                } else {
-                    report.skipped++;
-                }
-            }
-            if (checked) {
-                report.checked++;
-            }
-            done++;
-            progress(listener, "Проверка XML и smali", done, selected.size(), path);
-        }
+        report.findings.sort(FINDING_ORDER);
         return report;
     }
 }

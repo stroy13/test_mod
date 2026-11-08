@@ -1,5 +1,7 @@
 package com.gmail.heagoo.apkeditor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -43,5 +45,43 @@ public final class LocalizationChecks {
             }
         }
         return result;
+    }
+
+    /** Renders positional placeholders as users write them in XML, for example {@code %1$s, %2$d}. */
+    public static String formatTokens(Map<String, Set<String>> tokens) {
+        if (tokens == null || tokens.isEmpty()) {
+            return "нет";
+        }
+        List<String> indexes = new ArrayList<>(tokens.keySet());
+        indexes.sort((left, right) -> {
+            boolean leftNumber = left.matches("\\d+");
+            boolean rightNumber = right.matches("\\d+");
+            if (leftNumber && rightNumber) {
+                String leftKey = left.replaceFirst("^0+", "");
+                String rightKey = right.replaceFirst("^0+", "");
+                if (leftKey.isEmpty()) {
+                    leftKey = "0";
+                }
+                if (rightKey.isEmpty()) {
+                    rightKey = "0";
+                }
+                int byLength = Integer.compare(leftKey.length(), rightKey.length());
+                return byLength != 0 ? byLength : leftKey.compareTo(rightKey);
+            }
+            if (leftNumber != rightNumber) {
+                return leftNumber ? -1 : 1;
+            }
+            return left.compareTo(right);
+        });
+        StringBuilder out = new StringBuilder();
+        for (String index : indexes) {
+            for (String type : new TreeSet<>(tokens.get(index))) {
+                if (out.length() > 0) {
+                    out.append(", ");
+                }
+                out.append('%').append(index).append('$').append(type);
+            }
+        }
+        return out.length() == 0 ? "нет" : out.toString();
     }
 }

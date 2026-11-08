@@ -40,7 +40,7 @@ jobs:
             exit $code
           fi
 
-      - name: Юнит-тесты (манифест, DEX, темы, сортировка и диагностика)
+      - name: Юнит-тесты (манифест, DEX, темы, сортировка, диагностика и переводы)
         run: |
           set +e
           ./gradlew :_AndroidCommon:testDebugUnitTest :appListUtil:testDebugUnitTest :appDataEditor:testDebugUnitTest :httpServer:testDebugUnitTest :apkEditor:testDebugUnitTest :apkEditorPro:testDebugUnitTest --no-daemon --max-workers=2 --stacktrace > /tmp/test.log 2>&1

@@ -171,6 +171,72 @@ public class ProjectAnalysisTest {
         assertEquals(3, done.get());
     }
 
+
+    @Test(timeout = 30000)
+    public void parallelCheckKeepsCountsProgressAndFindingsDeterministic() throws Exception {
+        for (int i = 0; i < 160; i++) {
+            String name = String.format(java.util.Locale.ROOT, "Class%03d", i);
+            write("smali/test/" + name + ".smali", validSmali(name));
+        }
+        write("res/values/strings.xml", "<resources><string name=\"ok\">Good</string></resources>\n");
+        write("smali/test/Broken.smali", ".class public Ltest/Broken;\n.method public static x()V\n");
+        write("res/values/broken.xml", "<resources><string name=\"bad\">Bad</resources>\n");
+
+        AtomicInteger lastDone = new AtomicInteger();
+        AtomicInteger total = new AtomicInteger();
+        ProjectAnalysis.Report first = ProjectAnalysis.diagnose(temporary.getRoot(),
+                (stage, done, count, path) -> {
+                    if ("Проверка XML и smali".equals(stage)) {
+                        assertTrue("progress moved backwards: " + done + " after " + lastDone.get(),
+                                done >= lastDone.get());
+                        lastDone.set(done);
+                        total.set(count);
+                    }
+                }, () -> false);
+        ProjectAnalysis.Report second = ProjectAnalysis.diagnose(temporary.getRoot());
+
+        assertEquals(163, first.checked);
+        assertEquals(161, first.smaliChecked);
+        assertEquals(2, first.xmlChecked);
+        assertEquals(0, first.skipped);
+        assertEquals(163, total.get());
+        assertEquals(163, lastDone.get());
+        assertEquals(first.findings.toString(), second.findings.toString());
+        assertTrue(hasFinding(first, "smali/test/Broken.smali", "Метод не закрыт"));
+        assertTrue(hasFinding(first, "res/values/broken.xml", "XML:"));
+        for (int i = 1; i < first.findings.size(); i++) {
+            ProjectAnalysis.Finding left = first.findings.get(i - 1);
+            ProjectAnalysis.Finding right = first.findings.get(i);
+            int byPath = left.path.compareTo(right.path);
+            assertTrue(byPath < 0 || (byPath == 0 && left.line <= right.line));
+        }
+        assertTrue(ProjectAnalysis.workerCount() >= 1 && ProjectAnalysis.workerCount() <= 4);
+    }
+
+    @Test(timeout = 15000)
+    public void resourceIndexIgnoresDefinitionsOutsideRes() throws Exception {
+        write("assets/strings.xml", "<resources><string name=\"outside\">Outside</string></resources>\n");
+        write("res/layout/main.xml", "<TextView xmlns:android=\"http://schemas.android.com/apk/res/android\" "
+                + "android:text=\"@string/outside\"/>\n");
+
+        ProjectAnalysis.Report report = ProjectAnalysis.diagnose(temporary.getRoot());
+
+        assertEquals(2, report.xmlChecked);
+        assertTrue(hasFinding(report, "res/layout/main.xml", "Возможно отсутствует ресурс @string/outside"));
+    }
+
+    @Test(timeout = 15000)
+    public void findingLimitIsSortedAndDeterministic() throws Exception {
+        ProjectAnalysis.Report report = new ProjectAnalysis.Report();
+        for (int i = ProjectAnalysis.MAX_FINDINGS + 50; i >= 0; i--) {
+            report.add(String.format(java.util.Locale.ROOT, "file%04d.smali", i), 1, "issue");
+        }
+        assertEquals(ProjectAnalysis.MAX_FINDINGS, report.findings.size());
+        assertTrue(report.truncated);
+        assertEquals("file0000.smali", report.findings.get(0).path);
+        assertEquals("file0999.smali", report.findings.get(report.findings.size() - 1).path);
+    }
+
     @Test(timeout = 15000)
     public void smaliApiUsesNearestMarkerAndFallsBackForInvalidValues() throws Exception {
         File root = temporary.getRoot();
