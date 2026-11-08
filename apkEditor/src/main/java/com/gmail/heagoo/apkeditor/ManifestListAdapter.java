@@ -6,14 +6,12 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,6 +45,8 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
     private List<LineRecord> allXmlLines = new ArrayList();
     private final List<LineRecord> xmlLines = new ArrayList();
     private int layoutId = R.layout.item_manifestline;
+    private ManifestEditorPalette palette;
+    private int gutterWidth;
 
     ManifestListAdapter(Activity activity, String xmlPath, IManifestChangeCallback callback) {
         this.activityRef = new WeakReference<>(activity);
@@ -145,15 +145,19 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
         synchronized (this.xmlLines) {
             rec = this.xmlLines.get(position);
         }
+        Activity activity = this.activityRef.get();
         if (convertView == null) {
-            convertView = LayoutInflater.from(this.activityRef.get()).inflate(this.layoutId, (ViewGroup) null);
+            convertView = LayoutInflater.from(activity).inflate(this.layoutId, (ViewGroup) null);
             viewHolder = new ViewHolder();
             viewHolder.collapseImage = (ImageView) convertView.findViewById(R.id.collapse_icon);
+            viewHolder.lineNumber = (TextView) convertView.findViewById(R.id.line_number);
             viewHolder.lineData = (TextView) convertView.findViewById(R.id.line_data);
+            applyEditorTypeface(viewHolder);
             convertView.setTag(viewHolder);
         } else {
             viewHolder = (ViewHolder) convertView.getTag();
         }
+        ManifestEditorPalette colors = palette(activity, viewHolder.lineData);
         int availableWidth = parent.getWidth();
         if (availableWidth <= 0) {
             availableWidth = parent.getMeasuredWidth();
@@ -162,16 +166,97 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
             availableWidth = parent.getResources().getDisplayMetrics().widthPixels;
         }
         int availableWidth2 = availableWidth - (parent.getPaddingLeft() + parent.getPaddingRight());
-        if (rec.indent > 0) {
+
+        // Fixed-width line-number gutter, so digits never shift the code column.
+        int gutter = gutterWidth(viewHolder.lineNumber);
+        if (viewHolder.lineNumber != null) {
+            viewHolder.lineNumber.setWidth(gutter);
+            viewHolder.lineNumber.setBackgroundColor(colors.gutter);
+            viewHolder.lineNumber.setTextColor(colors.gutterText);
+            viewHolder.lineNumber.setText(String.valueOf(rec.lineIndex + 1));
+        }
+        availableWidth2 -= gutter;
+
+        // Indent guides and the collapse arrow are painted by the row background;
+        // the icon is only a click target sized to the indent.
+        float unit = viewHolder.lineData.getPaint().measureText("    ");
+        float lineHeight = viewHolder.lineData.getPaint().getFontSpacing();
+        int maxIndent = unit > 0.0f ? Math.max(1, (int) (availableWidth2 / 3.0f / unit)) : 0;
+        int indent = Math.min(rec.indent, maxIndent);
+        int indentWidth = Math.round(unit * indent);
+        if (indentWidth > 0) {
             viewHolder.collapseImage.setVisibility(0);
-            viewHolder.collapseImage.setImageBitmap(getImage(rec, availableWidth2));
-            availableWidth2 -= viewHolder.collapseImage.getDrawable().getIntrinsicWidth();
+            viewHolder.collapseImage.setImageDrawable(null);
+            ViewGroup.LayoutParams lp = viewHolder.collapseImage.getLayoutParams();
+            lp.width = indentWidth;
+            lp.height = Math.max(1, Math.round(lineHeight));
+            viewHolder.collapseImage.setLayoutParams(lp);
             setCollapsable(viewHolder.collapseImage, rec);
         } else {
             viewHolder.collapseImage.setVisibility(8);
         }
+        availableWidth2 -= indentWidth;
+        convertView.setBackground(new ManifestRowBackground(colors, gutter, unit, indent,
+                lineHeight, rec.sectionEnd != rec.lineIndex, rec.collapsed));
+        viewHolder.lineData.setTextColor(colors.text);
         viewHolder.lineData.setText(formatManifestLine(rec, viewHolder.lineData, availableWidth2 - (viewHolder.lineData.getCompoundPaddingLeft() + viewHolder.lineData.getCompoundPaddingRight())));
         return convertView;
+    }
+
+    /** Writing surface colour, so the list background matches the rows. */
+    int editorSurface() {
+        return palette(this.activityRef.get(), null).surface;
+    }
+
+    /** Monospace, dense rows -- the code view reads like MT Manager's editor. */
+    private static void applyEditorTypeface(ViewHolder holder) {
+        holder.lineData.setTypeface(Typeface.MONOSPACE);
+        holder.lineData.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13.0f);
+        holder.lineData.setIncludeFontPadding(false);
+        if (holder.lineNumber != null) {
+            holder.lineNumber.setTypeface(Typeface.MONOSPACE);
+            holder.lineNumber.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13.0f);
+            holder.lineNumber.setIncludeFontPadding(false);
+        }
+    }
+
+    private int gutterWidth(TextView gutter) {
+        if (gutter == null) {
+            return 0;
+        }
+        Activity activity = this.activityRef.get();
+        float density = activity == null ? 1.0f : activity.getResources().getDisplayMetrics().density;
+        // Padding is per-view: recycled rows keep it, but every freshly inflated
+        // row needs it applied too, otherwise its digits sit flush against the code.
+        gutter.setPadding(Math.round(6.0f * density), gutter.getPaddingTop(),
+                Math.round(10.0f * density), gutter.getPaddingBottom());
+        if (this.gutterWidth <= 0) {
+            int digits = Math.max(2, String.valueOf(Math.max(1, this.allXmlLines.size())).length());
+            this.gutterWidth = Math.round(gutter.getPaint().measureText("0") * digits)
+                    + Math.round(16.0f * density);
+        }
+        return this.gutterWidth;
+    }
+
+    /**
+     * The code view keeps its own editor surface instead of inheriting the app
+     * chrome colour, exactly as MT Manager does. Light app palettes get the
+     * matching light editor scheme.
+     */
+    private ManifestEditorPalette palette(Activity activity, TextView view) {
+        if (this.palette == null) {
+            boolean dark = true;
+            TypedValue surface = new TypedValue();
+            if (activity != null && activity.getTheme().resolveAttribute(R.attr.labSurface, surface, true)) {
+                int color = surface.resourceId != 0
+                        ? ContextCompat.getColor(activity, surface.resourceId) : surface.data;
+                dark = ColorUtils.calculateLuminance(color) <= 0.45d;
+            } else if (view != null) {
+                dark = ColorUtils.calculateLuminance(view.getCurrentTextColor()) <= 0.45d;
+            }
+            this.palette = ManifestEditorPalette.forDark(dark);
+        }
+        return this.palette;
     }
 
     private CharSequence formatManifestLine(LineRecord rec, final TextView view, int availableWidth) {
@@ -212,67 +297,31 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
     }
 
     private CharSequence highlightManifestLine(LineRecord rec, TextView view) {
-        int color;
         SpannableString result = new SpannableString(rec.lineData);
-        Activity activity = this.activityRef.get();
-        if (activity == null) {
-            return result;
-        }
-        TypedValue surface = new TypedValue();
-        boolean light = true;
-        if (activity.getTheme().resolveAttribute(R.attr.labSurface, surface, true)) {
-            int color2 = surface.resourceId != 0 ? ContextCompat.getColor(activity, surface.resourceId) : surface.data;
-            if (ColorUtils.calculateLuminance(color2) <= 0.45d) {
-                light = false;
-            }
-        } else if (ColorUtils.calculateLuminance(view.getCurrentTextColor()) >= 0.45d) {
-            light = false;
-        }
+        ManifestEditorPalette colors = palette(this.activityRef.get(), view);
         for (ManifestSyntax.Span span : rec.syntax) {
-            switch (span.kind) {
-                case 1:
-                    if (light) {
-                        color = -11189064;
-                        break;
-                    } else {
-                        color = -4871937;
-                        break;
-                    }
-                case 2:
-                    if (light) {
-                        color = -15246934;
-                        break;
-                    } else {
-                        color = -7489281;
-                        break;
-                    }
-                case 3:
-                    if (light) {
-                        color = -16222113;
-                        break;
-                    } else {
-                        color = -8463168;
-                        break;
-                    }
-                case 4:
-                    if (light) {
-                        color = -10916995;
-                        break;
-                    } else {
-                        color = -7561035;
-                        break;
-                    }
-                default:
-                    if (light) {
-                        color = -11443590;
-                        break;
-                    } else {
-                        color = -5653551;
-                        break;
-                    }
+            if (span.start < 0 || span.end > result.length() || span.end <= span.start) {
+                continue;
             }
-            if (span.start >= 0 && span.end <= result.length() && span.end > span.start) {
-                result.setSpan(new ForegroundColorSpan(color), span.start, span.end, 33);
+            if (span.kind == ManifestSyntax.ATTRIBUTE) {
+                // MT Manager paints the namespace, not merely the text before the
+                // colon: "android:name" -> violet "android", plain "name", while
+                // "xmlns:android" -> plain "xmlns", violet "android".
+                int colon = rec.lineData.indexOf(':', span.start);
+                if (colon > span.start && colon < span.end - 1) {
+                    boolean declaration = rec.lineData.startsWith("xmlns", span.start);
+                    int prefixColor = declaration ? colors.attribute : colors.namespace;
+                    int localColor = declaration ? colors.namespace : colors.attribute;
+                    result.setSpan(new ForegroundColorSpan(prefixColor), span.start, colon, 33);
+                    result.setSpan(new ForegroundColorSpan(localColor), colon + 1, span.end, 33);
+                    continue;
+                }
+            }
+            char first = rec.lineData.charAt(span.start);
+            result.setSpan(new ForegroundColorSpan(colors.spanColor(span.kind, first)),
+                    span.start, span.end, 33);
+            if (span.kind == ManifestSyntax.COMMENT) {
+                result.setSpan(new StyleSpan(Typeface.ITALIC), span.start, span.end, 33);
             }
         }
         return result;
@@ -308,25 +357,6 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
             }
             i++;
         }
-    }
-
-    private Bitmap getImage(LineRecord lineRec, int availableWidth) {
-        Bitmap arrow;
-        int maxIndent = Math.max(1, availableWidth / 96);
-        int indent = Math.min(lineRec.indent, maxIndent);
-        int width = indent * 48;
-        Bitmap b = Bitmap.createBitmap(width, 48, Bitmap.Config.ALPHA_8);
-        if (lineRec.sectionEnd != lineRec.lineIndex) {
-            if (!lineRec.collapsed) {
-                arrow = BitmapFactory.decodeResource(this.activityRef.get().getResources(), R.drawable.arrow_down);
-            } else {
-                arrow = BitmapFactory.decodeResource(this.activityRef.get().getResources(), R.drawable.arrow_right);
-            }
-            Canvas c = new Canvas(b);
-            Paint paint = new Paint();
-            c.drawBitmap(arrow, width - 40, 8.0f, paint);
-        }
-        return b;
     }
 
     @Override
@@ -478,6 +508,7 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
 
     private static class ViewHolder {
         ImageView collapseImage;
+        TextView lineNumber;
         TextView lineData;
 
         private ViewHolder() {

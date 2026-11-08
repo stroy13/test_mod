@@ -1,25 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    One row of the manifest code view. Layout mirrors MT Manager: a fixed
+    line-number gutter, an indent/collapse strip, then monospace code.
+    Colours, typeface and text size are applied by ManifestListAdapter so the
+    editor palette can follow the selected app theme.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:gravity="center_vertical"
+    android:gravity="top"
     android:orientation="horizontal">
+
+    <TextView
+        android:id="@+id/line_number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:gravity="right|top"
+        android:paddingTop="1.0dip"
+        android:paddingBottom="1.0dip"
+        android:singleLine="true"
+        android:fontFamily="monospace"
+        android:includeFontPadding="false"
+        android:textSize="13.0sp"
+        android:textColor="?labMuted" />
 
     <ImageView
         android:id="@+id/collapse_icon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
+        android:layout_gravity="top"
         android:contentDescription="@string/app_name"
         android:scaleType="fitCenter" />
 
     <TextView
         android:id="@+id/line_data"
-        android:layout_width="fill_parent"
+        android:layout_width="0.0dip"
         android:layout_height="wrap_content"
-        android:paddingTop="6.0dip"
-        android:paddingBottom="6.0dip"
-        android:singleLine="true"
+        android:layout_weight="1.0"
+        android:paddingLeft="2.0dip"
+        android:paddingTop="1.0dip"
+        android:paddingRight="8.0dip"
+        android:paddingBottom="1.0dip"
+        android:singleLine="false"
+        android:breakStrategy="simple"
+        android:hyphenationFrequency="none"
+        android:fontFamily="monospace"
+        android:includeFontPadding="false"
+        android:textSize="13.0sp"
         android:textColor="?labText" />
 
 </LinearLayout>

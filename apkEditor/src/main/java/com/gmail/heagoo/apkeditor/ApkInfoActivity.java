@@ -240,6 +240,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         long lastUpdateNanos;
         ProgressBar progressBar;
         TextView progressText;
+        TextView progressDetail;
         Thread worker;
 
         private AnalysisJob() {
@@ -1118,6 +1119,19 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.resSelectTip = (TextView) findViewById(R.id.selection_tip);
         this.manifestLayout = (LinearLayout) findViewById(R.id.manifest_layout);
         this.manifestList = (ListView) findViewById(R.id.manifest_list);
+        // A code view is continuous text, not a list of cards: drop the theme's
+        // row divider and the side margins so the line-number gutter sits flush
+        // against the edge, as in MT Manager.
+        this.manifestList.setDivider(null);
+        this.manifestList.setDividerHeight(0);
+        android.view.ViewGroup.LayoutParams manifestLp = this.manifestList.getLayoutParams();
+        if (manifestLp instanceof android.view.ViewGroup.MarginLayoutParams) {
+            android.view.ViewGroup.MarginLayoutParams margins =
+                    (android.view.ViewGroup.MarginLayoutParams) manifestLp;
+            margins.leftMargin = 0;
+            margins.rightMargin = 0;
+            this.manifestList.setLayoutParams(margins);
+        }
         this.loadingLayout = (LinearLayout) findViewById(R.id.layout_loading);
         this.loadRetryButton = new Button(this);
         this.loadRetryButton.setText(R.string.lab_load_retry);
@@ -1499,15 +1513,30 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.analysisJob = job;
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(1);
-        int p = (int) (getResources().getDisplayMetrics().density * 20.0f);
+        float density = getResources().getDisplayMetrics().density;
+        int p = (int) (density * 20.0f);
         content.setPadding(p, p, p, p / 2);
+        // Two fixed-height single-line rows: status on top, current path below.
+        // setLines(1) pins minLines == maxLines == 1, so neither a long file name
+        // nor a shorter phase can change the height. Previously the message went
+        // into one wrapping TextView: a long path added a third line and the
+        // centred dialog jumped up and down on every progress update.
         job.progressText = new TextView(this);
+        job.progressText.setLines(1);
+        job.progressText.setEllipsize(android.text.TextUtils.TruncateAt.END);
         job.progressText.setText("Подготовка проверки…");
         job.progressText.setTextIsSelectable(false);
-        content.addView(job.progressText);
+        content.addView(job.progressText, new LinearLayout.LayoutParams(-1, -2));
+        job.progressDetail = new TextView(this);
+        job.progressDetail.setLines(1);
+        job.progressDetail.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
+        job.progressDetail.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12.0f);
+        job.progressDetail.setAlpha(0.7f);
+        job.progressDetail.setText(" ");
+        content.addView(job.progressDetail, new LinearLayout.LayoutParams(-1, -2));
         ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progress.setIndeterminate(true);
-        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(-1, (int) (getResources().getDisplayMetrics().density * 5.0f));
+        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(-1, (int) (density * 5.0f));
         progressParams.topMargin = p / 2;
         content.addView(progress, progressParams);
         job.progressBar = progress;
@@ -1536,6 +1565,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     static void lambda$runProjectAnalysis$11(AnalysisJob job, View v) {
         job.cancelled.set(true);
         job.progressText.setText("Останавливаем проверку…");
+        if (job.progressDetail != null) {
+            job.progressDetail.setText(" ");
+        }
         job.dialog.getButton(-2).setEnabled(false);
         if (job.worker != null) {
             job.worker.interrupt();
@@ -1622,7 +1654,17 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (this.analysisJob != job || job.cancelled.get() || isFinishing() || isDestroyed()) {
             return;
         }
-        job.progressText.setText(message);
+        // The producer sends "phase: done / total (pct)\n<path>". Route the two
+        // parts to the two fixed rows instead of letting one TextView wrap,
+        // which is what resized the dialog mid-scan.
+        String text = message == null ? "" : message;
+        int newline = text.indexOf(10);
+        String status = newline < 0 ? text : text.substring(0, newline);
+        String detail = newline < 0 ? "" : text.substring(newline + 1).replace('\n', ' ');
+        job.progressText.setText(status);
+        if (job.progressDetail != null) {
+            job.progressDetail.setText(detail.length() == 0 ? " " : detail);
+        }
         if (job.progressBar != null) {
             if (total > 0) {
                 job.progressBar.setIndeterminate(false);
@@ -3454,6 +3496,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.resourceList.setOnItemLongClickListener(this);
         this.mfListAdapter = new ManifestListAdapter(this, this.decodeRootPath + "/AndroidManifest.xml", this);
         this.manifestList.setAdapter((ListAdapter) this.mfListAdapter);
+        this.manifestList.setBackgroundColor(this.mfListAdapter.editorSurface());
         this.manifestList.setOnItemClickListener(this.mfListAdapter);
         this.manifestList.setOnItemLongClickListener(this.mfListAdapter);
         if (this.navigationMgr != null && this.resCurrentDir != null) {
