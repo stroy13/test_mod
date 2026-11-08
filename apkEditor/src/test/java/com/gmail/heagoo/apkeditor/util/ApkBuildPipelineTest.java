@@ -31,6 +31,7 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -237,36 +238,29 @@ public class ApkBuildPipelineTest {
         // the same entries/compression through ZipFile.
         File unsigned = new File(folder.getRoot(), "unsigned.apk");
         ApkBuildPipeline.merge(source, unsigned, null, null, null, options(), null, null);
+        Map<String, Long> compressedSizes = new HashMap<>();
+        try (ZipFile zf = new ZipFile(unsigned)) {
+            java.util.Enumeration<? extends ZipEntry> en = zf.entries();
+            while (en.hasMoreElements()) {
+                ZipEntry ze = en.nextElement();
+                compressedSizes.put(ze.getName(), ze.getCompressedSize());
+            }
+        }
         try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(unsigned, "r")) {
             byte[] all = new byte[(int) raf.length()];
             raf.readFully(all);
-            int eocd = -1;
-            for (int i = all.length - 22; i >= 0; i--) {
-                if (ByteBuffer.wrap(all, i, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() == 0x06054b50) {
-                    eocd = i;
-                    break;
-                }
-            }
-            assertTrue("EOCD not found", eocd >= 0);
-            ByteBuffer e = ByteBuffer.wrap(all, eocd, 22).order(ByteOrder.LITTLE_ENDIAN);
-            int count = e.getShort(10) & 0xffff;
-            int pos = e.getInt(16);
+            int pos = 0;
             boolean checkedArsc = false;
             boolean checkedLib = false;
-            for (int i = 0; i < count; i++) {
-                assertEquals(0x02014b50, ByteBuffer.wrap(all, pos, 4).order(ByteOrder.LITTLE_ENDIAN).getInt());
-                ByteBuffer c = ByteBuffer.wrap(all, pos, 46).order(ByteOrder.LITTLE_ENDIAN);
-                int nameLen = c.getShort(28) & 0xffff;
-                int extraLen = c.getShort(30) & 0xffff;
-                int commentLen = c.getShort(32) & 0xffff;
-                int localOffset = c.getInt(42);
-                String name = new String(all, pos + 46, nameLen, StandardCharsets.UTF_8);
-                ByteBuffer l = ByteBuffer.wrap(all, localOffset, 30).order(ByteOrder.LITTLE_ENDIAN);
-                assertEquals(0x04034b50, l.getInt(0));
+            while (pos + 30 <= all.length
+                    && ByteBuffer.wrap(all, pos, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() == 0x04034b50) {
+                ByteBuffer l = ByteBuffer.wrap(all, pos, 30).order(ByteOrder.LITTLE_ENDIAN);
+                int flags = l.getShort(6) & 0xffff;
                 int method = l.getShort(8) & 0xffff;
-                int localNameLen = l.getShort(26) & 0xffff;
-                int localExtraLen = l.getShort(28) & 0xffff;
-                long dataOffset = localOffset + 30L + localNameLen + localExtraLen;
+                int nameLen = l.getShort(26) & 0xffff;
+                int extraLen = l.getShort(28) & 0xffff;
+                String name = new String(all, pos + 30, nameLen, StandardCharsets.UTF_8);
+                long dataOffset = pos + 30L + nameLen + extraLen;
                 if (method == ZipEntry.STORED && name.equals("resources.arsc")) {
                     assertEquals("resources.arsc must be 4-byte aligned", 0, dataOffset % 4);
                     checkedArsc = true;
@@ -275,7 +269,14 @@ public class ApkBuildPipelineTest {
                     assertEquals("native library must be 16KB aligned", 0, dataOffset % 16384);
                     checkedLib = true;
                 }
-                pos += 46 + nameLen + extraLen + commentLen;
+                Long compSize = compressedSizes.get(name);
+                assertNotNull("central directory missing " + name, compSize);
+                pos = (int) (dataOffset + compSize);
+                if (method == ZipEntry.DEFLATED && (flags & 0x08) != 0) {
+                    // ZipOutputStream writes a 16-byte data descriptor (with signature) after deflated data.
+                    assertEquals(0x08074b50, ByteBuffer.wrap(all, pos, 4).order(ByteOrder.LITTLE_ENDIAN).getInt());
+                    pos += 16;
+                }
             }
             assertTrue("resources.arsc not found", checkedArsc);
             assertTrue("stored library not found", checkedLib);
