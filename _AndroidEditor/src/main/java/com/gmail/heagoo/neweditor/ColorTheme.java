@@ -33,13 +33,14 @@ public class ColorTheme {
         int i;
         int i2;
         this.foregroundColors = new int[11];
-        int themeId = 0;
+        int themeId = ThemeRegistry.DEFAULT_THEME;
         try {
-            themeId = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(context).getString("AppTheme", "0"));
+            themeId = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(context)
+                    .getString("AppTheme", String.valueOf(ThemeRegistry.DEFAULT_THEME)));
         } catch (Exception e) {
         }
         if (!ThemeRegistry.valid(themeId)) {
-            themeId = 0;
+            themeId = ThemeRegistry.DEFAULT_THEME;
         }
         boolean dark = ThemeRegistry.isDark(themeId);
         boolean smali = "smali.xml".equals(syntaxFileName);

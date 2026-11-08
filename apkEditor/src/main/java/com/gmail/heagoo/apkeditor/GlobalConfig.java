@@ -16,15 +16,15 @@ public class GlobalConfig {
     private GlobalConfig(Context ctx) {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
         try {
-            String str = sp.getString("AppTheme", "2");
+            String str = sp.getString("AppTheme", String.valueOf(ThemeRegistry.DEFAULT_THEME));
             int id = Integer.valueOf(str).intValue();
             if (ThemeRegistry.valid(id)) {
                 this.themeId = id;
             } else {
-                this.themeId = THEME_DARK_RUSSIAN;
+                this.themeId = ThemeRegistry.DEFAULT_THEME;
             }
         } catch (Exception e) {
-            this.themeId = THEME_DARK_RUSSIAN;
+            this.themeId = ThemeRegistry.DEFAULT_THEME;
         }
         this.isFullScreen = sp.getBoolean("FullScreen", false);
     }
@@ -49,7 +49,7 @@ public class GlobalConfig {
     }
 
     public void updateThemeId(int themeId) {
-        this.themeId = ThemeRegistry.valid(themeId) ? themeId : THEME_DARK_RUSSIAN;
+        this.themeId = ThemeRegistry.valid(themeId) ? themeId : ThemeRegistry.DEFAULT_THEME;
     }
 
     public void setFullScreen(Context ctx, boolean isFullScreen) {

@@ -47,18 +47,27 @@ public class OutputPathAndUiDefaultsTest {
     }
 
     @Test
-    public void defaultThemeIsDark2Everywhere() throws Exception {
+    public void defaultThemeIsDark1Everywhere() throws Exception {
         String registry = read(root().resolve("_AndroidCommon/src/main/java/com/gmail/heagoo/common/ThemeRegistry.java"));
-        assertTrue(registry.contains("\"EditorThemeDarkAlt\""));
+        assertTrue(registry.contains("public static final int DEFAULT_THEME = 1;"));
+        assertTrue(registry.contains("\"EditorThemeDark\""));
+        // Index 1 must stay "Dark Theme 1" in both label arrays.
+        String labels = read(root().resolve("apkEditor/src/main/res/values/arrays.xml"));
+        assertTrue(labels.contains("<item>Dark Theme 1</item>"));
+        String labelsRu = read(root().resolve("apkEditor/src/main/res/values-ru/arrays.xml"));
+        assertTrue(labelsRu.contains("<item>\u0422\u0451\u043c\u043d\u0430\u044f \u0442\u0435\u043c\u0430 1</item>"));
+
         String editorTheme = read(root().resolve("_AndroidCommon/src/main/java/com/gmail/heagoo/common/EditorTheme.java"));
-        assertTrue(editorTheme.contains("getString(\"AppTheme\", \"2\")"));
+        assertTrue(editorTheme.contains("getString(\"AppTheme\", \"1\")"));
         String config = read(root().resolve("apkEditor/src/main/java/com/gmail/heagoo/apkeditor/GlobalConfig.java"));
-        assertTrue(config.contains("getString(\"AppTheme\", \"2\")"));
+        assertTrue(config.contains("getString(\"AppTheme\", String.valueOf(ThemeRegistry.DEFAULT_THEME))"));
+        String colorTheme = read(root().resolve("_AndroidEditor/src/main/java/com/gmail/heagoo/neweditor/ColorTheme.java"));
+        assertTrue(colorTheme.contains("getString(\"AppTheme\", String.valueOf(ThemeRegistry.DEFAULT_THEME))"));
         String styles = read(root().resolve("apkEditor/src/main/res/values/styles.xml"));
-        assertTrue(styles.contains("<style name=\"AppTheme\" parent=\"@style/EditorThemeDarkAlt\" />"));
+        assertTrue(styles.contains("<style name=\"AppTheme\" parent=\"@style/EditorThemeDark\" />"));
         for (String module : new String[]{"apkEditor", "apkEditorPlus"}) {
             String settings = read(root().resolve(module + "/src/main/res/xml/settings.xml"));
-            assertTrue(settings.contains("android:key=\"AppTheme\" android:defaultValue=\"2\""));
+            assertTrue(settings.contains("android:key=\"AppTheme\" android:defaultValue=\"1\""));
         }
     }
 
