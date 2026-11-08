@@ -275,7 +275,9 @@ public class ApkBuildPipelineTest {
                     break;
                 }
                 Long compSize = compressedSizes.get(name);
-                assertNotNull("central directory missing " + name, compSize);
+                assertNotNull("central directory missing '" + name + "' at pos=" + pos
+                        + ", dataOffset=" + dataOffset + ", extraLen=" + extraLen
+                        + ", known=" + compressedSizes.keySet(), compSize);
                 pos = (int) (dataOffset + compSize);
                 if (method == ZipEntry.DEFLATED && (flags & 0x08) != 0) {
                     // Data descriptor is 12 bytes (crc/csize/size); the 0x08074b50 signature

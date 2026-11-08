@@ -92,7 +92,12 @@ jobs:
               fi
             done
             if [ -f /tmp/test.log ]; then
-              echo "--- resource errors"
+              echo "--- junit failures"
+          for f in apkEditor/build/test-results/testDebugUnitTest/TEST-*.xml apkEditorPlus/build/test-results/testDebugUnitTest/TEST-*.xml; do
+            [ -f "$f" ] || continue
+            grep -B1 -A8 '<failure' "$f" | head -n 80 || true
+          done
+          echo "--- resource errors"
               grep -n -E "error:|AAPT|Android resource linking failed|\.xml:[0-9]+" /tmp/test.log | head -n 120 || true
             fi
             echo '```'
