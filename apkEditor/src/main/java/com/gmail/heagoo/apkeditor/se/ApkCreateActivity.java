@@ -36,6 +36,8 @@ import com.gmail.heagoo.apkeditor.base.BuildConfig;
 import com.gmail.heagoo.apkeditor.base.R;
 import com.gmail.heagoo.apkeditor.ce.IApkMaking;
 import com.gmail.heagoo.apkeditor.ce.IDescriptionUpdate;
+import com.gmail.heagoo.apkeditor.ce.ManifestInfo;
+import com.gmail.heagoo.apkeditor.ce.ManifestParser;
 import com.gmail.heagoo.apkeditor.ce.e.ResourceEditor;
 import com.gmail.heagoo.apkeditor.dex.DexStringEditor;
 import com.gmail.heagoo.apkeditor.util.ApkBuildPipeline;
@@ -647,6 +649,29 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
                 // To prepare/zoom all the images
                 activity.prepareImages(log);
                 log.map("Final replaces", activity.allReplaces);
+
+                String editedManifestPath = activity.allReplaces.get("AndroidManifest.xml");
+                if (editedManifestPath != null) {
+                    log.section("Edited manifest semantics");
+                    File editedManifest = new File(editedManifestPath);
+                    log.key("Edited manifest size", editedManifest.length() + " bytes");
+                    try (InputStream manifestInput = new java.io.BufferedInputStream(
+                            new java.io.FileInputStream(editedManifest))) {
+                        ManifestParser manifestParser = new ManifestParser(manifestInput);
+                        manifestParser.parse();
+                        ManifestInfo editedInfo = manifestParser.getManifestInfo();
+                        if (editedInfo == null || editedInfo.packageName == null) {
+                            throw new IOException("Edited AndroidManifest.xml has no package name");
+                        }
+                        log.log(ManifestParser.describe(editedInfo));
+                        if (editedInfo.isSplitRequired
+                                || (editedInfo.requiredSplitTypes != null
+                                && !editedInfo.requiredSplitTypes.isEmpty())) {
+                            log.log("WARNING: edited manifest still declares split requirements; "
+                                    + "standalone installation may be rejected");
+                        }
+                    }
+                }
 
                 String outApkName;
                 String strTail = (BuildConfig.WITH_SIGN ? "_signed" : "_unsigned");

@@ -255,6 +255,16 @@ public class ManifestParser implements IAttributeCallback {
                 return "versionName";
             case 0x0101021b:
                 return "versionCode";
+            case 0x010104ea:
+                return "extractNativeLibs";
+            case 0x01010591:
+                return "isSplitRequired";
+            case 0x0101059e:
+                return "useEmbeddedDex";
+            case 0x0101064e:
+                return "requiredSplitTypes";
+            case 0x0101064f:
+                return "splitTypes";
         }
         return null;
     }
@@ -324,6 +334,14 @@ public class ManifestParser implements IAttributeCallback {
                     && AxmlBodyChunk.isTypeRefToStrTable(type)) {
                 this.result.pkgNameIdx = idx;
                 this.result.packageName = strChunk.getStringByIndex(idx);
+            } else if ("isSplitRequired".equals(attrName)) {
+                this.result.isSplitRequired = idx != 0;
+            } else if ("requiredSplitTypes".equals(attrName)
+                    && AxmlBodyChunk.isTypeRefToStrTable(type)) {
+                this.result.requiredSplitTypes = strChunk.getStringByIndex(idx);
+            } else if ("splitTypes".equals(attrName)
+                    && AxmlBodyChunk.isTypeRefToStrTable(type)) {
+                this.result.splitTypes = strChunk.getStringByIndex(idx);
             }
         } else if ("application".equals(tag)) {
             if ("label".equals(attrName)) {
@@ -338,6 +356,10 @@ public class ManifestParser implements IAttributeCallback {
                 this.result.applicationCls = strChunk.getStringByIndex(idx);
             } else if ("icon".equals(attrName)) {
                 this.result.launcherId = idx;
+            } else if ("extractNativeLibs".equals(attrName)) {
+                this.result.extractNativeLibs = idx != 0 ? 1 : 0;
+            } else if ("useEmbeddedDex".equals(attrName)) {
+                this.result.useEmbeddedDex = idx != 0 ? 1 : 0;
             }
         } else if ("activity".equals(tag) || "service".equals(tag)
                 || "receiver".equals(tag) || "provider".equals(tag)) {
@@ -413,5 +435,53 @@ public class ManifestParser implements IAttributeCallback {
                 this.result.maxSdkVersion = idx;
             }
         }
+    }
+
+    /** Human-readable packaging summary for build logs. */
+    public static String describe(ManifestInfo info) {
+        if (info == null) {
+            return "manifest=null";
+        }
+        int activities = 0;
+        int services = 0;
+        int receivers = 0;
+        int providers = 0;
+        for (Integer type : info.compNameIdx2Type.values()) {
+            if (type == null) continue;
+            switch (type) {
+                case 0: activities++; break;
+                case 1: services++; break;
+                case 2: receivers++; break;
+                case 3: providers++; break;
+                default: break;
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("package=").append(info.packageName)
+                .append(", versionCode=").append(info.versionCode)
+                .append(", versionName=").append(info.versionName)
+                .append(", minSdk=").append(info.minSdkVersion)
+                .append(", targetSdk=").append(info.targetSdkVersion)
+                .append(", application=").append(info.applicationCls)
+                .append(", components={activities=").append(activities)
+                .append(", services=").append(services)
+                .append(", receivers=").append(receivers)
+                .append(", providers=").append(providers).append('}')
+                .append(", permissions=").append(info.permissions.size())
+                .append(", isSplitRequired=").append(info.isSplitRequired)
+                .append(", requiredSplitTypes=").append(info.requiredSplitTypes)
+                .append(", splitTypes=").append(info.splitTypes)
+                .append(", extractNativeLibs=").append(info.extractNativeLibs)
+                .append(", useEmbeddedDex=").append(info.useEmbeddedDex);
+        if (!info.providerInfoList.isEmpty()) {
+            sb.append(", authorities=[");
+            for (int i = 0; i < info.providerInfoList.size(); i++) {
+                if (i > 0) sb.append("; ");
+                ManifestInfo.ProviderInfo pi = info.providerInfoList.get(i);
+                sb.append(pi.name).append(" -> ").append(pi.authority);
+            }
+            sb.append(']');
+        }
+        return sb.toString();
     }
 }

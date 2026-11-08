@@ -197,6 +197,38 @@ public class ManifestEditorNew {
                         }
                     });
         }
+        if (bModifyPkgName) {
+            // A renamed/cloned APK is installed standalone: Play split requirements
+            // left in the manifest make PackageInstaller reject it ("cannot parse
+            // package" / missing split). Neutralize them explicitly.
+            body.modifyAttribute("manifest", "isSplitRequired",
+                    new IModifyTagAttribute() {
+                        @Override
+                        public void modify(Tag.TagAttr attr) {
+                            setInt(attr.getRawData(), attr.getOffset() + 8, -1);
+                            setInt(attr.getRawData(), attr.getOffset() + 12, 0x12000008);
+                            setInt(attr.getRawData(), attr.getOffset() + 16, 0);
+                        }
+                    });
+            body.modifyAttribute("manifest", "requiredSplitTypes",
+                    new IModifyTagAttribute() {
+                        @Override
+                        public void modify(Tag.TagAttr attr) {
+                            setInt(attr.getRawData(), attr.getOffset() + 8, -1);
+                            setInt(attr.getRawData(), attr.getOffset() + 12, 0x00000008);
+                            setInt(attr.getRawData(), attr.getOffset() + 16, 0);
+                        }
+                    });
+            body.modifyAttribute("manifest", "splitTypes",
+                    new IModifyTagAttribute() {
+                        @Override
+                        public void modify(Tag.TagAttr attr) {
+                            setInt(attr.getRawData(), attr.getOffset() + 8, -1);
+                            setInt(attr.getRawData(), attr.getOffset() + 12, 0x00000008);
+                            setInt(attr.getRawData(), attr.getOffset() + 16, 0);
+                        }
+                    });
+        }
         if (newInfo.versionCode != oldInfo.versionCode) { // modify version code
             body.modifyAttribute("manifest", "versionCode",
                     new IModifyTagAttribute() {

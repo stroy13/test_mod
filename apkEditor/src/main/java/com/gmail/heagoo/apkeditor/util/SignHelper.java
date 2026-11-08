@@ -2,6 +2,8 @@ package com.gmail.heagoo.apkeditor.util;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.preference.PreferenceManager;
 
 import com.gmail.heagoo.apkeditor.SettingActivity;
@@ -126,9 +128,7 @@ public final class SignHelper {
 
         ManifestInfo manifest = readManifest(new File(srcApkPath));
         if (out != null) {
-            out.log("Source manifest: package=" + manifest.packageName
-                    + ", minSdk=" + manifest.minSdkVersion
-                    + ", targetSdk=" + manifest.targetSdkVersion);
+            out.log("Source manifest: " + ManifestParser.describe(manifest));
         }
         String schemes = prefs.getString("SignSchemes", "v123");
         boolean v1 = schemes.contains("1");
@@ -151,6 +151,60 @@ public final class SignHelper {
                 privateKey, certificate, minSdk, targetSdk, v1, v2, v3, v4, compressionLevel);
         ApkBuildPipeline.build(new File(srcApkPath), new File(targetApkPath),
                 replacedFiles, addedFiles, deletedFiles, options, progress, cancellation, out);
+        try {
+            validateOutputWithAndroid(ctx, new File(targetApkPath), out);
+        } catch (Exception e) {
+            if (out != null) {
+                out.log("Output rejected by Android package parser; removing unusable APK: " + e);
+            }
+            // The pipeline publishes atomically before this final framework check.
+            // Do not leave an APK that the installer cannot parse.
+            //noinspection ResultOfMethodCallIgnored
+            new File(targetApkPath).delete();
+            throw e;
+        }
+    }
+
+    /**
+     * Final gate: ask Android's own package parser to read the generated APK.
+     * apksig + chunk validation do not catch every semantic manifest problem that
+     * PackageInstaller rejects with "cannot parse package".
+     */
+    private static void validateOutputWithAndroid(Context ctx, File apk, ApkBuildPipeline.Logger out)
+            throws Exception {
+        PackageManager pm = ctx.getPackageManager();
+        PackageInfo info = pm.getPackageArchiveInfo(apk.getAbsolutePath(), PackageManager.GET_META_DATA);
+        if (info == null || info.applicationInfo == null || info.packageName == null) {
+            throw new IOException("Android package parser cannot read generated APK: " + apk);
+        }
+        if (out != null) {
+            long versionCode = android.os.Build.VERSION.SDK_INT >= 28
+                    ? info.getLongVersionCode() : info.versionCode;
+            out.log("Android package parser OK: package=" + info.packageName
+                    + ", versionCode=" + versionCode
+                    + ", versionName=" + info.versionName);
+        }
+        try (ZipFile zip = new ZipFile(apk)) {
+            ZipEntry entry = zip.getEntry("AndroidManifest.xml");
+            if (entry == null) {
+                throw new IOException("Generated APK has no AndroidManifest.xml");
+            }
+            try (InputStream input = zip.getInputStream(entry)) {
+                ManifestParser parser = new ManifestParser(input);
+                parser.parse();
+                ManifestInfo parsed = parser.getManifestInfo();
+                if (parsed == null || parsed.packageName == null) {
+                    throw new IOException("Generated manifest has no package name");
+                }
+                if (!parsed.packageName.equals(info.packageName)) {
+                    throw new IOException("Manifest package mismatch: binary=" + parsed.packageName
+                            + ", framework=" + info.packageName);
+                }
+                if (out != null) {
+                    out.log("Output manifest: " + ManifestParser.describe(parsed));
+                }
+            }
+        }
     }
 
     private static ManifestInfo readManifest(File apk) throws Exception {

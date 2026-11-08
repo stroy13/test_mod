@@ -46,6 +46,13 @@ public class ManifestInfo {
     public Map<Integer, Integer> targetActivityIdxs = new HashMap<>();
     // Record all declared permissions
     public Set<String> permissions = new HashSet<>();
+    // Split / packaging flags that decide whether a standalone APK can be installed.
+    public boolean isSplitRequired;
+    public String requiredSplitTypes;
+    public String splitTypes;
+    // -1 = attribute absent, 0 = false, 1 = true
+    public int extractNativeLibs = -1;
+    public int useEmbeddedDex = -1;
 
     public static class ProviderInfo {
         public String name;
