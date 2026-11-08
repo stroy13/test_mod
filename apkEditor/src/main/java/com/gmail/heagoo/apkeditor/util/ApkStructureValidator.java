@@ -31,6 +31,7 @@ public final class ApkStructureValidator {
         int pos = headerSize;
         boolean sawStringPool = false;
         boolean sawEnd = false;
+        int stringCount = -1;
         while (pos < data.length) {
             if (pos + 8 > data.length) throw new IOException("Truncated AXML chunk at " + pos);
             int chunkType = b.getShort(pos) & 0xffff;
@@ -43,6 +44,27 @@ public final class ApkStructureValidator {
             if (chunkType == 0x0001) {
                 sawStringPool = true;
                 validateStringPool(b, pos, chunkSize, chunkHeader, "AndroidManifest.xml");
+                stringCount = b.getInt(pos + 8);
+            } else if (chunkType == 0x0180) {
+                if (chunkHeader < 8 || (chunkSize - chunkHeader) % 4 != 0) {
+                    throw new IOException("Invalid AXML resource map chunk at " + pos);
+                }
+            } else if (chunkType == 0x0100 || chunkType == 0x0101) {
+                if (chunkSize >= 24 && stringCount >= 0) {
+                    checkStringIndex(b.getInt(pos + 16), stringCount, "namespace prefix", pos);
+                    checkStringIndex(b.getInt(pos + 20), stringCount, "namespace uri", pos);
+                }
+                if (chunkType == 0x0101) sawEnd = true;
+            } else if (chunkType == 0x0103) {
+                if (chunkSize < 24) throw new IOException("Truncated AXML end tag at " + pos);
+                if (stringCount >= 0) {
+                    checkStringIndex(b.getInt(pos + 16), stringCount, "end tag namespace", pos);
+                    checkStringIndex(b.getInt(pos + 20), stringCount, "end tag name", pos);
+                }
+            } else if (chunkType == 0x0104) {
+                if (chunkSize >= 20 && stringCount >= 0) {
+                    checkStringIndex(b.getInt(pos + 16), stringCount, "CDATA string", pos);
+                }
             } else if (chunkType == 0x0102) {
                 if (chunkSize < 36) throw new IOException("Truncated AXML start tag at " + pos);
                 int attrCount = b.getShort(pos + 28) & 0xffff;
@@ -57,8 +79,27 @@ public final class ApkStructureValidator {
                 if (attrStart != 0 && attrStart + attrCount * 20 > chunkSize) {
                     throw new IOException("AXML attribute start overruns chunk at " + pos);
                 }
-            } else if (chunkType == 0x0101) {
-                sawEnd = true;
+                if (stringCount >= 0) {
+                    checkStringIndex(b.getInt(pos + 16), stringCount, "start tag namespace", pos);
+                    checkStringIndex(b.getInt(pos + 20), stringCount, "start tag name", pos);
+                    int attrsOffset = 16 + (attrStart != 0 ? attrStart : 20);
+                    if (attrsOffset + attrCount * 20 > chunkSize) {
+                        throw new IOException("AXML attributes overrun chunk at " + pos);
+                    }
+                    for (int i = 0; i < attrCount; i++) {
+                        int off = pos + attrsOffset + i * 20;
+                        if (off + 20 > pos + chunkSize) {
+                            throw new IOException("Truncated AXML attribute at " + off);
+                        }
+                        checkStringIndex(b.getInt(off), stringCount, "attribute namespace", off);
+                        checkStringIndex(b.getInt(off + 4), stringCount, "attribute name", off);
+                        checkStringIndex(b.getInt(off + 8), stringCount, "attribute raw value", off);
+                        int dataType = b.get(off + 15) & 0xff;
+                        if (dataType == 0x03) {
+                            checkStringIndex(b.getInt(off + 16), stringCount, "attribute string value", off);
+                        }
+                    }
+                }
             }
             pos += chunkSize;
         }
@@ -133,6 +174,33 @@ public final class ApkStructureValidator {
         }
     }
 
+    /**
+     * A package name is plain ASCII. A byte-swapped or BOM-prefixed string pool turns
+     * it into U+FFFE followed by CJK-looking code units, which Android's package
+     * parser rejects. Fail the build with a precise reason instead of shipping it.
+     */
+    public static void validatePackageName(String name) throws IOException {
+        if (name == null || name.isEmpty()) {
+            throw new IOException("Manifest has no package name");
+        }
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c < 0x20 || c > 0x7e) {
+                throw new IOException("Manifest package name contains non-ASCII character U+"
+                        + String.format("%04X", (int) c) + " at index " + i
+                        + "; the string pool is corrupted (wrong endianness or a BOM)");
+            }
+        }
+    }
+
+    private static void checkStringIndex(int index, int stringCount, String what, int pos)
+            throws IOException {
+        if (index != -1 && (index < 0 || index >= stringCount)) {
+            throw new IOException("AXML " + what + " index " + index
+                    + " out of bounds (stringCount=" + stringCount + ") at " + pos);
+        }
+    }
+
     private static void validateStringPool(ByteBuffer b, int chunkPos, int chunkSize,
                                            int chunkHeader, String what) throws IOException {
         if (chunkHeader < 28 || chunkSize < chunkHeader) {
@@ -171,6 +239,11 @@ public final class ApkStructureValidator {
                 if (pos + byteLen >= dataEnd || raw[pos + byteLen] != 0) {
                     throw new IOException(what + ": unterminated UTF-8 string " + i);
                 }
+                if (byteLen >= 3 && (raw[pos] & 0xff) == 0xef
+                        && (raw[pos + 1] & 0xff) == 0xbf && (raw[pos + 2] & 0xff) == 0xbe) {
+                    throw new IOException(what + ": string " + i + " starts with U+FFFE "
+                            + "(byte-swapped BOM); the string pool was written with the wrong endianness");
+                }
             } else {
                 if (pos + 2 > dataEnd) throw new IOException(what + ": truncated UTF-16 length " + i);
                 int units = readLength16(raw, pos);
@@ -181,6 +254,10 @@ public final class ApkStructureValidator {
                 }
                 if (raw[pos + charLen * 2] != 0 || raw[pos + charLen * 2 + 1] != 0) {
                     throw new IOException(what + ": unterminated UTF-16 string " + i);
+                }
+                if (charLen > 0 && (raw[pos] & 0xff) == 0xfe && (raw[pos + 1] & 0xff) == 0xff) {
+                    throw new IOException(what + ": string " + i + " starts with U+FFFE "
+                            + "(byte-swapped BOM); the string pool was written with the wrong endianness");
                 }
             }
         }

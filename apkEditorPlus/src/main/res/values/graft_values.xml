@@ -92,4 +92,5 @@
     <string name="build_cancelling">Cancelling after the current file…</string>
     <string name="build_failed_no_new_apk">No new APK was created. Any older gen_signed.apk in this folder is a previous result, not this build.</string>
     <string name="build_error_log">Details: %1$s</string>
+    <string name="build_log_path">Full build log: %1$s</string>
 </resources>

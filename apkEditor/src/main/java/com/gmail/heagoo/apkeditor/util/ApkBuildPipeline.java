@@ -53,6 +53,11 @@ public final class ApkBuildPipeline {
         boolean isCancelled();
     }
 
+    /** Sink for the full, user-visible build log. */
+    public interface Logger {
+        void log(String message);
+    }
+
     public static final class SigningOptions {
         public final PrivateKey privateKey;
         public final X509Certificate certificate;
@@ -83,6 +88,13 @@ public final class ApkBuildPipeline {
     private static final int BUFFER_SIZE = 256 * 1024;
     private static final Progress NO_PROGRESS = (stage, percent) -> { };
     private static final Cancellation NEVER_CANCELLED = () -> false;
+    private static final Logger NO_LOG = message -> { };
+
+    private static void log(Logger logger, String message) {
+        if (logger != null) {
+            logger.log(message);
+        }
+    }
 
     private ApkBuildPipeline() {
     }
@@ -94,6 +106,21 @@ public final class ApkBuildPipeline {
                              SigningOptions options,
                              Progress progress,
                              Cancellation cancellation) throws Exception {
+        build(source, target, replacedFiles, addedFiles, deletedFiles, options, progress, cancellation, null);
+    }
+
+    public static void build(File source, File target,
+                             Map<String, String> replacedFiles,
+                             Map<String, String> addedFiles,
+                             Set<String> deletedFiles,
+                             SigningOptions options,
+                             Progress progress,
+                             Cancellation cancellation,
+                             Logger logger) throws Exception {
+        Logger out = logger == null ? NO_LOG : logger;
+        log(out, "build() started");
+        log(out, "Source: " + source);
+        log(out, "Target: " + target);
         if (source == null || !source.isFile()) {
             throw new IOException("Source APK does not exist: " + source);
         }
@@ -109,9 +136,33 @@ public final class ApkBuildPipeline {
         Map<String, String> replaces = safeMap(replacedFiles);
         Map<String, String> added = safeMap(addedFiles);
         Set<String> deleted = deletedFiles == null ? Collections.emptySet() : new HashSet<>(deletedFiles);
+        log(out, "Replacements: " + replaces.size() + ", added: " + added.size()
+                + ", deleted: " + deleted.size());
+        for (Map.Entry<String, String> entry : replaces.entrySet()) {
+            File f = new File(entry.getValue());
+            log(out, "replace " + entry.getKey() + " <- " + entry.getValue()
+                    + " (" + (f.isFile() ? f.length() + " bytes" : "MISSING") + ")");
+        }
+        for (Map.Entry<String, String> entry : added.entrySet()) {
+            File f = new File(entry.getValue());
+            log(out, "add " + entry.getKey() + " <- " + entry.getValue()
+                    + " (" + (f.isFile() ? f.length() + " bytes" : "MISSING") + ")");
+        }
+        for (String name : deleted) {
+            log(out, "delete " + name);
+        }
         validateReplacements(replaces, added);
+        log(out, "Replacement files validated");
         Progress report = progress == null ? NO_PROGRESS : progress;
         Cancellation cancel = cancellation == null ? NEVER_CANCELLED : cancellation;
+        log(out, "Signing options: minSdk=" + options.minSdkVersion
+                + ", targetSdk=" + options.targetSdkVersion
+                + ", v1=" + options.v1 + ", v2=" + options.v2
+                + ", v3=" + options.v3 + ", v4=" + options.v4
+                + ", compressionLevel=" + options.compressionLevel);
+        if (options.certificate != null) {
+            log(out, "Certificate subject: " + options.certificate.getSubjectX500Principal());
+        }
         if (options.targetSdkVersion >= 30 && !options.v2 && !options.v3) {
             throw new IOException("APK with targetSdk " + options.targetSdkVersion
                     + " requires signature v2 or v3 on Android 11+");
@@ -124,19 +175,28 @@ public final class ApkBuildPipeline {
         File unsigned = File.createTempFile("apkbuild-", ".unsigned", parent);
         File signed = File.createTempFile("apkbuild-", ".signed", parent);
         File idsig = new File(signed.getAbsolutePath() + ".idsig");
+        log(out, "Temp unsigned: " + unsigned);
+        log(out, "Temp signed: " + signed);
         try {
             checkCancelled(cancel);
             report.onStage("merge", 0);
-            merge(source, unsigned, replaces, added, deleted, options, report, cancel);
+            log(out, "Stage: merge");
+            merge(source, unsigned, replaces, added, deleted, options, report, cancel, out);
+            log(out, "Merged size: " + unsigned.length() + " bytes");
             checkCancelled(cancel);
             report.onStage("sign", -1);
-            sign(unsigned, signed, options);
+            log(out, "Stage: sign");
+            sign(unsigned, signed, options, out);
+            log(out, "Signed size: " + signed.length() + " bytes");
             checkCancelled(cancel);
             report.onStage("verify", -1);
-            verify(signed, options);
+            log(out, "Stage: verify");
+            verify(signed, options, out);
             checkCancelled(cancel);
             report.onStage("publish", -1);
+            log(out, "Stage: publish");
             atomicReplace(signed, target);
+            log(out, "Published target: " + target + " (" + target.length() + " bytes)");
             if (options.v4) {
                 File targetIdsig = new File(target.getAbsolutePath() + ".idsig");
                 if (idsig.isFile()) {
@@ -149,10 +209,15 @@ public final class ApkBuildPipeline {
                 }
             }
             report.onStage("done", 100);
+            log(out, "build() succeeded");
+        } catch (Exception e) {
+            log(out, "build() failed: " + e);
+            throw e;
         } finally {
             deleteQuietly(unsigned);
             deleteQuietly(signed);
             deleteQuietly(idsig);
+            log(out, "Temporary files cleaned");
         }
     }
 
@@ -194,6 +259,14 @@ public final class ApkBuildPipeline {
                               Map<String, String> replaces, Map<String, String> added,
                               Set<String> deleted, SigningOptions options,
                               Progress report, Cancellation cancel) throws IOException {
+        merge(source, output, replaces, added, deleted, options, report, cancel, null);
+    }
+
+    static void merge(File source, File output,
+                      Map<String, String> replaces, Map<String, String> added,
+                      Set<String> deleted, SigningOptions options,
+                      Progress report, Cancellation cancel, Logger logger) throws IOException {
+        Logger logSink = logger == null ? NO_LOG : logger;
         replaces = safeMap(replaces);
         added = safeMap(added);
         deleted = deleted == null ? Collections.emptySet() : deleted;
@@ -211,6 +284,7 @@ public final class ApkBuildPipeline {
                     throw new IOException("Duplicate ZIP entry: " + name);
                 }
                 if (deleted.contains(name) || isOldSignature(name)) {
+                    log(logSink, "skip " + name + (deleted.contains(name) ? " (deleted)" : " (old signature)"));
                     continue;
                 }
                 entries.add(entry);
@@ -222,6 +296,8 @@ public final class ApkBuildPipeline {
                 }
                 totalBytes += new File(added.get(name)).length();
             }
+            log(logSink, "Merge entries: " + entries.size() + ", added: " + added.size()
+                    + ", uncompressed total: " + totalBytes + " bytes");
             CountingOutputStream counting = new CountingOutputStream(
                     new BufferedOutputStream(new FileOutputStream(output), BUFFER_SIZE));
             try (ZipOutputStream out = new ZipOutputStream(counting)) {
@@ -237,8 +313,12 @@ public final class ApkBuildPipeline {
                     File replacementFile = replacement == null ? null : new File(replacement);
                     long size = replacementFile != null ? replacementFile.length() : entry.getSize();
                     if (replacementFile != null) {
-                        validateReplacement(name, replacementFile);
+                        validateReplacement(name, replacementFile, logSink);
                     }
+                    log(logSink, "merge " + name + ": sourceMethod="
+                            + (entry.getMethod() == ZipEntry.STORED ? "STORED" : "DEFLATED")
+                            + ", size=" + size
+                            + (replacementFile != null ? ", replacement=" + replacementFile : ""));
                     try (InputStream input = replacementFile != null
                             ? new BufferedInputStream(new FileInputStream(replacementFile), BUFFER_SIZE)
                             : zip.getInputStream(entry)) {
@@ -252,7 +332,8 @@ public final class ApkBuildPipeline {
                 for (Map.Entry<String, String> entry : added.entrySet()) {
                     checkCancelled(cancel);
                     File file = new File(entry.getValue());
-                    validateReplacement(entry.getKey(), file);
+                    validateReplacement(entry.getKey(), file, logSink);
+                    log(logSink, "add " + entry.getKey() + ": size=" + file.length());
                     try (InputStream input = new BufferedInputStream(new FileInputStream(file), BUFFER_SIZE)) {
                         writeEntry(out, counting, entry.getKey(), input, file.length(), null, file, buffer,
                                 options.targetSdkVersion);
@@ -303,7 +384,8 @@ public final class ApkBuildPipeline {
         out.closeEntry();
     }
 
-    private static void validateReplacement(String name, File file) throws IOException {
+    private static void validateReplacement(String name, File file, Logger logger) throws IOException {
+        Logger out = logger == null ? NO_LOG : logger;
         String lower = name.toLowerCase(Locale.ROOT);
         if (!lower.equals("androidmanifest.xml") && !lower.equals("resources.arsc")
                 && !lower.matches("classes[0-9]*\\.dex")) {
@@ -325,7 +407,9 @@ public final class ApkBuildPipeline {
             } else {
                 ApkStructureValidator.validateDex(data);
             }
+            log(out, "structure OK: " + name + " (" + data.length + " bytes)");
         } catch (IOException e) {
+            log(out, "structure INVALID: " + name + ": " + e.getMessage());
             throw new IOException("Edited " + name + " is structurally invalid: " + e.getMessage(), e);
         }
     }
@@ -398,7 +482,10 @@ public final class ApkBuildPipeline {
         }
     }
 
-    private static void sign(File unsigned, File signed, SigningOptions options) throws Exception {
+    private static void sign(File unsigned, File signed, SigningOptions options, Logger logger) throws Exception {
+        Logger out = logger == null ? NO_LOG : logger;
+        log(out, "apksig sign: input=" + unsigned.length() + " bytes, v1=" + options.v1
+                + ", v2=" + options.v2 + ", v3=" + options.v3 + ", v4=" + options.v4);
         ApkSigner.SignerConfig config = new ApkSigner.SignerConfig.Builder(
                 "apkeditor", options.privateKey, Collections.singletonList(options.certificate)).build();
         new ApkSigner.Builder(Collections.singletonList(config))
@@ -410,13 +497,21 @@ public final class ApkBuildPipeline {
                 .setV3SigningEnabled(options.v3)
                 .setV4SigningEnabled(options.v4)
                 .build().sign();
+        log(out, "apksig sign finished: output=" + signed.length() + " bytes");
     }
 
-    private static void verify(File signed, SigningOptions options) throws Exception {
+    private static void verify(File signed, SigningOptions options, Logger logger) throws Exception {
+        Logger out = logger == null ? NO_LOG : logger;
         ApkVerifier.Result result = new ApkVerifier.Builder(signed)
                 .setMinCheckedPlatformVersion(options.minSdkVersion)
                 .setMaxCheckedPlatformVersion(Math.max(37, options.targetSdkVersion))
                 .build().verify();
+        log(out, "apksig verify: verified=" + result.isVerified()
+                + ", v1=" + result.isVerifiedUsingV1Scheme()
+                + ", v2=" + result.isVerifiedUsingV2Scheme()
+                + ", v3=" + result.isVerifiedUsingV3Scheme()
+                + ", errors=" + result.getErrors()
+                + ", warnings=" + result.getWarnings());
         if (!result.isVerified() || !result.getErrors().isEmpty()) {
             throw new IOException("Signed APK verification failed: " + result.getErrors());
         }
@@ -456,8 +551,10 @@ public final class ApkBuildPipeline {
                 } else {
                     ApkStructureValidator.validateDex(data);
                 }
+                log(out, "signed structure OK: " + entry.getName() + " (" + data.length + " bytes)");
             }
         }
+        log(out, "Signed APK structure verified");
     }
 
     private static void atomicReplace(File from, File to) throws IOException {

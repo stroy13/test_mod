@@ -28,18 +28,25 @@ public class ApkInstaller {
                 dir.mkdir();
             }
             File apk = new File(dir, "gen.apk");
+            File source = new File(targetApkPath);
             InputStream inputStream = null;
             OutputStream outputStream = null;
             try {
-                inputStream = new FileInputStream(new File(targetApkPath));
+                inputStream = new FileInputStream(source);
                 outputStream = new FileOutputStream(apk);
                 IOUtils.copy(inputStream, outputStream);
+                outputStream.flush();
             } catch (Exception e) {
                 Toast.makeText(ctx, "Internal error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 return;
             } finally {
                 IOUtils.closeQuietly(inputStream);
                 IOUtils.closeQuietly(outputStream);
+            }
+            if (!apk.isFile() || apk.length() != source.length()) {
+                Toast.makeText(ctx, "Internal error: copied APK is incomplete ("
+                        + apk.length() + " != " + source.length() + ")", Toast.LENGTH_LONG).show();
+                return;
             }
             try {
                 String authorityName = ctx.getPackageName() + ".fileprovider";

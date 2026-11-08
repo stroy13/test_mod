@@ -1,10 +1,10 @@
 package com.gmail.heagoo.apkeditor.ce.e;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -252,22 +252,32 @@ public class ResStringChunk {
     }
 
     private byte[] getStringBytes_utf8(String _str) {
-        byte[] strBuffer = null;
-
-        try {
-            byte[] coded = _str.getBytes("UTF-8");
-            int len1 = _str.length(); // UTF-16 code units, as required by ResStringPool
-            int len2 = coded.length;
-            byte[] data1 = getLEB128(len1);
-            byte[] data2 = getLEB128(len2);
-            strBuffer = new byte[data1.length + data2.length + coded.length + 1];
-            System.arraycopy(data1, 0, strBuffer, 0, data1.length);
-            System.arraycopy(data2, 0, strBuffer, data1.length, data2.length);
-            System.arraycopy(coded, 0, strBuffer, data1.length + data2.length, coded.length);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        byte[] coded = _str.getBytes(StandardCharsets.UTF_8);
+        int len1 = _str.length(); // UTF-16 code units, as required by ResStringPool
+        int len2 = coded.length;
+        byte[] data1 = getResLength8(len1);
+        byte[] data2 = getResLength8(len2);
+        byte[] strBuffer = new byte[data1.length + data2.length + coded.length + 1];
+        System.arraycopy(data1, 0, strBuffer, 0, data1.length);
+        System.arraycopy(data2, 0, strBuffer, data1.length, data2.length);
+        System.arraycopy(coded, 0, strBuffer, data1.length + data2.length, coded.length);
+        // The trailing 0x00 terminator is already zero-initialised.
         return strBuffer;
+    }
+
+    /**
+     * ResStringPool UTF-8 length prefix: one byte below 0x80, otherwise two bytes
+     * (high | 0x80, low) in big-endian order. This is deliberately NOT LEB128 --
+     * {@link #getLEB128(int)} remains correct for the DEX writers that call it.
+     */
+    private static byte[] getResLength8(int val) {
+        if (val < 0 || val > 0x7fff) {
+            throw new IllegalArgumentException("String too long for ResStringPool: " + val);
+        }
+        if (val < 0x80) {
+            return new byte[]{(byte) val};
+        }
+        return new byte[]{(byte) ((val >> 8) | 0x80), (byte) (val & 0xff)};
     }
 
     // private void updateOffsetAndBuffer(String addedStr, int position) {
@@ -324,24 +334,13 @@ public class ResStringChunk {
     // }
 
     private byte[] getStringBytes_utf16(String _str) {
-        byte[] strBuffer = null;
-        try {
-            byte[] data = _str.getBytes("utf-16");
-            int offset = 0;
-            int length = data.length;
-            if (data.length >= 2 && ((data[0] & 0xff) == 255)
-                    && ((data[1] & 0xff) == 254)) {
-                offset = 2;
-                length -= 2;
-            }
-
-            strBuffer = new byte[length];
-            System.arraycopy(data, offset, strBuffer, 0, length);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-
-        return strBuffer;
+        // ResStringPool stores UTF-16 as little-endian code units with NO byte-order
+        // mark. String.getBytes("UTF-16") is platform dependent: it always emits a
+        // BOM and may pick big-endian, so the old "strip FF FE" logic silently wrote
+        // big-endian text into a little-endian pool. That turned the renamed package
+        // into "\uFFFE\u7200\u7500..." and made Android reject the whole APK with
+        // "There was a problem parsing the package". Always encode explicitly.
+        return _str.getBytes(StandardCharsets.UTF_16LE);
     }
 
     // public void modifyString(int strIndex, String newVal) {
@@ -444,18 +443,17 @@ public class ResStringChunk {
     }
 
     private byte[] getLengthEncoding(int val) {
-        byte[] result = null;
         if (val > 32767) {
-            result = new byte[4];
-            int low = val & 0x7fff;
-            int high = (val >> 15) & 0x7fff;
-            ManifestEditorNew.setShort(result, 0, high);
-            ManifestEditorNew.setShort(result, 2, low);
-        } else {
-            result = new byte[2];
-            ManifestEditorNew.setShort(result, 0, val);
+            // Two uint16 words: the high word carries the 0x8000 flag, followed by
+            // the low 16 bits. The previous code omitted the flag and split at the
+            // wrong bit, so getUtf16() could never read such a string back.
+            byte[] result = new byte[4];
+            ManifestEditorNew.setShort(result, 0, ((val >> 16) & 0x7fff) | 0x8000);
+            ManifestEditorNew.setShort(result, 2, val & 0xffff);
+            return result;
         }
-
+        byte[] result = new byte[2];
+        ManifestEditorNew.setShort(result, 0, val);
         return result;
     }
 
