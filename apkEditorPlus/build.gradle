@@ -1,0 +1,74 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    buildFeatures { buildConfig = true }
+    compileSdk 37
+    ndkVersion "30.0.16248370"
+
+    defaultConfig {
+        versionCode 186
+        versionName "1.10.0.186"
+        applicationId "ru.apkeditor.plus"
+        minSdk 26
+        targetSdk 37
+        multiDexEnabled true
+        ndk { abiFilters 'armeabi-v7a', 'arm64-v8a' }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    externalNativeBuild {
+        ndkBuild {
+            path 'src/main/jni/Android.mk'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles 'proguard-project.txt'
+
+            ndk {
+                abiFilters 'x86', 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+            }
+        }
+    }
+    namespace 'com.gmail.heagoo.apkeditor.plus'
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+        resources {
+            pickFirsts += ['baksmali.properties', 'smali.properties', 'dexlib2.properties']
+        }
+    }
+}
+
+dependencies {
+    implementation project(':apkEditor')
+    implementation project(':appDataEditor')
+    implementation('org.smali:baksmali:2.4.0') { exclude group: 'com.beust', module: 'jcommander' }
+    implementation('org.smali:smali:2.4.0') { exclude group: 'com.beust', module: 'jcommander' }
+    implementation 'com.android.tools.smali:smali:3.0.10'
+    implementation 'com.android.tools.smali:smali-baksmali:3.0.10'
+    implementation 'com.android.tools.smali:smali-dexlib2:3.0.10'
+    implementation 'com.android.tools.smali:smali-util:3.0.10'
+    // Dependencies for jadx
+    implementation 'commons-io:commons-io:2.5'
+    implementation 'asm:asm-all:3.3.1'
+    implementation files('libs/dx-1.10.jar')
+    implementation files('libs/android-5.1-clst-core.jar')
+    implementation 'org.slf4j:slf4j-api:2.0.3'
+    implementation 'uk.com.robust-it:cloning:1.9.2'
+    implementation 'org.jetbrains:annotations:23.1.0'
+
+    testImplementation project(':_AndroidCommon')
+    testImplementation 'junit:junit:4.13.2'
+}

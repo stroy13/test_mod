@@ -426,7 +426,7 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
         }
         if (mode == 3) {
             try {
-                RefInvoke.invokeStaticMethod("com.gmail.heagoo.apkeditor.pro.appdm", "de", new Class[]{Context.class, String.class}, new Object[]{this, extra});
+                RefInvoke.invokeStaticMethod("com.gmail.heagoo.apkeditor.plus.appdm", "de", new Class[]{Context.class, String.class}, new Object[]{this, extra});
                 return;
             } catch (Exception e) {
                 Toast.makeText((Context) this, (CharSequence) e.toString(), 1).show();

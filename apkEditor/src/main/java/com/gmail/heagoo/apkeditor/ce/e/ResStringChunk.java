@@ -256,7 +256,7 @@ public class ResStringChunk {
 
         try {
             byte[] coded = _str.getBytes("UTF-8");
-            int len1 = _str.codePointCount(0, _str.length());
+            int len1 = _str.length(); // UTF-16 code units, as required by ResStringPool
             int len2 = coded.length;
             byte[] data1 = getLEB128(len1);
             byte[] data2 = getLEB128(len2);

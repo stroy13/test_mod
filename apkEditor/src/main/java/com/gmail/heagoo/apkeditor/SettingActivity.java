@@ -59,8 +59,8 @@ public class SettingActivity extends ThemedPreferenceActivity implements Prefere
 
     public static int getCompressionLevel(Context ctx) {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(ctx);
-        String strLevel = sp.getString(compressLevelKey, "9");
-        int level = 9;
+        String strLevel = sp.getString(compressLevelKey, "6");
+        int level = 6;
         try {
             level = Integer.valueOf(strLevel).intValue();
         } catch (Exception e) {
@@ -192,7 +192,7 @@ public class SettingActivity extends ThemedPreferenceActivity implements Prefere
         orderPref.setOnPreferenceChangeListener(this);
         ListPreference compressLevelPref = (ListPreference) manager.findPreference(compressLevelKey);
         SharedPreferences sp2 = PreferenceManager.getDefaultSharedPreferences(this);
-        String strLevel = sp2.getString(compressLevelKey, "9");
+        String strLevel = sp2.getString(compressLevelKey, "6");
         compressLevelPref.setValue(strLevel);
         compressLevelPref.setOnPreferenceChangeListener(this);
         ListPreference signPref = (ListPreference) manager.findPreference(signWithKey);

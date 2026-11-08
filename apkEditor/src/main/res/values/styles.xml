@@ -1,6 +1,6 @@
 <resources>
 
-    <style name="AppTheme" parent="@style/EditorThemeLight" />
+    <style name="AppTheme" parent="@style/EditorThemeDarkAlt" />
 
 
     <style name="Dialog_No_Border_2">

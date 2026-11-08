@@ -18,10 +18,11 @@ public class MenuListAdapter extends BaseAdapter {
     public static final int ITEM_TOOLS = 4;
     private WeakReference<Context> ctxRef;
     private boolean isDark;
-    private static final int[] titles = {R.string.projects, R.string.apk_inspection_tools, R.string.about};
-    private static final int[] drawables = {R.drawable.ic_project, R.drawable.ic_setting, R.drawable.ic_about};
-    private static final int[] drawables_dark = {R.drawable.ic_project_white, R.drawable.ic_setting_white, R.drawable.ic_about_white};
-    private static final int[] itemIds = {0, 4, 3};
+    // "About/Info" lives on the home screen; do not duplicate it in the drawer.
+    private static final int[] titles = {R.string.projects, R.string.apk_inspection_tools};
+    private static final int[] drawables = {R.drawable.ic_project, R.drawable.ic_setting};
+    private static final int[] drawables_dark = {R.drawable.ic_project_white, R.drawable.ic_setting_white};
+    private static final int[] itemIds = {0, 4};
 
     public MenuListAdapter(Context ctx, boolean isDark) {
         this.ctxRef = new WeakReference<>(ctx);

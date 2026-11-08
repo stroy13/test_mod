@@ -433,7 +433,7 @@ public abstract class TextEditBase extends CustomizedLangActivity implements Col
                     @Override
                     public void process() throws Exception {
                         boolean modern = "modern".equals(PreferenceManager.getDefaultSharedPreferences(TextEditBase.this).getString("JadxVersion", "legacy"));
-                        String extractorClass = modern ? "com.gmail.heagoo.apkeditor.pro.ModernJavaExtractor" : "com.gmail.heagoo.apkeditor.pro.JavaExtractor";
+                        String extractorClass = modern ? "com.gmail.heagoo.apkeditor.plus.ModernJavaExtractor" : "com.gmail.heagoo.apkeditor.plus.JavaExtractor";
                         IJavaExtractor extractor = (IJavaExtractor) RefInvoke.createInstance(extractorClass, new Class[]{String.class, String.class, String.class, String.class}, new Object[]{TextEditBase.this.apkPath, dexName, className, workingDirectory});
                         if (extractor == null) {
                             this.errMessage = "Cannot load Java decompiler";

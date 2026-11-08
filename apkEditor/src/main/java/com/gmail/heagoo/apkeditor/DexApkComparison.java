@@ -131,7 +131,7 @@ public final class DexApkComparison {
         if (!file2.isDirectory() && !file2.mkdirs()) {
             throw new IOException("Не создать каталог классов");
         }
-        Class<?> cls = Class.forName("com.gmail.heagoo.apkeditor.pro.DexDecoder");
+        Class<?> cls = Class.forName("com.gmail.heagoo.apkeditor.plus.DexDecoder");
         boolean z2 = true;
         int i = 0;
         Constructor<?> constructor = cls.getConstructor(String.class);

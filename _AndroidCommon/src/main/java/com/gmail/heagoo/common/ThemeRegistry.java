@@ -17,7 +17,7 @@ public final class ThemeRegistry {
     }
 
     public static String styleName(int id) {
-        return STYLES[valid(id) ? id : 0];
+        return STYLES[valid(id) ? id : 2];
     }
 
     public static String dialogStyleName(int id) {
@@ -30,7 +30,7 @@ public final class ThemeRegistry {
     }
 
     public static int accent(int id) {
-        return ACCENTS[valid(id) ? id : 0];
+        return ACCENTS[valid(id) ? id : 2];
     }
 
     public static int swatch(int id) {

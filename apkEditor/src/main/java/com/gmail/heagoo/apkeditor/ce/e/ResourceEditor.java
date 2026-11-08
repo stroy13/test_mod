@@ -111,10 +111,23 @@ public class ResourceEditor {
         resPkgHeader.writeTo(output);
         writeInt(packageId);
 
-        // Write package name
+        // ResTable_package: after the 8-byte chunk header and 4-byte id comes a
+        // 256-byte UTF-16 name, then optional fields up to headerSize. Validate and
+        // copy the real header remainder instead of assuming a fixed 288-byte header.
+        int packageHeaderRemaining = (resPkgHeader.headerSize & 0xffff) - 12;
         if (this.packageNameBuf != null) {
+            if (packageHeaderRemaining < 256) {
+                throw new IOException("Invalid ResTable_package headerSize: "
+                        + (resPkgHeader.headerSize & 0xffff));
+            }
             output.write(packageNameBuf);
             input.skipBytes(256);
+            packageHeaderRemaining -= 256;
+        }
+        if (packageHeaderRemaining > 0) {
+            byte[] headerTail = new byte[packageHeaderRemaining];
+            input.readFully(headerTail);
+            output.write(headerTail);
         }
 
         // Copy remaining

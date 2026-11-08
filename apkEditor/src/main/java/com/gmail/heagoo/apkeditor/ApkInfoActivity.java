@@ -296,27 +296,16 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (outputDir.endsWith("/")) {
             outputDir = outputDir.substring(0, outputDir.length() - 1);
         }
-        String targetApkPath = outputDir + "/" + filename + ".apk";
-        int position = inputPath.lastIndexOf(47);
-        String inputDir = inputPath.substring(0, position);
-        String inputName = inputPath.substring(position + 1);
-        if (inputDir.equals(outputDir) && inputName.startsWith(filename)) {
-            String strEnd = inputName.substring(filename.length());
-            if (".apk".equals(strEnd)) {
-                return outputDir + "/" + filename + "2.apk";
-            }
-            if (strEnd.matches("[1-9][0-9]*\\.apk")) {
-                String strNum = strEnd.substring(0, strEnd.length() - 4);
-                try {
-                    int idx = Integer.valueOf(strNum).intValue();
-                    return outputDir + "/" + filename + (idx + 1) + ".apk";
-                } catch (Exception e) {
-                    return targetApkPath;
-                }
-            }
-            return targetApkPath;
+        // Never overwrite an existing result: a failed build used to leave the previous
+        // (possibly broken) gen_signed.apk in place, and users then installed that stale
+        // file thinking it was the new build. Pick the first free numbered name instead.
+        String candidate = outputDir + "/" + filename + ".apk";
+        int index = 2;
+        while (new File(candidate).exists() || candidate.equals(inputPath)) {
+            candidate = outputDir + "/" + filename + index + ".apk";
+            index++;
         }
-        return targetApkPath;
+        return candidate;
     }
 
     public static boolean generalTranslatePluginExist(Context ctx) {

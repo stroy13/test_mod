@@ -152,10 +152,6 @@ public class Tag {
         } else if (tagType == END_TAG) { // XML END TAG
             reviseIndexByOffset(mapping, rawData, 4 * 4);
             reviseIndexByOffset(mapping, rawData, 5 * 4);
-        } else if (tagType == END_DOC_TAG) { // END OF XML DOC TAG
-            // prefix and uri
-            reviseIndexByOffset(mapping, rawData, 4 * 4);
-            reviseIndexByOffset(mapping, rawData, 5 * 4);
         } else if (tagType == NAMESPACE_TAG) {
             // prefix and uri
             reviseIndexByOffset(mapping, rawData, 4 * 4);

@@ -17,7 +17,7 @@ maintained with its own fixes and improvements.
 
 ## Signing keys in the tree
 
-`apkEditorPro/src/main/assets/testkey.pk8`, `testkey.x509.pem`, `editorkey.pk8` and
+`apkEditorPlus/src/main/assets/testkey.pk8`, `testkey.x509.pem`, `editorkey.pk8` and
 `editorkey.x509.pem` are the **public AOSP test keys** that the app itself ships to sign
 patched APKs. They are not private developer keys, but you should not use them for anything
 you distribute.

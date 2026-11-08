@@ -38,7 +38,9 @@ import java.util.zip.ZipOutputStream;
  * <p>The previous JAR signer swallowed every exception and could leave a truncated
  * {@code gen_signed.apk} that the UI reported as success. This pipeline writes only
  * temporary files, signs with apksig (v1/v2/v3), verifies the result and publishes it
- * with an atomic rename. STORED entries are never recompressed and native libraries /
+ * with an atomic rename. Original compression methods are preserved (native libraries
+ * are NOT forcibly uncompressed, which previously multiplied APK size). Only
+ * resources.arsc is forced to STORED for targetSdk 30+, and STORED native libraries /
  * resources.arsc are aligned for modern Android loaders.
  */
 public final class ApkBuildPipeline {
@@ -125,7 +127,7 @@ public final class ApkBuildPipeline {
         try {
             checkCancelled(cancel);
             report.onStage("merge", 0);
-            merge(source, unsigned, replaces, added, deleted, options.compressionLevel, report, cancel);
+            merge(source, unsigned, replaces, added, deleted, options, report, cancel);
             checkCancelled(cancel);
             report.onStage("sign", -1);
             sign(unsigned, signed, options);
@@ -187,10 +189,16 @@ public final class ApkBuildPipeline {
         }
     }
 
-    private static void merge(File source, File output,
+    // Package-private so JVM tests can inspect alignment before apksig rewrites the archive.
+    static void merge(File source, File output,
                               Map<String, String> replaces, Map<String, String> added,
-                              Set<String> deleted, int compressionLevel,
+                              Set<String> deleted, SigningOptions options,
                               Progress report, Cancellation cancel) throws IOException {
+        replaces = safeMap(replaces);
+        added = safeMap(added);
+        deleted = deleted == null ? Collections.emptySet() : deleted;
+        report = report == null ? NO_PROGRESS : report;
+        cancel = cancel == null ? NEVER_CANCELLED : cancel;
         try (ZipFile zip = new ZipFile(source)) {
             List<ZipEntry> entries = new ArrayList<>();
             long totalBytes = 0;
@@ -217,7 +225,7 @@ public final class ApkBuildPipeline {
             CountingOutputStream counting = new CountingOutputStream(
                     new BufferedOutputStream(new FileOutputStream(output), BUFFER_SIZE));
             try (ZipOutputStream out = new ZipOutputStream(counting)) {
-                out.setLevel(compressionLevel);
+                out.setLevel(options.compressionLevel);
                 long doneBytes = 0;
                 int index = 0;
                 int total = entries.size() + added.size();
@@ -228,10 +236,14 @@ public final class ApkBuildPipeline {
                     String replacement = replaces.get(name);
                     File replacementFile = replacement == null ? null : new File(replacement);
                     long size = replacementFile != null ? replacementFile.length() : entry.getSize();
+                    if (replacementFile != null) {
+                        validateReplacement(name, replacementFile);
+                    }
                     try (InputStream input = replacementFile != null
                             ? new BufferedInputStream(new FileInputStream(replacementFile), BUFFER_SIZE)
                             : zip.getInputStream(entry)) {
-                        writeEntry(out, counting, name, input, size, entry, replacementFile, buffer);
+                        writeEntry(out, counting, name, input, size, entry, replacementFile, buffer,
+                                options.targetSdkVersion);
                     }
                     doneBytes += Math.max(0, size);
                     index++;
@@ -240,8 +252,10 @@ public final class ApkBuildPipeline {
                 for (Map.Entry<String, String> entry : added.entrySet()) {
                     checkCancelled(cancel);
                     File file = new File(entry.getValue());
+                    validateReplacement(entry.getKey(), file);
                     try (InputStream input = new BufferedInputStream(new FileInputStream(file), BUFFER_SIZE)) {
-                        writeEntry(out, counting, entry.getKey(), input, file.length(), null, file, buffer);
+                        writeEntry(out, counting, entry.getKey(), input, file.length(), null, file, buffer,
+                                options.targetSdkVersion);
                     }
                     doneBytes += file.length();
                     index++;
@@ -263,9 +277,11 @@ public final class ApkBuildPipeline {
     private static void writeEntry(ZipOutputStream out, CountingOutputStream counting,
                                    String name, InputStream input, long size,
                                    ZipEntry sourceEntry, File replacementFile,
-                                   byte[] buffer) throws IOException {
+                                   byte[] buffer, int targetSdkVersion) throws IOException {
+        // Preserve the source compression method. Forcing every .so to STORED inflated
+        // game APKs several times over. resources.arsc must be STORED on targetSdk 30+.
         boolean stored = (sourceEntry != null && sourceEntry.getMethod() == ZipEntry.STORED)
-                || mustStore(name);
+                || mustStore(name, targetSdkVersion);
         ZipEntry entry = new ZipEntry(name);
         if (stored) {
             entry.setMethod(ZipEntry.STORED);
@@ -285,6 +301,33 @@ public final class ApkBuildPipeline {
             copy(input, out, buffer, -1, name);
         }
         out.closeEntry();
+    }
+
+    private static void validateReplacement(String name, File file) throws IOException {
+        String lower = name.toLowerCase(Locale.ROOT);
+        if (!lower.equals("androidmanifest.xml") && !lower.equals("resources.arsc")
+                && !lower.matches("classes[0-9]*\\.dex")) {
+            return;
+        }
+        byte[] data;
+        try (InputStream in = new BufferedInputStream(new FileInputStream(file), BUFFER_SIZE);
+             java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream()) {
+            byte[] buf = new byte[BUFFER_SIZE];
+            int n;
+            while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
+            data = bos.toByteArray();
+        }
+        try {
+            if (lower.equals("androidmanifest.xml")) {
+                ApkStructureValidator.validateManifest(data);
+            } else if (lower.equals("resources.arsc")) {
+                ApkStructureValidator.validateResources(data);
+            } else {
+                ApkStructureValidator.validateDex(data);
+            }
+        } catch (IOException e) {
+            throw new IOException("Edited " + name + " is structurally invalid: " + e.getMessage(), e);
+        }
     }
 
     private static long computeCrc(File file, long expectedSize, byte[] buffer) throws IOException {
@@ -321,9 +364,8 @@ public final class ApkBuildPipeline {
         }
     }
 
-    private static boolean mustStore(String name) {
-        String lower = name.toLowerCase(Locale.ROOT);
-        return lower.equals("resources.arsc") || (lower.startsWith("lib/") && lower.endsWith(".so"));
+    private static boolean mustStore(String name, int targetSdkVersion) {
+        return targetSdkVersion >= 30 && name.toLowerCase(Locale.ROOT).equals("resources.arsc");
     }
 
     private static boolean isOldSignature(String name) {
@@ -390,6 +432,30 @@ public final class ApkBuildPipeline {
             }
             if (zip.getEntry("classes.dex") == null) {
                 throw new IOException("Signed APK has no classes.dex");
+            }
+            java.util.Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                String lower = entry.getName().toLowerCase(Locale.ROOT);
+                if (!lower.equals("androidmanifest.xml") && !lower.equals("resources.arsc")
+                        && !lower.matches("classes[0-9]*\\.dex")) {
+                    continue;
+                }
+                byte[] data;
+                try (InputStream in = zip.getInputStream(entry);
+                     java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream()) {
+                    byte[] buf = new byte[BUFFER_SIZE];
+                    int n;
+                    while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
+                    data = bos.toByteArray();
+                }
+                if (lower.equals("androidmanifest.xml")) {
+                    ApkStructureValidator.validateManifest(data);
+                } else if (lower.equals("resources.arsc")) {
+                    ApkStructureValidator.validateResources(data);
+                } else {
+                    ApkStructureValidator.validateDex(data);
+                }
             }
         }
     }

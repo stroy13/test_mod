@@ -9,7 +9,7 @@
 cd tmp
 LIB_SIZE=`ls -l ../../libs/armeabi/libsyscheck.so |awk '{print $5}'`
 # Pro version
-unzip -o apkEditorPro-release.apk classes.dex AndroidManifest.xml lib/armeabi/libsyscheck.so
+unzip -o apkEditorPlus-release.apk classes.dex AndroidManifest.xml lib/armeabi/libsyscheck.so
 PRO_MANIFEST_SIZE=`ls -l AndroidManifest.xml |awk '{print $5}'`
 PRO_DEX_SIZE=`ls -l classes.dex |awk '{print $5}'`
 PRO_OFFSET=`strings --radix=d classes.dex |grep ifbhpp |awk '{print $1}'`

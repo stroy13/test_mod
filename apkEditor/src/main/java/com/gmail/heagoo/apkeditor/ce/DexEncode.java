@@ -46,7 +46,7 @@ public class DexEncode implements IApkMaking, Serializable,
         // Invoke DexEncoder.smali2Dex
         try {
             Class<?> obj_class = Class
-                    .forName("com.gmail.heagoo.apkeditor.pro.DexEncoder");
+                    .forName("com.gmail.heagoo.apkeditor.plus.DexEncoder");
             Method method = obj_class.getMethod("smali2Dex", new Class<?>[]{
                     String.class, String.class, ISmaliAssembleCallback.class});
             method.invoke(null,

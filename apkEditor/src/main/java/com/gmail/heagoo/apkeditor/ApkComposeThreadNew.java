@@ -236,7 +236,7 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
         String dexFilePath = dexFile.getPath();
         try {
             long start = System.currentTimeMillis();
-            Class<?> obj_class = Class.forName("com.gmail.heagoo.apkeditor.pro.DexEncoder");
+            Class<?> obj_class = Class.forName("com.gmail.heagoo.apkeditor.plus.DexEncoder");
             Method method = obj_class.getMethod("smali2Dex", String.class, String.class, ISmaliAssembleCallback.class);
             method.invoke(null, smaliFilePath, dexFilePath, this);
             Log.i("DEBUG", "Encode time=" + (System.currentTimeMillis() - start));
