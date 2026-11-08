@@ -274,6 +274,11 @@ public class ApkBuildPipelineTest {
                 if (checkedArsc && checkedLib) {
                     break;
                 }
+                if (name.endsWith("/")) {
+                    // Directory marker (zero payload); some ZipFile views omit it from entries().
+                    pos = (int) dataOffset;
+                    continue;
+                }
                 Long compSize = compressedSizes.get(name);
                 assertNotNull("central directory missing '" + name + "' at pos=" + pos
                         + ", dataOffset=" + dataOffset + ", extraLen=" + extraLen
