@@ -293,7 +293,7 @@ public class ApkParseThread extends Thread {
                     z2 = true;
                     try {
                         try {
-                            RefInvoke.invokeStaticMethod("com.gmail.heagoo.apkeditor.pro.ResourceDecoder", "decodeResources", new Class[]{String.class, String.class}, new Object[]{str, makeWorkingDir});
+                            RefInvoke.invokeStaticMethod("com.gmail.heagoo.apkeditor.plus.ResourceDecoder", "decodeResources", new Class[]{String.class, String.class}, new Object[]{str, makeWorkingDir});
                             this.idProvider = new ResSmaliIdProvider(makeWorkingDir, value);
                         } catch (Exception e) {
                         }

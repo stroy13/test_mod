@@ -43,7 +43,7 @@ jobs:
       - name: Юнит-тесты (манифест, DEX, темы, сортировка, диагностика и переводы)
         run: |
           set +e
-          ./gradlew :_AndroidCommon:testDebugUnitTest :appListUtil:testDebugUnitTest :appDataEditor:testDebugUnitTest :httpServer:testDebugUnitTest :apkEditor:testDebugUnitTest :apkEditorPro:testDebugUnitTest --no-daemon --max-workers=2 --stacktrace > /tmp/test.log 2>&1
+          ./gradlew :_AndroidCommon:testDebugUnitTest :appListUtil:testDebugUnitTest :appDataEditor:testDebugUnitTest :httpServer:testDebugUnitTest :apkEditor:testDebugUnitTest :apkEditorPlus:testDebugUnitTest --no-daemon --max-workers=2 --stacktrace > /tmp/test.log 2>&1
           code=$?
           if [ $code -ne 0 ]; then
             msg=$(grep -A 12 -m 1 -E "^FAILURE:|What went wrong|FAILED" /tmp/test.log | head -n 40 | sed ':a;N;$!ba;s/\n/%0A/g')
@@ -52,7 +52,7 @@ jobs:
             tail -n 60 /tmp/test.log
             echo "--- AAPT/resource errors"
             grep -n -E "error:|AAPT|Android resource linking failed|\.xml:[0-9]+" /tmp/test.log | head -n 100 || true
-            for report in _AndroidCommon/build/test-results/testDebugUnitTest/TEST-*.xml appListUtil/build/test-results/testDebugUnitTest/TEST-*.xml appDataEditor/build/test-results/testDebugUnitTest/TEST-*.xml httpServer/build/test-results/testDebugUnitTest/TEST-*.xml apkEditor/build/test-results/testDebugUnitTest/TEST-*.xml apkEditorPro/build/test-results/testDebugUnitTest/TEST-*.xml; do
+            for report in _AndroidCommon/build/test-results/testDebugUnitTest/TEST-*.xml appListUtil/build/test-results/testDebugUnitTest/TEST-*.xml appDataEditor/build/test-results/testDebugUnitTest/TEST-*.xml httpServer/build/test-results/testDebugUnitTest/TEST-*.xml apkEditor/build/test-results/testDebugUnitTest/TEST-*.xml apkEditorPlus/build/test-results/testDebugUnitTest/TEST-*.xml; do
               if [ -f "$report" ]; then
                 echo "--- $report"
                 cat "$report"
@@ -65,7 +65,7 @@ jobs:
       - name: Сборка debug APK
         run: |
           set +e
-          ./gradlew :apkEditorPro:assembleDebug --no-daemon --max-workers=2 --stacktrace > /tmp/build.log 2>&1
+          ./gradlew :apkEditorPlus:assembleDebug --no-daemon --max-workers=2 --stacktrace > /tmp/build.log 2>&1
           code=$?
           if [ $code -ne 0 ]; then
             msg=$(grep -A 12 -m 1 -E "^FAILURE:|What went wrong" /tmp/build.log | head -n 40 | sed ':a;N;$!ba;s/\n/%0A/g')
@@ -84,7 +84,7 @@ jobs:
           {
             echo '### Диагностика сборки'
             echo '```'
-            for f in /tmp/installed.log /tmp/sdk.log /tmp/test.log /tmp/build.log apkEditorPro/build/test-results/testDebugUnitTest/TEST-*.xml; do
+            for f in /tmp/installed.log /tmp/sdk.log /tmp/test.log /tmp/build.log apkEditorPlus/build/test-results/testDebugUnitTest/TEST-*.xml; do
               if [ -f "$f" ]; then
                 echo "--- $f"
                 tail -c 6000 "$f" | tr -d '\r'
@@ -110,15 +110,17 @@ jobs:
               --title "Отладочные сборки" \
               --notes "Свежая CI-сборка debug APK. Ассет перезаписывается при каждой успешной сборке; точный коммит смотрите в запуске workflow." \
               --target "${{ github.sha }}"
-          gh release upload "$TAG" apkEditorPro/build/outputs/apk/debug/*.apk --clobber
+          gh release upload "$TAG" apkEditorPlus/build/outputs/apk/debug/*.apk --clobber
+          # The module was renamed Pro -> Plus; drop the stale Pro-named asset if present.
+          gh release delete-asset "$TAG" apkEditorPro-debug.apk --yes || true
           echo "published to https://github.com/${{ github.repository }}/releases/tag/$TAG"
 
       - name: Загрузка APK (артефакт)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: apkEditorPro-debug
+          name: apkEditorPlus-debug
           path: |
-            apkEditorPro/build/outputs/apk/debug/*.apk
-            apkEditorPro/build/outputs/logs/*.txt
+            apkEditorPlus/build/outputs/apk/debug/*.apk
+            apkEditorPlus/build/outputs/logs/*.txt
           if-no-files-found: warn

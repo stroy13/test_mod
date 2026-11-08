@@ -126,10 +126,16 @@ public class StringBlockEditor {
 
     private void rebuild() throws IOException {
         byte[][] encoded = new byte[stringCount][];
+        Map<String, byte[]> unique = new HashMap<>();
         int dataSize = 0;
         for (int i = 0; i < stringCount; i++) {
-            encoded[i] = isUTF8 ? encodeUtf8(values[i]) : encodeUtf16(values[i]);
-            dataSize += encoded[i].length;
+            byte[] payload = unique.get(values[i]);
+            if (payload == null) {
+                payload = isUTF8 ? encodeUtf8(values[i]) : encodeUtf16(values[i]);
+                unique.put(values[i], payload);
+                dataSize += payload.length;
+            }
+            encoded[i] = payload;
         }
         int headerSize = 28 + stringCount * 4 + styleCount * 4;
         int padding = (4 - ((headerSize + dataSize) % 4)) % 4;

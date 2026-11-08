@@ -11,6 +11,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.KeyFactory;
@@ -40,9 +42,9 @@ public class ApkBuildPipelineTest {
     public TemporaryFolder folder = new TemporaryFolder();
 
     private static File asset(String name) {
-        File f = new File("apkEditorPro/src/main/assets/" + name);
+        File f = new File("apkEditorPlus/src/main/assets/" + name);
         if (!f.isFile()) {
-            f = new File("../apkEditorPro/src/main/assets/" + name);
+            f = new File("../apkEditorPlus/src/main/assets/" + name);
         }
         assertTrue("Missing test asset " + name, f.isFile());
         return f;
@@ -62,13 +64,58 @@ public class ApkBuildPipelineTest {
         File apk = folder.newFile("source.apk");
         try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(apk))) {
             put(out, "AndroidManifest.xml", MANIFEST, ZipEntry.DEFLATED);
-            put(out, "classes.dex", "dex".getBytes(StandardCharsets.UTF_8), ZipEntry.DEFLATED);
-            put(out, "resources.arsc", new byte[513], ZipEntry.STORED);
+            put(out, "classes.dex", minimalDex(), ZipEntry.DEFLATED);
+            put(out, "resources.arsc", minimalArsc(), ZipEntry.STORED);
             put(out, "lib/arm64-v8a/libgame.so", new byte[70000], ZipEntry.STORED);
+            put(out, "lib/armeabi-v7a/libcompressed.so", compressibleLibrary(), ZipEntry.DEFLATED);
             put(out, "assets/big.bin", new byte[300000], ZipEntry.DEFLATED);
             put(out, "META-INF/CERT.RSA", new byte[10], ZipEntry.DEFLATED);
         }
         return apk;
+    }
+
+    private static byte[] compressibleLibrary() {
+        byte[] data = new byte[200000];
+        for (int i = 0; i < data.length; i++) data[i] = (byte) (i % 16);
+        return data;
+    }
+
+    private static byte[] minimalArsc() {
+        // ResTable with one package and an empty global string pool.
+        byte[] pool = new byte[28];
+        ByteBuffer p = ByteBuffer.wrap(pool).order(ByteOrder.LITTLE_ENDIAN);
+        p.putShort((short) 0x0001); p.putShort((short) 28); p.putInt(28);
+        p.putInt(0); p.putInt(0); p.putInt(0); p.putInt(28); p.putInt(0);
+        byte[] pkg = new byte[288];
+        ByteBuffer k = ByteBuffer.wrap(pkg).order(ByteOrder.LITTLE_ENDIAN);
+        k.putShort((short) 0x0200); k.putShort((short) 288); k.putInt(288); k.putInt(0x7f);
+        byte[] name = "com.test.app".getBytes(StandardCharsets.UTF_16LE);
+        k.position(16); k.put(name);
+        int size = 12 + pool.length + pkg.length;
+        byte[] table = new byte[size];
+        ByteBuffer t = ByteBuffer.wrap(table).order(ByteOrder.LITTLE_ENDIAN);
+        t.putShort((short) 0x0002); t.putShort((short) 12); t.putInt(size); t.putInt(1);
+        t.put(pool); t.put(pkg);
+        return table;
+    }
+
+    private static byte[] minimalDex() throws Exception {
+        byte[] dex = new byte[112];
+        ByteBuffer b = ByteBuffer.wrap(dex).order(ByteOrder.LITTLE_ENDIAN);
+        b.put("dex\n035\0".getBytes(StandardCharsets.US_ASCII));
+        b.position(32); b.putInt(112); b.putInt(0x70); b.putInt(0x12345678);
+        // link_size, link_off, map_off, string_ids_size, string_ids_off, type_ids_size,
+        // type_ids_off, proto_ids_size, proto_ids_off, field_ids_size, field_ids_off,
+        // method_ids_size, method_ids_off, class_defs_size, class_defs_off, data_size, data_off
+        for (int i = 0; i < 17; i++) b.putInt(0);
+        java.security.MessageDigest sha1 = java.security.MessageDigest.getInstance("SHA-1");
+        sha1.update(dex, 32, dex.length - 32);
+        byte[] digest = sha1.digest();
+        System.arraycopy(digest, 0, dex, 12, 20);
+        java.util.zip.Adler32 adler = new java.util.zip.Adler32();
+        adler.update(dex, 12, dex.length - 12);
+        b.position(8); b.putInt((int) adler.getValue());
+        return dex;
     }
 
     private static void put(ZipOutputStream out, String name, byte[] data, int method) throws Exception {
@@ -161,6 +208,89 @@ public class ApkBuildPipelineTest {
             fail("Expected v2/v3 requirement");
         } catch (Exception expected) {
             assertTrue(expected.getMessage().contains("v2 or v3"));
+        }
+        assertFalse(target.exists());
+    }
+
+    @Test
+    public void preservesDeflatedNativeLibraryAndDoesNotInflateSize() throws Exception {
+        File source = sourceApk();
+        File target = new File(folder.getRoot(), "gen_signed.apk");
+        ApkBuildPipeline.build(source, target, null, null, null, options(), null, null);
+        try (ZipFile src = new ZipFile(source); ZipFile out = new ZipFile(target)) {
+            ZipEntry lib = out.getEntry("lib/armeabi-v7a/libcompressed.so");
+            assertEquals(ZipEntry.DEFLATED, lib.getMethod());
+            assertEquals(src.getEntry("lib/armeabi-v7a/libcompressed.so").getSize(), lib.getSize());
+            assertTrue("deflated library must stay compressed", lib.getCompressedSize() < lib.getSize() / 2);
+            assertEquals(ZipEntry.STORED, out.getEntry("lib/arm64-v8a/libgame.so").getMethod());
+        }
+        // Output may differ by signature blocks, but must not multiply the payload size.
+        assertTrue("output inflated: " + target.length() + " vs " + source.length(),
+                target.length() < source.length() + 200000);
+    }
+
+    @Test
+    public void storedEntriesAreAlignedAtRealDataOffset() throws Exception {
+        File source = sourceApk();
+        File target = new File(folder.getRoot(), "gen_signed.apk");
+        ApkBuildPipeline.build(source, target, null, null, null, options(), null, null);
+        try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(target, "r")) {
+            byte[] all = new byte[(int) raf.length()];
+            raf.readFully(all);
+            int eocd = -1;
+            for (int i = all.length - 22; i >= 0; i--) {
+                if (ByteBuffer.wrap(all, i, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() == 0x06054b50) {
+                    eocd = i;
+                    break;
+                }
+            }
+            assertTrue("EOCD not found", eocd >= 0);
+            ByteBuffer e = ByteBuffer.wrap(all, eocd, 22).order(ByteOrder.LITTLE_ENDIAN);
+            int count = e.getShort(10) & 0xffff;
+            int pos = e.getInt(16);
+            boolean checkedArsc = false;
+            boolean checkedLib = false;
+            for (int i = 0; i < count; i++) {
+                assertEquals(0x02014b50, ByteBuffer.wrap(all, pos, 4).order(ByteOrder.LITTLE_ENDIAN).getInt());
+                ByteBuffer c = ByteBuffer.wrap(all, pos, 46).order(ByteOrder.LITTLE_ENDIAN);
+                int nameLen = c.getShort(28) & 0xffff;
+                int extraLen = c.getShort(30) & 0xffff;
+                int commentLen = c.getShort(32) & 0xffff;
+                int localOffset = c.getInt(42);
+                String name = new String(all, pos + 46, nameLen, StandardCharsets.UTF_8);
+                ByteBuffer l = ByteBuffer.wrap(all, localOffset, 30).order(ByteOrder.LITTLE_ENDIAN);
+                assertEquals(0x04034b50, l.getInt(0));
+                int method = l.getShort(8) & 0xffff;
+                int localNameLen = l.getShort(26) & 0xffff;
+                int localExtraLen = l.getShort(28) & 0xffff;
+                long dataOffset = localOffset + 30L + localNameLen + localExtraLen;
+                if (method == ZipEntry.STORED && name.equals("resources.arsc")) {
+                    assertEquals("resources.arsc must be 4-byte aligned", 0, dataOffset % 4);
+                    checkedArsc = true;
+                }
+                if (method == ZipEntry.STORED && name.equals("lib/arm64-v8a/libgame.so")) {
+                    assertEquals("native library must be 16KB aligned", 0, dataOffset % 16384);
+                    checkedLib = true;
+                }
+                pos += 46 + nameLen + extraLen + commentLen;
+            }
+            assertTrue("resources.arsc not found", checkedArsc);
+            assertTrue("stored library not found", checkedLib);
+        }
+    }
+
+    @Test
+    public void invalidEditedManifestIsRejectedBeforePublish() throws Exception {
+        File source = sourceApk();
+        File target = new File(folder.getRoot(), "gen_signed.apk");
+        File bad = folder.newFile("AndroidManifest.xml");
+        Files.write(bad.toPath(), new byte[]{1, 2, 3});
+        Map<String, String> replaces = Collections.singletonMap("AndroidManifest.xml", bad.getAbsolutePath());
+        try {
+            ApkBuildPipeline.build(source, target, replaces, null, null, options(), null, null);
+            fail("Expected structural validation failure");
+        } catch (Exception expected) {
+            assertTrue(expected.getMessage(), expected.getMessage().contains("structurally invalid"));
         }
         assertFalse(target.exists());
     }

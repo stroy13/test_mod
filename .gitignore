@@ -2,7 +2,7 @@
 .gradle/
 build/
 */build/
-apkEditorPro/release/
+apkEditorPlus/release/
 captures/
 .externalNativeBuild/
 .cxx/

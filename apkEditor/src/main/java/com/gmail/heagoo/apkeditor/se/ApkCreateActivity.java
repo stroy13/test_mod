@@ -609,6 +609,20 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
                 } else {
                     this.error = clsName + ": " + msg;
                 }
+                if (activity != null) {
+                    this.error += "\n" + activity.getString(R.string.build_failed_no_new_apk);
+                    try {
+                        java.io.File log = new java.io.File(activity.workingDir + ".build-error.txt");
+                        try (java.io.PrintWriter writer = new java.io.PrintWriter(log, "UTF-8")) {
+                            writer.println("Source APK: " + activity.apkPath);
+                            writer.println("Intended output: " + this.outputApkPath);
+                            writer.println("Time: " + new java.util.Date());
+                            e.printStackTrace(writer);
+                        }
+                        this.error += "\n" + activity.getString(R.string.build_error_log, log.getAbsolutePath());
+                    } catch (Exception ignored) {
+                    }
+                }
                 activity.handler.sendEmptyMessage(1);
                 e.printStackTrace();
             }

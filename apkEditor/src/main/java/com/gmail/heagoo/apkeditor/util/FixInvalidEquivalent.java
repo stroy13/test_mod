@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// /data/user/0/com.gmail.heagoo.apkeditor.pro/files/decoded/res/anim/aRA.xml: error: File is case-insensitive equivalent to: /data/user/0/com.gmail.heagoo.apkeditor.pro/files/decoded/res/anim/aRa.xml
+// /data/user/0/com.gmail.heagoo.apkeditor.plus/files/decoded/res/anim/aRA.xml: error: File is case-insensitive equivalent to: /data/user/0/com.gmail.heagoo.apkeditor.plus/files/decoded/res/anim/aRa.xml
 public class FixInvalidEquivalent extends FixInvalid {
     private final static String err_eqivalent = "^(.+): error: File is case-insensitive equivalent to: (.+)";
 

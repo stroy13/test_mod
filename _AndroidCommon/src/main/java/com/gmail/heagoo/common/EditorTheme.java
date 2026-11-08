@@ -18,10 +18,10 @@ public final class EditorTheme {
     public static int selected(Activity activity) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
         try {
-            int id = Integer.parseInt(prefs.getString("AppTheme", "0"));
-            return ThemeRegistry.valid(id) ? id : 0;
+            int id = Integer.parseInt(prefs.getString("AppTheme", "2"));
+            return ThemeRegistry.valid(id) ? id : 2;
         } catch (RuntimeException invalidValue) {
-            return 0;
+            return 2;
         }
     }
 

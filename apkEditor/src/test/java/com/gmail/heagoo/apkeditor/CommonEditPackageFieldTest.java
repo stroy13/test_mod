@@ -31,7 +31,7 @@ public class CommonEditPackageFieldTest {
     @Test
     public void packageEditingUsesBuildCapabilityNotApplicationIdSuffix() throws Exception {
         String activity = read(root().resolve("apkEditor/src/main/java/com/gmail/heagoo/apkeditor/CommonEditActivity.java"));
-        String gradle = read(root().resolve("apkEditorPro/build.gradle"));
+        String gradle = read(root().resolve("apkEditorPlus/build.gradle"));
         assertTrue(gradle.contains("applicationId \"ru.apkeditor.plus\""));
         assertTrue(activity.contains("import com.gmail.heagoo.apkeditor.base.BuildConfig;"));
         assertTrue(activity.contains("boolean canRenamePackage = BuildConfig.IS_PRO;"));
@@ -42,7 +42,7 @@ public class CommonEditPackageFieldTest {
 
     @Test
     public void bothCommonEditLayoutsKeepThePackageFieldInteractive() throws Exception {
-        for (String module : new String[]{"apkEditor", "apkEditorPro"}) {
+        for (String module : new String[]{"apkEditor", "apkEditorPlus"}) {
             Path layout = root().resolve(module + "/src/main/res/layout/activity_commonedit.xml");
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);

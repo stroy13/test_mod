@@ -1,3 +1,3 @@
 BUILD SUCCESSFUL — ошибок компиляции нет.
-Финальный прогон: gradle :apkEditorPro:assembleDebug (Gradle 9.8.2, AGP 9.5.1) завершился успешно,
-APK: apkEditorPro/build/outputs/apk/debug/apkEditorPro-debug.apk
+Финальный прогон: gradle :apkEditorPlus:assembleDebug (Gradle 9.8.2, AGP 9.5.1) завершился успешно,
+APK: apkEditorPlus/build/outputs/apk/debug/apkEditorPlus-debug.apk

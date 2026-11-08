@@ -5,6 +5,8 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 
 // Check whether bought any paid apps
+// The Pro applicationId below is the ORIGINAL paid app by SteelWorks, kept only to
+// detect whether that historical package is installed; this fork is APK Editor Plus.
 public class PaidAppsChecker {
 
     private static String[] paidApps = {"com.gmail.heagoo.pmaster.pro",

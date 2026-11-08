@@ -513,7 +513,7 @@
     <!--
     <string name="sure_to_exit_tip">Are you sure to exit?\nSorry, edit is not supported any more as some of the policy reason. You could save it as project which will be located at %s.</string>
     -->
-    <string name="about_apk_editor_title">APK Editor +</string>
+    <string name="about_apk_editor_title">APK Editor Plus</string>
     
     <string name="about_link_unavailable">No app is available to open the link.</string>
     

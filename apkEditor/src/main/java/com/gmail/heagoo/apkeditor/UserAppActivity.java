@@ -342,7 +342,7 @@ public class UserAppActivity extends CustomizedLangActivity implements AdapterVi
                 break;
             case 3:
                 try {
-                    RefInvoke.invokeStaticMethod("com.gmail.heagoo.apkeditor.pro.appdm", "de", new Class[]{Context.class, String.class}, new Object[]{this, extraStr});
+                    RefInvoke.invokeStaticMethod("com.gmail.heagoo.apkeditor.plus.appdm", "de", new Class[]{Context.class, String.class}, new Object[]{this, extraStr});
                     break;
                 } catch (Exception e) {
                     break;

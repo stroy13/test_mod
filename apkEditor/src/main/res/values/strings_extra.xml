@@ -30,4 +30,6 @@
     <string name="build_percent">%1$d%%</string>
     <string name="build_elapsed">Elapsed %1$02d:%2$02d</string>
     <string name="build_cancelling">Cancelling after the current file…</string>
+    <string name="build_failed_no_new_apk">No new APK was created. Any older gen_signed.apk in this folder is a previous result, not this build.</string>
+    <string name="build_error_log">Details: %1$s</string>
 </resources>

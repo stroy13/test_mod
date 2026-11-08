@@ -497,7 +497,7 @@ public final class ComparisonActivity extends ThemedActivity implements FileSele
             throw new IOException("DEX отсутствует или больше 512 МБ");
         }
         try {
-            Object decoder = Class.forName("com.gmail.heagoo.apkeditor.pro.DexDecoder").getConstructor(String.class).newInstance(dex.getAbsolutePath());
+            Object decoder = Class.forName("com.gmail.heagoo.apkeditor.plus.DexDecoder").getConstructor(String.class).newInstance(dex.getAbsolutePath());
             decoder.getClass().getMethod("dex2smali", String.class).invoke(decoder, out.getAbsolutePath());
         } catch (InvocationTargetException e) {
             throw new IOException("Не удалось разобрать DEX: " + e.getCause(), e.getCause());

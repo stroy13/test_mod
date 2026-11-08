@@ -763,12 +763,12 @@ public final class ProjectAnalysis {
         boolean checkerUsesSupplier = false;
         if (report.smaliFound > 0) {
             try {
-                smaliChecker = Class.forName("com.gmail.heagoo.apkeditor.pro.SmaliCheck")
+                smaliChecker = Class.forName("com.gmail.heagoo.apkeditor.plus.SmaliCheck")
                         .getMethod("check", String.class, Integer.TYPE, BooleanSupplier.class);
                 checkerUsesSupplier = true;
             } catch (ClassNotFoundException | NoSuchMethodException | LinkageError unavailable) {
                 try {
-                    smaliChecker = Class.forName("com.gmail.heagoo.apkeditor.pro.SmaliCheck")
+                    smaliChecker = Class.forName("com.gmail.heagoo.apkeditor.plus.SmaliCheck")
                             .getMethod("check", String.class, Integer.TYPE);
                 } catch (ClassNotFoundException | NoSuchMethodException | LinkageError missing) {
                     report.smaliSyntaxUnavailable = true;

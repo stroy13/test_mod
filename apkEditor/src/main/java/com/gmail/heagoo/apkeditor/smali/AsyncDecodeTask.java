@@ -21,7 +21,7 @@ import java.util.zip.ZipFile;
 
 /** Extracts the APK's DEX files and reports actual disassembly progress to the UI. */
 public class AsyncDecodeTask extends AsyncTask<Void, Integer, Boolean> {
-    private static final String DECODER_CLASS = "com.gmail.heagoo.apkeditor.pro.DexDecoder";
+    private static final String DECODER_CLASS = "com.gmail.heagoo.apkeditor.plus.DexDecoder";
 
     private final Context context;
     private final IDecodeTaskCallback callback;
