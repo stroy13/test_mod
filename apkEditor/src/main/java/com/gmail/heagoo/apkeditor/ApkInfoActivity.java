@@ -1663,11 +1663,13 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             return;
         }
         if (resource == null) {
-            caution = "Проверка не заменяет сборку: межфайловые зависимости и часть ресурсов могут содержать другие ошибки.\nПроверено XML: " + r.xmlChecked + ", smali: " + r.smaliChecked + "; пропущено: " + r.skipped + ".";
-            if (r.smaliChecked == 0) {
+            caution = "Проверка не заменяет сборку: межфайловые зависимости и часть ресурсов могут содержать другие ошибки.\nНайдено XML: " + r.xmlFound + ", smali: " + r.smaliFound + ".\nПроверено XML: " + r.xmlChecked + ", smali: " + r.smaliChecked + "; пропущено: " + r.skipped + ".";
+            if (r.smaliFound == 0) {
                 caution = caution + "\nФайлы smali не найдены. При необходимости сначала преобразуйте DEX в smali.";
             }
-            if (r.smaliNotParsed > 0) {
+            if (r.smaliSyntaxUnavailable) {
+                caution = caution + "\nПолная проверка синтаксиса smali недоступна в этой сборке; выполнена структурная проверка.";
+            } else if (r.smaliNotParsed > 0) {
                 caution = caution + "\nСинтаксис smali не удалось полностью проверить для файлов: " + r.smaliNotParsed + ". Выполнена только доступная структурная проверка.";
             }
             if (r.resourceIndexIncomplete) {
@@ -1687,7 +1689,10 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }
         AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle(resource == null ? "Диагностика проекта" : "Использование " + resource).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null);
         if (r.findings.isEmpty()) {
-            b.setMessage(caution2 + (r.checked == 0 ? "\nПодходящих файлов для проверки не найдено." : resource == null ? "\nЗамечаний не найдено." : "\nСовпадений не найдено."));
+            String empty = resource == null
+                    ? (r.xmlFound + r.smaliFound == 0 ? "\nПодходящих файлов для проверки не найдено." : "\nЗамечаний не найдено.")
+                    : (r.checked == 0 ? "\nПодходящих файлов для проверки не найдено." : "\nСовпадений не найдено.");
+            b.setMessage(caution2 + empty);
         } else {
             b.setAdapter(dialogChoiceAdapter(items), new DialogInterface.OnClickListener() {
                 @Override // android.content.DialogInterface.OnClickListener
