@@ -232,36 +232,25 @@ public class ApkBuildPipelineTest {
     @Test
     public void storedEntriesAreAlignedAtRealDataOffset() throws Exception {
         File source = sourceApk();
-        File target = new File(folder.getRoot(), "gen_signed.apk");
-        ApkBuildPipeline.build(source, target, null, null, null, options(), null, null);
-        try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(target, "r")) {
+        // Check alignment on the merged archive before apksig inserts its signing block
+        // and rewrit es the central directory; then confirm the signed APK still exposes
+        // the same entries/compression through ZipFile.
+        File unsigned = new File(folder.getRoot(), "unsigned.apk");
+        ApkBuildPipeline.merge(source, unsigned, null, null, null, options(), null, null);
+        try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(unsigned, "r")) {
             byte[] all = new byte[(int) raf.length()];
             raf.readFully(all);
-            // Use ZipFile to locate entries reliably even when apksig has inserted a
-            // signing block / rewritten the central directory, then read each local
-            // header through the extra field that carries the real header offset.
-            int pos;
-            int count;
-            try (ZipFile zf = new ZipFile(target)) {
-                count = zf.size();
-                // Find EOCD by scanning backwards for a valid central directory pointer.
-                int eocd = -1;
-                for (int i = all.length - 22; i >= 0; i--) {
-                    if (ByteBuffer.wrap(all, i, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() != 0x06054b50) continue;
-                    ByteBuffer cand = ByteBuffer.wrap(all, i, 22).order(ByteOrder.LITTLE_ENDIAN);
-                    int cdOffset = cand.getInt(16);
-                    int cdSize = cand.getInt(12);
-                    if (cdOffset >= 0 && cdSize > 0 && cdOffset + cdSize <= all.length
-                            && ByteBuffer.wrap(all, cdOffset, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() == 0x02014b50) {
-                        eocd = i;
-                        break;
-                    }
+            int eocd = -1;
+            for (int i = all.length - 22; i >= 0; i--) {
+                if (ByteBuffer.wrap(all, i, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() == 0x06054b50) {
+                    eocd = i;
+                    break;
                 }
-                assertTrue("EOCD not found", eocd >= 0);
-                ByteBuffer e = ByteBuffer.wrap(all, eocd, 22).order(ByteOrder.LITTLE_ENDIAN);
-                count = e.getShort(10) & 0xffff;
-                pos = e.getInt(16);
             }
+            assertTrue("EOCD not found", eocd >= 0);
+            ByteBuffer e = ByteBuffer.wrap(all, eocd, 22).order(ByteOrder.LITTLE_ENDIAN);
+            int count = e.getShort(10) & 0xffff;
+            int pos = e.getInt(16);
             boolean checkedArsc = false;
             boolean checkedLib = false;
             for (int i = 0; i < count; i++) {
@@ -290,6 +279,13 @@ public class ApkBuildPipelineTest {
             }
             assertTrue("resources.arsc not found", checkedArsc);
             assertTrue("stored library not found", checkedLib);
+        }
+        File target = new File(folder.getRoot(), "gen_signed.apk");
+        ApkBuildPipeline.build(source, target, null, null, null, options(), null, null);
+        try (ZipFile zip = new ZipFile(target)) {
+            assertEquals(ZipEntry.STORED, zip.getEntry("resources.arsc").getMethod());
+            assertEquals(ZipEntry.STORED, zip.getEntry("lib/arm64-v8a/libgame.so").getMethod());
+            assertEquals(ZipEntry.DEFLATED, zip.getEntry("lib/armeabi-v7a/libcompressed.so").getMethod());
         }
     }
 

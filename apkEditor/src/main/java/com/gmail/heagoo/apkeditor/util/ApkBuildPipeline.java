@@ -189,7 +189,8 @@ public final class ApkBuildPipeline {
         }
     }
 
-    private static void merge(File source, File output,
+    // Package-private so JVM tests can inspect alignment before apksig rewrites the archive.
+    static void merge(File source, File output,
                               Map<String, String> replaces, Map<String, String> added,
                               Set<String> deleted, SigningOptions options,
                               Progress report, Cancellation cancel) throws IOException {
