@@ -110,7 +110,10 @@ public class ApkBuildPipelineTest {
                 assertArrayEquals(replacementBytes, bos.toByteArray());
             }
         }
-        ApkVerifier.Result result = new ApkVerifier.Builder(target).build().verify();
+        ApkVerifier.Result result = new ApkVerifier.Builder(target)
+                .setMinCheckedPlatformVersion(26)
+                .setMaxCheckedPlatformVersion(37)
+                .build().verify();
         assertTrue("APK verification errors: " + result.getErrors(), result.isVerified());
         assertTrue(result.isVerifiedUsingV2Scheme());
         assertTrue(result.isVerifiedUsingV3Scheme());
