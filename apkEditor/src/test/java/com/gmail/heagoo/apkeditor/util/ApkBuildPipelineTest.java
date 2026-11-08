@@ -237,17 +237,31 @@ public class ApkBuildPipelineTest {
         try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(target, "r")) {
             byte[] all = new byte[(int) raf.length()];
             raf.readFully(all);
-            int eocd = -1;
-            for (int i = all.length - 22; i >= 0; i--) {
-                if (ByteBuffer.wrap(all, i, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() == 0x06054b50) {
-                    eocd = i;
-                    break;
+            // Use ZipFile to locate entries reliably even when apksig has inserted a
+            // signing block / rewritten the central directory, then read each local
+            // header through the extra field that carries the real header offset.
+            int pos;
+            int count;
+            try (ZipFile zf = new ZipFile(target)) {
+                count = zf.size();
+                // Find EOCD by scanning backwards for a valid central directory pointer.
+                int eocd = -1;
+                for (int i = all.length - 22; i >= 0; i--) {
+                    if (ByteBuffer.wrap(all, i, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() != 0x06054b50) continue;
+                    ByteBuffer cand = ByteBuffer.wrap(all, i, 22).order(ByteOrder.LITTLE_ENDIAN);
+                    int cdOffset = cand.getInt(16);
+                    int cdSize = cand.getInt(12);
+                    if (cdOffset >= 0 && cdSize > 0 && cdOffset + cdSize <= all.length
+                            && ByteBuffer.wrap(all, cdOffset, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() == 0x02014b50) {
+                        eocd = i;
+                        break;
+                    }
                 }
+                assertTrue("EOCD not found", eocd >= 0);
+                ByteBuffer e = ByteBuffer.wrap(all, eocd, 22).order(ByteOrder.LITTLE_ENDIAN);
+                count = e.getShort(10) & 0xffff;
+                pos = e.getInt(16);
             }
-            assertTrue("EOCD not found", eocd >= 0);
-            ByteBuffer e = ByteBuffer.wrap(all, eocd, 22).order(ByteOrder.LITTLE_ENDIAN);
-            int count = e.getShort(10) & 0xffff;
-            int pos = e.getInt(16);
             boolean checkedArsc = false;
             boolean checkedLib = false;
             for (int i = 0; i < count; i++) {
