@@ -74,7 +74,7 @@ public class ProjectAnalysisSmaliIntegrationTest {
                 + ".super Ljava/lang/Object;\n"
                 + ".method public static broken()V\n"
                 + "    .registers 1\n"
-                + "    nop nop\n"
+                + "    const/4 v0,\n"
                 + ".end method\n");
 
         ProjectAnalysis.Report report = ProjectAnalysis.diagnose(temporary.getRoot());
