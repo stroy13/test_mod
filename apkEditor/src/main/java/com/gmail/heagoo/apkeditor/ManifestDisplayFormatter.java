@@ -56,7 +56,9 @@ public final class ManifestDisplayFormatter {
                 continue;
             }
             if (attr.start > lineStart) {
-                plan.insertions.add(new Insertion(attr.start, "\n  "));
+                // "\u21B3 " marks a wrapped continuation, as in MT Manager. Monospace
+                // keeps it exactly as wide as the two spaces it replaces.
+                plan.insertions.add(new Insertion(attr.start, "\n\u21B3 "));
                 lineStart = attr.start;
                 indent = two;
             }
@@ -77,7 +79,7 @@ public final class ManifestDisplayFormatter {
                     }
                     if (value.kind == ManifestSyntax.VALUE && quoted(text, value)
                             && text.substring(attr.end, value.start).trim().equals("=")) {
-                        plan.insertions.add(new Insertion(value.start, "\n    "));
+                        plan.insertions.add(new Insertion(value.start, "\n\u21B3   "));
                         lineStart = value.start;
                         indent = four;
                         break;
