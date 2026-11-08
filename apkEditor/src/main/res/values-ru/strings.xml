@@ -175,7 +175,7 @@
     <string name="pkg_rename_as_plugin">Сделать как плагин</string>
     <string name="pkg_rename_cheat">\"Хитрое\" переименование</string>
     <string name="pkg_rename_direct">Прямое переименование</string>
-    <string name="pkg_rename_notice">Примечание: переименование пакета скорее всего не будет работать. Это зависимости от того, как приложение написано (или защищено).</string>
+    <string name="pkg_rename_notice">Переименование пакета может не сработать, если приложение проверяет своё имя или защищено от изменений. После сохранения проверьте установленное приложение.</string>
     <string name="pls_input_filename">Введите имя файла:</string>
     <string name="pls_input_foldername">Пожалуйста, введите имя папки:</string>
     <string name="pls_input_keyword">Введите ключевые слова для поиска</string>
@@ -324,7 +324,7 @@
     <string name="project_num">Проектов: %d</string>
     <string name="project_removed">Проект \"%s\" удалён.</string>
     <string name="projects">Проекты</string>
-    <string name="rename_in_dex">Изменение имени пакета в файлах DEX [В стадии тестирования. Чтобы повысить вероятность успеха, пожалуйста, сохраните длину и сделайте как можно более незначительные изменения, как, например, заменив com.android на com.androie]</string>
+    <string name="rename_in_dex">Также изменить имя пакета в коде DEX (экспериментально; надёжнее менять имя минимально и сохранять длину)</string>
     <string name="replace_all">Заменить все</string>
     <string name="save_as_project">Сохранить как проект</string>
     <string name="save_changes_tip">Сохранить изменения?</string>

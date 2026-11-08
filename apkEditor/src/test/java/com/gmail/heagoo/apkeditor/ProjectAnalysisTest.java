@@ -207,8 +207,9 @@ public class ProjectAnalysisTest {
         for (int i = 1; i < first.findings.size(); i++) {
             ProjectAnalysis.Finding left = first.findings.get(i - 1);
             ProjectAnalysis.Finding right = first.findings.get(i);
+            int byKind = left.kind.ordinal() - right.kind.ordinal();
             int byPath = left.path.compareTo(right.path);
-            assertTrue(byPath < 0 || (byPath == 0 && left.line <= right.line));
+            assertTrue(byKind < 0 || (byKind == 0 && (byPath < 0 || (byPath == 0 && left.line <= right.line))));
         }
         assertTrue(ProjectAnalysis.workerCount() >= 1 && ProjectAnalysis.workerCount() <= 4);
     }
@@ -233,6 +234,9 @@ public class ProjectAnalysisTest {
         }
         assertEquals(ProjectAnalysis.MAX_FINDINGS, report.findings.size());
         assertTrue(report.truncated);
+        assertTrue(report.findingsTruncated);
+        assertFalse(report.fileLimitReached);
+        assertEquals(ProjectAnalysis.MAX_FINDINGS + 51, report.totalFindings);
         assertEquals("file0000.smali", report.findings.get(0).path);
         assertEquals("file0999.smali", report.findings.get(report.findings.size() - 1).path);
     }
@@ -276,5 +280,55 @@ public class ProjectAnalysisTest {
 
         assertEquals(2, report.xmlChecked);
         assertTrue(report.findings.toString(), report.findings.isEmpty());
+    }
+
+
+    @Test(timeout = 15000)
+    public void firebaseKeepRulesInRawAreNotTreatedAsMissingAndroidResources() throws Exception {
+        write("res/raw/firebase_common_keep.xml", "<resources>\n"
+                + "    <keep>@string/ga_trackingId</keep>\n"
+                + "</resources>\n");
+        write("res/raw/firebase_crashlytics_keep.xml", "<resources>\n"
+                + "    <keep>@bool/com_crashlytics_RequireBuildId</keep>\n"
+                + "    <keep>@string/com.google.firebase.crashlytics_</keep>\n"
+                + "</resources>\n");
+        write("res/raw-ru/rules.xml", "<keep>@string/local_rule</keep>\n");
+        write("assets/payload.xml", "<data>@string/not_a_resource</data>\n");
+
+        ProjectAnalysis.Report report = ProjectAnalysis.diagnose(temporary.getRoot());
+
+        assertEquals(4, report.xmlChecked);
+        assertEquals(0, report.warnings);
+        assertTrue(report.findings.toString(), report.findings.isEmpty());
+        assertFalse(ProjectAnalysis.checksResourceReferences("res/raw/firebase_common_keep.xml"));
+        assertFalse(ProjectAnalysis.checksResourceReferences("res/raw-ru/rules.xml"));
+        assertFalse(ProjectAnalysis.checksResourceReferences("assets/payload.xml"));
+        assertTrue(ProjectAnalysis.checksResourceReferences("res/layout/main.xml"));
+        assertTrue(ProjectAnalysis.checksResourceReferences("AndroidManifest.xml"));
+    }
+
+    @Test(timeout = 15000)
+    public void missingResourceIsAWarningNotAConfirmedError() throws Exception {
+        write("res/layout/main.xml", "<TextView xmlns:android=\"http://schemas.android.com/apk/res/android\" "
+                + "android:text=\"@string/missing\"/>\n");
+
+        ProjectAnalysis.Report report = ProjectAnalysis.diagnose(temporary.getRoot());
+
+        assertEquals(0, report.errors);
+        assertEquals(1, report.warnings);
+        assertEquals(ProjectAnalysis.FindingKind.WARNING, report.findings.get(0).kind);
+    }
+
+    @Test(timeout = 15000)
+    public void skippedFilesAreCountedSeparatelyFromErrors() throws Exception {
+        File binary = new File(temporary.getRoot(), "AndroidManifest.xml");
+        Files.write(binary.toPath(), new byte[]{3, 0, 8, 0, 0, 0, 0, 0});
+
+        ProjectAnalysis.Report report = ProjectAnalysis.diagnose(temporary.getRoot());
+
+        assertEquals(0, report.errors);
+        assertEquals(0, report.warnings);
+        assertEquals(1, report.notChecked);
+        assertEquals(ProjectAnalysis.FindingKind.NOT_CHECKED, report.findings.get(0).kind);
     }
 }

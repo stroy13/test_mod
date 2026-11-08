@@ -253,7 +253,7 @@
     <string name="hide_smali_tip">Please long click at "DEX -> Smali" to hide it.</string>
 
     <!-- 20160508 -->
-    <string name="pkg_rename_notice">Please Note: Package rename is more likely not to work, depending on how the app is written (or even protected).</string>
+    <string name="pkg_rename_notice">Package renaming may fail if the app checks its own name or is protected against changes. Test the installed app after saving.</string>
     <string name="package_rename_method">Package Rename Method</string>
     <string name="pkg_rename_direct">Direct Rename</string>
     <string name="pkg_rename_cheat">Cheat the package name</string>
@@ -409,7 +409,7 @@
     <string name="prj_error_decode_dir_notfound">Cannot find decoding directory: %s</string>
     <string name="prj_error_apk_notfound">Cannot find APK file: %s</string>
     <string name="dex_decode_succeed">Successfully decoded DEX file(s).</string>
-    <string name="rename_in_dex">Rename package name in DEX file(s) [Beta version yet. To improve the success rate, please keep the length unchanged, and do as minor change as possible, like change com.android to com.androie]</string>
+    <string name="rename_in_dex">Also rename the package in DEX code (experimental; minimal, same-length changes are safer)</string>
 
     <!-- 1.8.10 -->
     <string name="patch_error_regex_not_true">REGEX must be true in MATCH_ASSIGN rule.</string>
