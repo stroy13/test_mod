@@ -313,7 +313,7 @@ public final class ApkBuildPipeline {
                     File replacementFile = replacement == null ? null : new File(replacement);
                     long size = replacementFile != null ? replacementFile.length() : entry.getSize();
                     if (replacementFile != null) {
-                        validateReplacement(name, replacementFile, out);
+                        validateReplacement(name, replacementFile, logSink);
                     }
                     log(logSink, "merge " + name + ": sourceMethod="
                             + (entry.getMethod() == ZipEntry.STORED ? "STORED" : "DEFLATED")
@@ -332,7 +332,7 @@ public final class ApkBuildPipeline {
                 for (Map.Entry<String, String> entry : added.entrySet()) {
                     checkCancelled(cancel);
                     File file = new File(entry.getValue());
-                    validateReplacement(entry.getKey(), file, out);
+                    validateReplacement(entry.getKey(), file, logSink);
                     log(logSink, "add " + entry.getKey() + ": size=" + file.length());
                     try (InputStream input = new BufferedInputStream(new FileInputStream(file), BUFFER_SIZE)) {
                         writeEntry(out, counting, entry.getKey(), input, file.length(), null, file, buffer,
