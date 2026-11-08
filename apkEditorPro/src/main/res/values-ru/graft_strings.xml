@@ -141,4 +141,15 @@
 <string name="web_server_started">"Веб-сервер запущен. Откройте:
 %s"</string>
 <string name="width">Ширина</string>
+
+    <string name="cancel">Отмена</string>
+    <string name="build_stage_prepare">Подготовка изменений…</string>
+    <string name="build_stage_merge">Сборка APK</string>
+    <string name="build_stage_sign">Подпись APK (v1/v2/v3)</string>
+    <string name="build_stage_verify">Проверка APK и подписи</string>
+    <string name="build_stage_publish">Сохранение результата</string>
+    <string name="build_indeterminate">Выполняется…</string>
+    <string name="build_percent">%1$d%%</string>
+    <string name="build_elapsed">Прошло %1$02d:%2$02d</string>
+    <string name="build_cancelling">Отмена после текущего файла…</string>
 </resources>

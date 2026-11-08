@@ -59,7 +59,7 @@ public class RefactorLayout implements IApkMaking, Serializable {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw e;
         } finally {
             closeQuietly(zfile);
         }

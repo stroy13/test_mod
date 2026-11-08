@@ -38,7 +38,8 @@ public class ReplaceLauncherIcon implements IApkMaking, Serializable {
 
     @Override
     public void prepareReplaces(Context ctx, String apkFilePath,
-                                Map<String, String> allReplaces, IDescriptionUpdate updater) {
+                                Map<String, String> allReplaces, IDescriptionUpdate updater)
+            throws Exception {
         ZipFile zipFile = null;
         InputStream arscStream = null;
 
@@ -94,7 +95,7 @@ public class ReplaceLauncherIcon implements IApkMaking, Serializable {
             }
 
         } catch (Exception e) {
-
+            throw e;
         } finally {
             if (arscStream != null) {
                 try {

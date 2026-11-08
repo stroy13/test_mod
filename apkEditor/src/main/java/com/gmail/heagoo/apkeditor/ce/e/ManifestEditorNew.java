@@ -63,7 +63,8 @@ public class ManifestEditorNew {
         try {
             parse();
         } catch (Exception e) {
-            e.printStackTrace();
+            closeQuietly(out);
+            throw new IOException("Cannot parse AndroidManifest.xml: " + e.getMessage(), e);
         }
     }
 
@@ -231,7 +232,7 @@ public class ManifestEditorNew {
         }
         if (oldInfo.maxSdkVersion != -1 &&
                 newInfo.maxSdkVersion != oldInfo.maxSdkVersion) {
-            body.modifyAttribute("manifest/uses-sdk", "minSdkVersion",
+            body.modifyAttribute("manifest/uses-sdk", "maxSdkVersion",
                     new IModifyTagAttribute() {
                         @Override
                         public void modify(Tag.TagAttr attr) {

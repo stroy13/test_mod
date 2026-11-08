@@ -68,7 +68,7 @@ public class ResourceEditor {
     // Change app name by modifying string in the pool
     // Modify all the strings starts with oldStarts, and replace it with newStarts
     public boolean modifyString(String oldStr, String newStr,
-                                String oldStarts, String newStarts) {
+                                String oldStarts, String newStarts) throws IOException {
         this.strPoolEditor = new StringBlockEditor(strPoolHeader, strPoolData);
         return strPoolEditor.replaceString(oldStr, newStr, oldStarts, newStarts);
     }
@@ -95,7 +95,7 @@ public class ResourceEditor {
 
         // Write the head block
         tableHeader.setChunkSize(tableHeader.chunkSize
-                + this.strPoolEditor.getDeltaSize());
+                + (this.strPoolEditor != null ? this.strPoolEditor.getDeltaSize() : 0));
         tableHeader.writeTo(output);
         writeInt(packageCount);
 
@@ -126,7 +126,11 @@ public class ResourceEditor {
             readLen = input.read(buffer, 0, length);
         }
 
-        output.close();
+        try {
+            output.close();
+        } finally {
+            input.close();
+        }
     }
 
     static class ResChunkHeader {

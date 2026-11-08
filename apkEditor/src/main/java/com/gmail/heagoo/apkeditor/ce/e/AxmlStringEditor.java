@@ -33,7 +33,7 @@ public class AxmlStringEditor {
         try {
             parse();
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IOException("Cannot parse binary XML: " + e.getMessage(), e);
         }
     }
 

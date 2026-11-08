@@ -19,4 +19,15 @@
     <string name="patch_log_share">Share</string>
     <string name="lab_package_hint">For example, com.example.app</string>
     <string name="lab_package_help">Tap the field to change the app identifier. This is not the visible app name.</string>
+
+    <string name="cancel">Cancel</string>
+    <string name="build_stage_prepare">Preparing changes…</string>
+    <string name="build_stage_merge">Assembling APK</string>
+    <string name="build_stage_sign">Signing APK (v1/v2/v3)</string>
+    <string name="build_stage_verify">Verifying APK and signature</string>
+    <string name="build_stage_publish">Saving result</string>
+    <string name="build_indeterminate">Working…</string>
+    <string name="build_percent">%1$d%%</string>
+    <string name="build_elapsed">Elapsed %1$02d:%2$02d</string>
+    <string name="build_cancelling">Cancelling after the current file…</string>
 </resources>

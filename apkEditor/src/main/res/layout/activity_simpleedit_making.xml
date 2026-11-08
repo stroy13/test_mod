@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:id="@+id/layout_apk_generating"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:background="?labSurface"
         android:gravity="center"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="24dp">
 
         <ProgressBar
             android:id="@+id/progressBar1"
@@ -19,24 +20,61 @@
             android:indeterminateDrawable="@drawable/commonutil_progressbar" />
 
         <TextView
+            android:id="@+id/tv_stage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="20.0dip"
-            android:text="@string/in_progress"
-            android:textColor="?labText" />
+            android:layout_marginTop="20dp"
+            android:text="@string/build_stage_prepare"
+            android:textColor="?labText"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <ProgressBar
+            android:id="@+id/progress_build"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:indeterminate="true"
+            android:max="100" />
+
+        <TextView
+            android:id="@+id/tv_percent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="?labMuted"
+            android:textSize="13sp" />
 
         <TextView
             android:id="@+id/tv_detail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:textColor="?labText"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tv_elapsed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12.0dip"
-            android:textColor="?labText" />
+            android:layout_marginTop="10dp"
+            android:textColor="?labMuted"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/button_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/cancel" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/layout_apk_reinstall"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:background="?labSurface"
         android:gravity="center"
         android:orientation="vertical">
@@ -48,53 +86,50 @@
             android:src="@drawable/succeed" />
 
         <ScrollView
-            android:layout_width="fill_parent"
-            android:layout_height="0dip"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
             android:layout_weight="1">
 
             <TextView
                 android:id="@+id/result"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:layout_marginLeft="24.0dip"
-                android:layout_marginRight="24.0dip"
+                android:layout_marginLeft="24dp"
+                android:layout_marginRight="24dp"
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 android:textColor="?labAccent" />
-
         </ScrollView>
 
-
         <LinearLayout
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="4dip">
+            android:padding="4dp">
 
             <Button
                 android:id="@+id/button_uninstall"
-                android:layout_width="0dip"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="4dip"
+                android:layout_marginRight="4dp"
                 android:layout_weight="1"
                 android:text="@string/remove"
                 android:visibility="gone" />
 
             <Button
                 android:id="@+id/button_reinstall"
-                android:layout_width="0dip"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="4dip"
+                android:layout_marginRight="4dp"
                 android:layout_weight="1"
                 android:text="@string/install" />
 
             <Button
                 android:id="@+id/button_close"
-                android:layout_width="0dip"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/close" />
         </LinearLayout>
     </LinearLayout>
-
 </merge>

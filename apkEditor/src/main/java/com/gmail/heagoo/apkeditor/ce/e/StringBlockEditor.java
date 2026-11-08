@@ -5,303 +5,225 @@ import com.gmail.heagoo.apkeditor.ce.e.ResourceEditor.ResChunkHeader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import brut.androlib.res.decoder.StringBlock;
 
-// Edit the string pool in resources.arsc
+/**
+ * Edits the global string pool of resources.arsc.
+ *
+ * <p>The old implementation shifted offsets after every single replacement and added
+ * padding repeatedly, which corrupted pools with shared string offsets or multiple
+ * edits. This version decodes the pool once, applies all replacements, then rebuilds
+ * the pool with correct UTF-8/UTF-16 lengths, shared offsets and a single alignment
+ * padding before the style data.
+ */
 public class StringBlockEditor {
 
-    private static final CharsetDecoder UTF16LE_DECODER = Charset.forName(
-            "UTF-16LE").newDecoder();
-    private static final CharsetDecoder UTF8_DECODER = Charset.forName("UTF-8")
-            .newDecoder();
-
-    private ResChunkHeader strPoolHeader;
+    private final ResChunkHeader strPoolHeader;
     private byte[] strPoolData;
+    private final int originalChunkSize;
+    private final int stringCount;
+    private final int styleCount;
+    private final boolean isUTF8;
+    private final int[] stringOffsets;
+    private final int stringsOffset;
+    private final int stylesOffset;
+    private final byte[] styleData;
+    private final String[] values;
+    private int totalDeltaSize;
 
-    private int chunkSize;
-    private int stringCount;
-    private int styleCount;
-    private int flags;
-    private int stringsOffset;
-    private int stylesOffset;
-
-    private boolean isUTF8;
-    private int[] stringOffsets;
-    private int[] styleOffsets;
-
-    // When string is modified, delta size for this block
-    private int totalDeltaSize = 0;
-
-    public StringBlockEditor(ResChunkHeader strPoolHeader, byte[] strPoolData) {
+    public StringBlockEditor(ResChunkHeader strPoolHeader, byte[] strPoolData) throws IOException {
         this.strPoolHeader = strPoolHeader;
         this.strPoolData = strPoolData;
-
-        int dataOffset = 0;
-        this.chunkSize = strPoolHeader.chunkSize;
-        this.stringCount = getInt(strPoolData, dataOffset);
-        dataOffset += 4;
-        this.styleCount = getInt(strPoolData, dataOffset);
-        dataOffset += 4;
-        this.flags = getInt(strPoolData, dataOffset);
-        dataOffset += 4;
-        this.stringsOffset = getInt(strPoolData, dataOffset);
-        dataOffset += 4;
-        this.stylesOffset = getInt(strPoolData, dataOffset);
-        dataOffset += 4;
-
-        // Read string offsets array and style offsets array
-        this.isUTF8 = (flags & 256) != 0;
-//        Log.d("DEBUG", "isUTF8=" + this.isUTF8);
-        this.stringOffsets = new int[stringCount];
-        for (int i = 0; i < stringCount; i++) {
-            this.stringOffsets[i] = getInt(strPoolData, dataOffset);
-            dataOffset += 4;
+        this.originalChunkSize = strPoolHeader.chunkSize;
+        if (strPoolData.length < 20) {
+            throw new IOException("Truncated resources.arsc string pool");
         }
-        if (styleCount != 0) {
-            this.styleOffsets = new int[styleCount];
-            for (int i = 0; i < styleCount; i++) {
-                this.styleOffsets[i] = getInt(strPoolData, dataOffset);
-                dataOffset += 4;
+        this.stringCount = getInt(strPoolData, 0);
+        this.styleCount = getInt(strPoolData, 4);
+        int flags = getInt(strPoolData, 8);
+        this.stringsOffset = getInt(strPoolData, 12);
+        this.stylesOffset = getInt(strPoolData, 16);
+        this.isUTF8 = (flags & 0x100) != 0;
+        if (stringCount < 0 || styleCount < 0 || stringsOffset < 28
+                || stringsOffset > strPoolData.length + 8
+                || (styleCount > 0 && (stylesOffset < stringsOffset || stylesOffset > strPoolData.length + 8))) {
+            throw new IOException("Invalid resources.arsc string pool offsets");
+        }
+        this.stringOffsets = new int[stringCount];
+        int offset = 20;
+        for (int i = 0; i < stringCount; i++) {
+            if (offset + 4 > strPoolData.length) {
+                throw new IOException("Truncated resources.arsc string offsets");
+            }
+            stringOffsets[i] = getInt(strPoolData, offset);
+            offset += 4;
+        }
+        this.styleData = stylesOffset > 0
+                ? Arrays.copyOfRange(strPoolData, stylesOffset - 8, strPoolData.length)
+                : new byte[0];
+        this.values = new String[stringCount];
+        for (int i = 0; i < stringCount; i++) {
+            values[i] = decodeString(i);
+            if (values[i] == null) {
+                throw new IOException("Cannot decode resources.arsc string #" + i);
             }
         }
     }
 
-    public final short getShort(byte[] work, int offset) {
-        return (short) ((work[offset + 1] & 0xff) << 8 | (work[offset] & 0xff));
-    }
-
-    public final int getInt(byte[] work, int offset) {
-        return (work[offset + 3]) << 24 | (work[offset + 2] & 0xff) << 16
-                | (work[offset + 1] & 0xff) << 8 | (work[offset] & 0xff);
-    }
-
-    public final void setInt(byte[] buffer, int offset, int v) {
-        buffer[offset] = (byte) (v & 0xff);
-        buffer[offset + 1] = (byte) ((v >> 8) & 0xff);
-        buffer[offset + 2] = (byte) ((v >> 16) & 0xff);
-        buffer[offset + 3] = (byte) ((v >> 24) & 0xff);
-    }
-
-    public final void setShort(byte[] buffer, int offset, int v) {
-        buffer[offset] = (byte) (v & 0xff);
-        buffer[offset + 1] = (byte) ((v >> 8) & 0xff);
-    }
-
-    private String decodeString(int offset, int length) {
+    private String decodeString(int index) {
         try {
-            return (isUTF8 ? UTF8_DECODER : UTF16LE_DECODER).decode(
-                    ByteBuffer.wrap(strPoolData, offset, length)).toString();
-        } catch (Exception ex) {
-            // LOGGER.log(Level.WARNING, null, ex);
+            int start = stringsOffset + stringOffsets[index] - 8;
+            if (start < 0 || start >= strPoolData.length) {
+                return null;
+            }
+            int offset;
+            int length;
+            if (isUTF8) {
+                int[] val = StringBlock.getUtf8(strPoolData, start);
+                offset = val[0];
+                length = val[1];
+            } else {
+                int[] val = StringBlock.getUtf16(strPoolData, start);
+                offset = start + val[0];
+                length = val[1];
+            }
+            if (offset < 0 || length < 0 || offset + length > strPoolData.length) {
+                return null;
+            }
+            return (isUTF8 ? StandardCharsets.UTF_8 : StandardCharsets.UTF_16LE)
+                    .decode(ByteBuffer.wrap(strPoolData, offset, length)).toString();
+        } catch (Exception e) {
             return null;
         }
     }
 
-    /*
-     * For each string item, if it is UTF-8, it contains: 1) the length of the
-     * string in characters 2) the length of the UTF-8 encoding of the string in
-     * bytes 3) the UTF-8 encoded string 4) a trailing 8-bit zero
-     *
-     * If it is UTF-16, it contains: 1) the length of the string in characters
-     * 2) the 16-bit characters 3) a trailing 16-bit zero
-     */
-    private boolean replaceStringIfEqualOrStarts(int index, String oldStr, String newStr,
-                                                 String oldStarts, String newStarts) {
-        if (index < 0) {
-            return false;
-        }
-
-        int lenLength; // how many bytes for the length fields
-        int offset = stringOffsets[index];
-        int length; // length of the encoded string content
-
-        if (isUTF8) {
-            // strPoolData = chunk_start_addr + 8
-            // actual addr = chunk_start_addr + (stringsOffset + offset)
-            int startAt = stringsOffset + offset - 8;
-            int[] val = StringBlock.getUtf8(strPoolData, startAt);
-            offset = val[0];
-            lenLength = offset - startAt;
-            length = val[1];
-        } else {
-            int[] val = StringBlock.getUtf16(strPoolData, stringsOffset
-                    + offset - 8);
-            lenLength = val[0];
-            offset = stringsOffset + offset - 8 + lenLength;
-            length = val[1];
-        }
-
-        String value = decodeString(offset, length);
-        if (value != null) {
+    public boolean replaceString(String oldStr, String newStr,
+                                 String oldStarts, String newStarts) throws IOException {
+        boolean replaced = false;
+        for (int i = 0; i < stringCount; i++) {
+            String value = values[i];
             String newValue = null;
-            if (value.equals(oldStr) && newStr != null) {
+            if (oldStr != null && newStr != null && value.equals(oldStr)) {
                 newValue = newStr;
-            } else if (value.startsWith(oldStarts) && newStarts != null) {
+            } else if (oldStarts != null && newStarts != null && value.startsWith(oldStarts)) {
                 newValue = newStarts + value.substring(oldStarts.length());
             }
-
-            if (newValue != null) {
-                //Log.e("DEBUG", "StringBlockEditor: " + value + " -> " + newValue);
-                int oldTotalLen = lenLength + length + (isUTF8 ? 1 : 2);
-                byte[] newString = this.isUTF8 ? encodeString8(newValue)
-                        : encodeString16(newValue);
-                reviseBuffer(index, offset - lenLength, oldTotalLen, newString);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // Revise the buffer: stringOffsets and styleOffsets
-    // The bytes between [offset, offset+length) will be replaced by newString
-    // All offsets after index will be revised
-    private void reviseBuffer(int index, int offset, int length,
-                              byte[] newString) {
-//        Log.d("DEBUG",
-//                String.format(
-//                        "index=%d, startsStart=%d, stringCount=%d, offset=%d, length=%d, stylesOffset=%d, styleCount=%d, newString.length=%d",
-//                        index, stringsOffset, stringCount, offset, length,
-//                        stylesOffset, styleCount, newString.length));
-        this.chunkSize += newString.length - length;
-        int paddingSize = 0;
-        if ((this.chunkSize % 4) != 0) {
-            paddingSize = 4 - chunkSize % 4;
-            this.chunkSize += paddingSize;
-        }
-//        Log.d("DEBUG", "padding size=" + paddingSize);
-
-        int deltaSize = newString.length - length;
-
-        // Revise the chunk size
-        this.strPoolHeader.setChunkSize(this.chunkSize);
-
-        // Revise the style start offset
-        if (this.stylesOffset > 0 && this.styleCount > 0) {
-            this.stylesOffset += deltaSize + paddingSize;
-            setInt(strPoolData, 16, this.stylesOffset);
-        }
-
-        // Revise the offsets value
-        int dataOffset = 20 + (index + 1) * 4;
-        for (int i = index + 1; i < this.stringCount; i++) {
-            this.stringOffsets[i] += deltaSize;
-            setInt(strPoolData, dataOffset, this.stringOffsets[i]);
-            dataOffset += 4;
-        }
-
-        // Revise the string content
-        byte[] newData = new byte[strPoolData.length + deltaSize + paddingSize];
-        System.arraycopy(strPoolData, 0, newData, 0, offset); // data before
-        // offset
-        System.arraycopy(newString, 0, newData, offset, newString.length); // replace
-        // data
-        // [offset,
-        // offset+length)
-        // Note: the zero padding is added after all the strings, before the
-        // style data
-        if (this.stylesOffset > 0) {
-            // Copy remain strings (note: stylesOffset is already changed)
-            int oldStylesOffset = stylesOffset - deltaSize - paddingSize;
-            int stringEndPos = oldStylesOffset - 8;
-//            Log.d("DEBUG", "stringEndPos=" + stringEndPos);
-//            Log.d("DEBUG", String.format("Copy from %d, len %d", offset + length, stringEndPos - offset - length));
-            System.arraycopy(strPoolData, offset + length, newData, offset
-                    + newString.length, stringEndPos - offset - length);
-            // Copy style data
-            int dstOffset = stringEndPos + deltaSize + paddingSize;
-//            Log.d("DEBUG", String.format("Copy from %d, len %d", stringEndPos, strPoolData.length - stringEndPos));
-            System.arraycopy(strPoolData, stringEndPos, newData, dstOffset,
-                    strPoolData.length - stringEndPos);
-        } else {
-            System.arraycopy(strPoolData, offset + length, newData, offset
-                    + newString.length, strPoolData.length - offset - length);
-        }
-
-        // Replace the data
-        this.strPoolData = newData;
-
-        this.totalDeltaSize += deltaSize + paddingSize;
-    }
-
-    /*
-     * At stringsStart are all of the UTF-16 strings concatenated together; each
-     * starts with a uint16_t of the string's length and each ends with a 0x0000
-     * terminator. If a string is > 32767 characters, the high bit of the length
-     * is set meaning to take those 15 bits as a high word and it will be
-     * followed by another uint16_t containing the low word.
-     */
-    private byte[] encodeString16(String newStr) {
-        try {
-            String codeName = "UTF-16LE";
-            byte[] data = newStr.getBytes(codeName);
-            while (data.length > 32767) {
-                newStr = newStr.substring(0, newStr.length() - 1);
-                data = newStr.getBytes(codeName);
-            }
-
-            int characters = newStr.length();
-            byte[] result = new byte[4 + data.length];
-            setShort(result, 0, characters);
-            System.arraycopy(data, 0, result, 2, data.length);
-            result[2 + data.length] = 0;
-            result[3 + data.length] = 0;
-
-            return result;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    private byte[] encodeString8(String newStr) {
-        try {
-            String codeName = "UTF-8";
-            byte[] data = newStr.getBytes(codeName);
-            while (data.length >= 128) {
-                newStr = newStr.substring(0, newStr.length() - 1);
-                data = newStr.getBytes(codeName);
-            }
-
-            int characters = newStr.length();
-            int utf8Length = data.length;
-            byte[] result = new byte[3 + utf8Length];
-            result[0] = (byte) characters;
-            result[1] = (byte) utf8Length;
-            System.arraycopy(data, 0, result, 2, utf8Length);
-            result[2 + utf8Length] = 0;
-
-            return result;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    public boolean replaceString(String oldStr, String newStr,
-                                 String oldStarts, String newStarts) {
-        boolean replaced = false;
-        for (int i = 0; i < this.stringCount; i++) {
-            if (replaceStringIfEqualOrStarts(i, oldStr, newStr, oldStarts, newStarts)) {
+            if (newValue != null && !newValue.equals(value)) {
+                values[i] = newValue;
                 replaced = true;
             }
         }
-
+        if (replaced) {
+            rebuild();
+        }
         return replaced;
     }
 
-    public int getDeltaSize() {
-        return this.totalDeltaSize;
+    private void rebuild() throws IOException {
+        byte[][] encoded = new byte[stringCount][];
+        int dataSize = 0;
+        for (int i = 0; i < stringCount; i++) {
+            encoded[i] = isUTF8 ? encodeUtf8(values[i]) : encodeUtf16(values[i]);
+            dataSize += encoded[i].length;
+        }
+        int headerSize = 28 + stringCount * 4 + styleCount * 4;
+        int padding = (4 - ((headerSize + dataSize) % 4)) % 4;
+        int newStylesOffset = styleCount > 0 ? headerSize + dataSize + padding : 0;
+        int newChunkSize = headerSize + dataSize + padding + styleData.length;
+        byte[] newData = new byte[newChunkSize - 8];
+        putInt(newData, 0, stringCount);
+        putInt(newData, 4, styleCount);
+        putInt(newData, 8, isUTF8 ? 0x100 : 0);
+        putInt(newData, 12, headerSize);
+        putInt(newData, 16, newStylesOffset);
+        Map<ByteBuffer, Integer> sharedOffsets = new HashMap<>();
+        int cursor = headerSize - 8;
+        int offsetArrayPos = 20;
+        for (int i = 0; i < stringCount; i++) {
+            ByteBuffer key = ByteBuffer.wrap(encoded[i]);
+            Integer shared = sharedOffsets.get(key);
+            int stringOffset;
+            if (shared != null) {
+                stringOffset = shared;
+            } else {
+                stringOffset = cursor - (headerSize - 8);
+                sharedOffsets.put(key, stringOffset);
+                System.arraycopy(encoded[i], 0, newData, cursor, encoded[i].length);
+                cursor += encoded[i].length;
+            }
+            putInt(newData, offsetArrayPos, stringOffset);
+            offsetArrayPos += 4;
+        }
+        // Style offsets array is preserved verbatim between string offsets and string data.
+        int styleArraySrc = 20 + stringCount * 4;
+        int styleArrayDst = styleArraySrc;
+        if (styleCount > 0) {
+            System.arraycopy(strPoolData, styleArraySrc, newData, styleArrayDst, styleCount * 4);
+            System.arraycopy(styleData, 0, newData, newStylesOffset - 8, styleData.length);
+        }
+        strPoolHeader.setChunkSize(newChunkSize);
+        strPoolData = newData;
+        totalDeltaSize = newChunkSize - originalChunkSize;
     }
 
-    // Save all the contents of the string pool
+    private static byte[] encodeUtf8(String value) throws IOException {
+        byte[] utf8 = value.getBytes(StandardCharsets.UTF_8);
+        int utf16Length = value.codePointCount(0, value.length());
+        if (utf16Length > 0x7fff || utf8.length > 0x7fff) {
+            throw new IOException("resources.arsc string is too long: " + utf16Length);
+        }
+        byte[] len1 = lengthBytes(utf16Length);
+        byte[] len2 = lengthBytes(utf8.length);
+        byte[] result = new byte[len1.length + len2.length + utf8.length + 1];
+        System.arraycopy(len1, 0, result, 0, len1.length);
+        System.arraycopy(len2, 0, result, len1.length, len2.length);
+        System.arraycopy(utf8, 0, result, len1.length + len2.length, utf8.length);
+        return result;
+    }
+
+    private static byte[] lengthBytes(int value) {
+        if (value < 0x80) {
+            return new byte[]{(byte) value};
+        }
+        return new byte[]{(byte) ((value >> 8) | 0x80), (byte) (value & 0xff)};
+    }
+
+    private static byte[] encodeUtf16(String value) throws IOException {
+        byte[] utf16 = value.getBytes(StandardCharsets.UTF_16LE);
+        int characters = utf16.length / 2;
+        if (characters > 0x7fff) {
+            throw new IOException("resources.arsc UTF-16 string is too long: " + characters);
+        }
+        byte[] result = new byte[2 + utf16.length + 2];
+        result[0] = (byte) (characters & 0xff);
+        result[1] = (byte) ((characters >> 8) & 0xff);
+        System.arraycopy(utf16, 0, result, 2, utf16.length);
+        return result;
+    }
+
+    public int getDeltaSize() {
+        return totalDeltaSize;
+    }
+
     public void writeTo(OutputStream output) throws IOException {
         strPoolHeader.writeTo(output);
         output.write(strPoolData);
+    }
+
+    private static int getInt(byte[] buffer, int offset) {
+        return (buffer[offset] & 0xff) | ((buffer[offset + 1] & 0xff) << 8)
+                | ((buffer[offset + 2] & 0xff) << 16) | ((buffer[offset + 3] & 0xff) << 24);
+    }
+
+    private static void putInt(byte[] buffer, int offset, int value) {
+        buffer[offset] = (byte) value;
+        buffer[offset + 1] = (byte) (value >> 8);
+        buffer[offset + 2] = (byte) (value >> 16);
+        buffer[offset + 3] = (byte) (value >> 24);
     }
 }

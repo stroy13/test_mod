@@ -8,6 +8,7 @@ import com.gmail.heagoo.common.IOUtils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -49,34 +50,35 @@ public class DexStringEditor {
     // Buffer for the class data section
     private List<PatchBuffer> patchBuffers = new ArrayList<>();
 
-    public DexStringEditor(String zipFilePath) {
+    public DexStringEditor(String zipFilePath) throws IOException {
         this(zipFilePath, "classes.dex");
     }
 
-    public DexStringEditor(String zipFilePath, String targetDex) {
-        ZipFile zfile = null;
-        BufferedInputStream is = null;
-        try {
-            zfile = new ZipFile(zipFilePath);
+    public DexStringEditor(String zipFilePath, String targetDex) throws IOException {
+        try (ZipFile zfile = new ZipFile(zipFilePath)) {
             ZipEntry ze = zfile.getEntry(targetDex);
-
-            int dexFileSize = (int) ze.getSize();
-            this.dexBuf = new byte[dexFileSize];
-
-            is = new BufferedInputStream(zfile.getInputStream(ze));
-            int totalLen = 0;
-            while (totalLen < dexFileSize) {
-                int readLen = is.read(dexBuf, totalLen, dexFileSize - totalLen);
-                totalLen += readLen;
+            if (ze == null) {
+                throw new IOException("DEX entry not found: " + targetDex);
             }
-
-            // Create parser
+            long size = ze.getSize();
+            if (size < 0 || size > Integer.MAX_VALUE) {
+                throw new IOException("Invalid DEX size: " + size);
+            }
+            int dexFileSize = (int) size;
+            this.dexBuf = new byte[dexFileSize];
+            try (BufferedInputStream is = new BufferedInputStream(zfile.getInputStream(ze))) {
+                int totalLen = 0;
+                while (totalLen < dexFileSize) {
+                    int readLen = is.read(dexBuf, totalLen, dexFileSize - totalLen);
+                    if (readLen < 0) {
+                        throw new IOException("Truncated DEX entry: " + targetDex);
+                    }
+                    totalLen += readLen;
+                }
+            }
             parser = new DexParser(dexBuf);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            IOUtils.closeQuietly(is);
-            IOUtils.closeQuietly(zfile);
+        } catch (MyException e) {
+            throw new IOException("Invalid DEX header in " + targetDex + ": " + e.getMessage(), e);
         }
     }
 
@@ -358,7 +360,7 @@ public class DexStringEditor {
 
     // Refactor strings
     private boolean doRefactor(String savePath, List<DexStringItem> dexStringList,
-                               String oldName, String newName) {
+                               String oldName, String newName) throws Exception {
         String LoldName = getLFormat(oldName);
         String LarrayOld = "[" + LoldName;
         String LnewName = getLFormat(newName);
@@ -415,18 +417,10 @@ public class DexStringEditor {
             return false;
         }
 
-        if (stringOrderChanged(dexStringList, clsMatchStart, clsMatchEnd)) {
-            Log.e("DEBUG", "The string order is changed! (as the class name change)");
-        }
-        if (pkgMatchStart != -1) {
-            if (stringOrderChanged(dexStringList, pkgMatchStart, pkgMatchEnd)) {
-                Log.e("DEBUG", "The string order is changed! (as the pkg name change)");
-            }
-        }
-        if (arrayClsStart != -1) {
-            if (stringOrderChanged(dexStringList, arrayClsStart, arrayClsEnd)) {
-                Log.e("DEBUG", "The string order is changed! (as the array class name change)");
-            }
+        if (stringOrderChanged(dexStringList, clsMatchStart, clsMatchEnd)
+                || (pkgMatchStart != -1 && stringOrderChanged(dexStringList, pkgMatchStart, pkgMatchEnd))
+                || (arrayClsStart != -1 && stringOrderChanged(dexStringList, arrayClsStart, arrayClsEnd))) {
+            throw new Exception("Package rename would break DEX string ordering; refusing to write a corrupt DEX");
         }
 
         return simpleRefactor(savePath, dexStringList);
@@ -455,8 +449,7 @@ public class DexStringEditor {
                 || (afterItem != null && dexStringList.get(modifyEnd - 1).compare(afterItem) > 0));
     }
 
-    private boolean simpleRefactor(String savePath, List<DexStringItem> dexStringList) {
-        try {
+    private boolean simpleRefactor(String savePath, List<DexStringItem> dexStringList) throws Exception {
             // Find the original string data offset and length
             int originStringStart = 0;
             int originStringSize = 0;
@@ -557,10 +550,6 @@ public class DexStringEditor {
             saveToFile(buffers, savePath);
 
             return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
     //    struct DexAnnotationsDirectoryItem {
@@ -917,7 +906,7 @@ public class DexStringEditor {
             // Check if break the string order
             String curStr = (factoredName != null ? factoredName : strVal);
             if (curStr.compareTo(previousStr) <= 0) {
-                Log.e("ERROR", "Order break: " + curStr + ", " + previousStr);
+                throw new Exception("Class rename would break DEX string ordering: " + curStr);
             }
 
             // Update previous string

@@ -177,11 +177,18 @@ public class SignApk {
             throws IOException, GeneralSecurityException {
 
         try {
-            byte[] bytes = new byte[8 * 1024];
-            int read = input.read(bytes);
-            byte[] data = new byte[read];
-            System.arraycopy(bytes, 0, data, 0, read);
-            bytes = data;
+            java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+            byte[] chunk = new byte[8192];
+            int read;
+            while ((read = input.read(chunk)) >= 0) {
+                if (read > 0) {
+                    buffer.write(chunk, 0, read);
+                }
+            }
+            byte[] bytes = buffer.toByteArray();
+            if (bytes.length == 0) {
+                throw new IOException("Empty private key stream");
+            }
 
             KeySpec spec = decryptPrivateKey(bytes, input);
             if (spec == null) {
@@ -825,7 +832,7 @@ public class SignApk {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         if (args.length != 4) {
             System.err.println("Usage: signapk "
                     + "publickey.x509[.pem] privatekey.pk8 "
@@ -843,7 +850,7 @@ public class SignApk {
     public static void signAPK(InputStream publicKeyInput,
                                InputStream privateKeyInput, String inputApkPath,
                                String outputApkPath, Map<String, String> jarPath2FilePath,
-                               int level) {
+                               int level) throws IOException, GeneralSecurityException {
         signAPK(publicKeyInput, privateKeyInput, inputApkPath, outputApkPath,
                 jarPath2FilePath, null, level);
     }
@@ -851,7 +858,7 @@ public class SignApk {
     public static void signAPK(InputStream publicKeyInput,
                                InputStream privateKeyInput, String inputApkPath,
                                String outputApkPath, Map<String, String> jarPath2FilePath,
-                               int level, boolean encrypted) {
+                               int level, boolean encrypted) throws IOException, GeneralSecurityException {
         // Play tricks
         if (encrypted) {
             InputStream privateInput = new PrivateKeyTransformer(
@@ -864,7 +871,8 @@ public class SignApk {
     public static void signAPK(InputStream publicKeyInput,
                                InputStream privateKeyInput, String inputApkPath,
                                String outputApkPath, Map<String, String> jarPath2FilePath,
-                               Map<String, String> addedAssetFiles, int level) {
+                               Map<String, String> addedAssetFiles, int level)
+            throws IOException, GeneralSecurityException {
 
         JarFile inputJar = null;
         JarOutputStream outputJar = null;
@@ -920,8 +928,10 @@ public class SignApk {
             outputJar = null;
             outputStream.flush();
 
+        } catch (IOException | GeneralSecurityException e) {
+            throw e;
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IOException("APK signing failed: " + e.getMessage(), e);
         } finally {
             try {
                 if (inputJar != null)
@@ -940,7 +950,7 @@ public class SignApk {
                                InputStream privateKeyInput, String inputApkPath,
                                String outputApkPath, Map<String, String> addedFiles,
                                Set<String> deletedFiles, Map<String, String> replacedFiles,
-                               int level) {
+                               int level) throws IOException, GeneralSecurityException {
 
         JarFile inputJar = null;
         JarOutputStream outputJar = null;
@@ -996,9 +1006,10 @@ public class SignApk {
             outputJar = null;
             outputStream.flush();
 
+        } catch (IOException | GeneralSecurityException e) {
+            throw e;
         } catch (Exception e) {
-            e.printStackTrace();
-            //     Log.d("sawsem", e.toString());
+            throw new IOException("APK signing failed: " + e.getMessage(), e);
         } finally {
             try {
                 if (inputJar != null)
