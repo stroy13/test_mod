@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lab_package_hint">Например, com.example.app</string>
+    <string name="lab_package_help">Нажмите на поле, чтобы изменить идентификатор приложения. Это не видимое название приложения.</string>
+</resources>

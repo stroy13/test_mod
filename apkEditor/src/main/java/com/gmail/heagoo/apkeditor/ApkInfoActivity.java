@@ -1669,56 +1669,72 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     private void showAnalysisReport(final File root, final ProjectAnalysis.Report r, String resource) {
-        String caution;
         if (isFinishing() || isDestroyed()) {
             return;
         }
-        if (resource == null) {
-            caution = "Проверка не заменяет сборку: межфайловые зависимости и часть ресурсов могут содержать другие ошибки.\nНайдено XML: " + r.xmlFound + ", smali: " + r.smaliFound + ".\nПроверено XML: " + r.xmlChecked + ", smali: " + r.smaliChecked + "; пропущено: " + r.skipped + ".";
-            if (r.smaliFound == 0) {
-                caution = caution + "\nФайлы smali не найдены. При необходимости сначала преобразуйте DEX в smali.";
-            }
-            if (r.smaliSyntaxUnavailable) {
-                caution = caution + "\nПолная проверка синтаксиса smali недоступна в этой сборке; выполнена структурная проверка.";
-            } else if (r.smaliNotParsed > 0) {
-                caution = caution + "\nСинтаксис smali не удалось полностью проверить для файлов: " + r.smaliNotParsed + ". Выполнена только доступная структурная проверка.";
-            }
-            if (r.resourceIndexIncomplete) {
-                caution = caution + "\nИндекс ресурсов неполный: предупреждения о ссылках могут быть неточными.";
-            }
-        } else {
-            caution = "Поиск только по тексту на диске: динамические ссылки, числовые ID и нераспакованные файлы могут не обнаружиться.\nПроверено файлов: " + r.checked + ", пропущено: " + r.skipped + ".";
+        boolean search = resource != null;
+        AnalysisReportFormatter.Summary summary = AnalysisReportFormatter.summarize(r, search);
+        List<AnalysisReportFormatter.Entry> entries = AnalysisReportFormatter.entries(r, search);
+        AnalysisReportAdapter adapter = new AnalysisReportAdapter(this, summary, entries);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setTitle(search ? "Использование ресурса" : "Результат проверки")
+                .setPositiveButton("Готово", (DialogInterface.OnClickListener) null)
+                .setAdapter(adapter, (dialog, position) -> {
+                    if (position > 0 && position <= entries.size()) {
+                        showAnalysisEntry(root, entries.get(position - 1));
+                    }
+                });
+        if (!entries.isEmpty()) {
+            builder.setNeutralButton("Технические детали", (dialog, which) -> showAnalysisTechnicalDetails(r));
         }
-        if (r.truncated) {
-            caution = caution + "\nРезультаты или число файлов ограничены.";
-        }
-        String caution2 = caution + "\nНесохранённые изменения форм могут отсутствовать.";
-        String[] items = new String[r.findings.size() + 1];
-        items[0] = caution2;
-        for (int i = 0; i < r.findings.size(); i++) {
-            items[i + 1] = r.findings.get(i).toString();
-        }
-        AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle(resource == null ? "Диагностика проекта" : "Использование " + resource).setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null);
-        if (r.findings.isEmpty()) {
-            String empty = resource == null
-                    ? (r.xmlFound + r.smaliFound == 0 ? "\nПодходящих файлов для проверки не найдено." : "\nЗамечаний не найдено.")
-                    : (r.checked == 0 ? "\nПодходящих файлов для проверки не найдено." : "\nСовпадений не найдено.");
-            b.setMessage(caution2 + empty);
-        } else {
-            b.setAdapter(dialogChoiceAdapter(items), new DialogInterface.OnClickListener() {
-                @Override // android.content.DialogInterface.OnClickListener
-                public final void onClick(DialogInterface dialogInterface, int i2) {
-                    ApkInfoActivity.this.m85xa18dd12a(root, r, dialogInterface, i2);
-                }
-            });
-        }
-        b.show();
+        builder.show();
     }
 
-    void m85xa18dd12a(File root, ProjectAnalysis.Report r, DialogInterface d, int index) {
-        if (index > 0) {
-            openAnalysisFinding(root, r.findings.get(index - 1));
+    private void showAnalysisEntry(File root, AnalysisReportFormatter.Entry entry) {
+        String message = entry.explanation + "\n\nЧто делать: " + entry.action + "\n\n" + entry.location;
+        new AlertDialog.Builder(this)
+                .setTitle(entry.title)
+                .setMessage(message)
+                .setPositiveButton("Открыть файл", (dialog, which) -> openAnalysisFinding(root, entry.finding))
+                .setNeutralButton("Подробности от проверки", (dialog, which) ->
+                        new AlertDialog.Builder(this)
+                                .setTitle("Технические детали")
+                                .setMessage(AnalysisReportFormatter.technicalDetails(entry.finding))
+                                .setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null)
+                                .show())
+                .setNegativeButton("Назад", (DialogInterface.OnClickListener) null)
+                .show();
+    }
+
+    private void showAnalysisTechnicalDetails(ProjectAnalysis.Report report) {
+        StringBuilder details = new StringBuilder();
+        details.append("Проверено: ").append(report.checked)
+                .append("; XML: ").append(report.xmlChecked)
+                .append("; smali: ").append(report.smaliChecked)
+                .append("; пропущено: ").append(report.skipped).append('\n');
+        for (ProjectAnalysis.Finding finding : report.findings) {
+            if (details.length() > 0) {
+                details.append("\n\n");
+            }
+            details.append(AnalysisReportFormatter.technicalDetails(finding));
         }
+        if (report.findingsTruncated) {
+            details.append("\n\nПоказаны первые ").append(report.findings.size())
+                    .append(" замечаний из ").append(report.totalFindings).append('.');
+        }
+        String text = details.toString();
+        new AlertDialog.Builder(this)
+                .setTitle("Технические детали")
+                .setMessage(text)
+                .setPositiveButton(android.R.string.ok, (DialogInterface.OnClickListener) null)
+                .setNeutralButton("Скопировать", (dialog, which) -> {
+                    ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (clipboard != null) {
+                        clipboard.setPrimaryClip(ClipData.newPlainText("Диагностика проекта", text));
+                        Toast.makeText(this, "Скопировано", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .show();
     }
 
     private void openAnalysisFinding(File root, ProjectAnalysis.Finding finding) {

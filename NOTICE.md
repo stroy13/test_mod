@@ -1,7 +1,7 @@
 # NOTICE / attribution
 
 This repository is a **full fork** of the Android application
-**APK Editor Plus** (`ru.apkeditor.plus`, version **1.10.0.183**, versionCode **183**),
+**APK Editor Plus** (`ru.apkeditor.plus`, version **1.10.0.184**, versionCode **184**),
 maintained with its own fixes and improvements.
 
 ## Rights

@@ -98,8 +98,25 @@
                 android:id="@+id/et_pkgname"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:background="?android:attr/editTextBackground"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:clickable="true"
+                android:hint="@string/lab_package_hint"
+                android:imeOptions="actionDone"
                 android:inputType="textNoSuggestions"
+                android:singleLine="true"
+                android:textColor="?labText"
+                android:textColorHint="?labMuted"
                 android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/lab_package_help"
+                android:textColor="?labMuted"
+                android:textSize="12sp" />
 
             <LinearLayout
                 android:id="@+id/layout_rename_extra"

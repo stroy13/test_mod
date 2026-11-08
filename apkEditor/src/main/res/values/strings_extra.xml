@@ -17,4 +17,6 @@
     <string name="patch_log_copy">Copy</string>
     <string name="patch_log_last">Last log</string>
     <string name="patch_log_share">Share</string>
+    <string name="lab_package_hint">For example, com.example.app</string>
+    <string name="lab_package_help">Tap the field to change the app identifier. This is not the visible app name.</string>
 </resources>

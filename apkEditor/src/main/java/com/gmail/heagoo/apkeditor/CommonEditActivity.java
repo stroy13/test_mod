@@ -169,6 +169,7 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
             this.apkLabel.setText(this.apkInfo.label);
             this.appNameEt.setText(this.apkInfo.label);
             this.pkgNameEt.setText(this.manifestInfo.packageName);
+            this.renameExtraLayout.setVisibility(View.GONE);
             if (this.manifestInfo.verNameIdx == -1) {
                 this.verNameEt.setVisibility(8);
                 findViewById(R.id.tv_vername).setVisibility(8);
@@ -223,13 +224,23 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
         this.renameDexCb = (CheckBox) findViewById(R.id.cb_rename_dex);
         this.renameExtraLayout = findViewById(R.id.layout_rename_extra);
         this.renameMethodSpinner = (Spinner) findViewById(R.id.rename_method_spinner);
-        if (!getPackageName().endsWith("pro")) {
-            this.pkgNameEt.setEnabled(false);
-            this.renameMethodSpinner.setEnabled(false);
-            findViewById(R.id.cb_rename_resource).setEnabled(false);
-        } else {
-            this.pkgNameEt.addTextChangedListener(this);
-        }
+        // This fork ships the full editor as ru.apkeditor.plus. The old suffix check
+        // disabled package editing simply because the applicationId no longer ends in "pro".
+        boolean canRenamePackage = BuildConfig.IS_PRO;
+        this.pkgNameEt.setEnabled(canRenamePackage);
+        this.renameMethodSpinner.setEnabled(canRenamePackage);
+        this.renameResCb.setEnabled(canRenamePackage);
+        this.renameDexCb.setEnabled(canRenamePackage);
+        this.pkgNameEt.addTextChangedListener(this);
+        this.pkgNameEt.setOnFocusChangeListener((field, focused) -> {
+            if (!focused) {
+                String normalized = PackageNameValidator.normalize(this.pkgNameEt.getText().toString());
+                if (!normalized.equals(this.pkgNameEt.getText().toString())) {
+                    this.pkgNameEt.setText(normalized);
+                }
+                updatePackageError();
+            }
+        });
         this.installLocSpinner = (Spinner) findViewById(R.id.location_spinner);
         Resources res = getResources();
         String[] strLocations = {res.getString(R.string.location_0), res.getString(R.string.location_1), res.getString(R.string.location_2), res.getString(R.string.location_3)};
@@ -380,8 +391,10 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
         try {
             this.newVerCode = Integer.valueOf(strCode).intValue();
             this.newAppName = this.appNameEt.getText().toString();
-            this.newPackageName = this.pkgNameEt.getText().toString();
-            this.newPackageName = this.newPackageName.trim();
+            this.newPackageName = PackageNameValidator.normalize(this.pkgNameEt.getText().toString());
+            if (!this.newPackageName.equals(this.pkgNameEt.getText().toString())) {
+                this.pkgNameEt.setText(this.newPackageName);
+            }
             this.newVerName = this.verNameEt.getText().toString();
             int minSdkVersion = -1;
             int targetSdkVersion = -1;
@@ -480,21 +493,18 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
         }
     }
 
+    private void updatePackageError() {
+        String original = this.manifestInfo == null ? null : this.manifestInfo.packageName;
+        this.pkgNameEt.setError(PackageNameValidator.validationError(this.pkgNameEt.getText().toString(), original));
+    }
+
     private boolean checkPackageName() {
-        if (this.newPackageName.equals("")) {
-            Toast.makeText((Context) this, (CharSequence) "Invalid Package Name", 0).show();
+        updatePackageError();
+        String error = PackageNameValidator.validationError(this.newPackageName,
+                this.manifestInfo == null ? null : this.manifestInfo.packageName);
+        if (error != null) {
+            this.pkgNameEt.requestFocus();
             return false;
-        }
-        if (this.newPackageName.length() >= 128) {
-            Toast.makeText((Context) this, (CharSequence) "Package name is too long", 0).show();
-            return false;
-        }
-        for (int i = 0; i < this.newPackageName.length(); i++) {
-            int v = this.newPackageName.charAt(i);
-            if (v > 127) {
-                Toast.makeText((Context) this, (CharSequence) "Invalid Package Name", 0).show();
-                return false;
-            }
         }
         return true;
     }
@@ -576,11 +586,14 @@ public class CommonEditActivity extends CustomizedLangActivity implements View.O
 
     @Override
     public void afterTextChanged(Editable s) {
-        String newPkgName = s.toString();
+        String newPkgName = PackageNameValidator.normalize(s.toString());
         if (this.manifestInfo != null && newPkgName.equals(this.manifestInfo.packageName)) {
-            this.renameExtraLayout.setVisibility(8);
+            this.renameExtraLayout.setVisibility(View.GONE);
         } else {
-            this.renameExtraLayout.setVisibility(0);
+            this.renameExtraLayout.setVisibility(View.VISIBLE);
+        }
+        if (this.pkgNameEt.hasFocus()) {
+            updatePackageError();
         }
     }
 

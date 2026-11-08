@@ -66,15 +66,43 @@ public final class ProjectAnalysis {
         void update(String stage, int done, int total, String path);
     }
 
+    public enum FindingKind {
+        ERROR,
+        WARNING,
+        NOT_CHECKED,
+        MATCH;
+
+        static FindingKind forMessage(String message) {
+            if (message == null) {
+                return ERROR;
+            }
+            if (message.startsWith("Возможно отсутствует ресурс")) {
+                return WARNING;
+            }
+            if (message.startsWith("Файл пропущен") || message.startsWith("XML не проверен")
+                    || message.startsWith("Не удалось прочитать") || message.startsWith("Не удалось проверить XML")
+                    || message.startsWith("Не удалось проверить smali")) {
+                return NOT_CHECKED;
+            }
+            return ERROR;
+        }
+    }
+
     public static final class Finding {
         public final int line;
         public final String message;
         public final String path;
+        public final FindingKind kind;
 
         Finding(String path, int line, String message) {
+            this(path, line, message, FindingKind.forMessage(message));
+        }
+
+        Finding(String path, int line, String message, FindingKind kind) {
             this.path = path;
             this.line = line;
             this.message = message;
+            this.kind = kind == null ? FindingKind.forMessage(message) : kind;
         }
 
         @Override
@@ -84,7 +112,8 @@ public final class ProjectAnalysis {
     }
 
     private static final Comparator<Finding> FINDING_ORDER = Comparator
-            .comparing((Finding finding) -> finding.path)
+            .comparingInt((Finding finding) -> finding.kind.ordinal())
+            .thenComparing(finding -> finding.path)
             .thenComparingInt(finding -> finding.line)
             .thenComparing(finding -> finding.message);
 
@@ -99,10 +128,36 @@ public final class ProjectAnalysis {
         public int smaliNotParsed;
         public boolean smaliSyntaxUnavailable;
         public boolean truncated;
+        public boolean fileLimitReached;
+        public boolean findingsTruncated;
+        public int totalFindings;
+        public int errors;
+        public int warnings;
+        public int notChecked;
+        public int matches;
         public int xmlChecked;
 
         synchronized void add(String path, int line, String message) {
-            Finding finding = new Finding(path, line, message);
+            add(path, line, message, FindingKind.forMessage(message));
+        }
+
+        synchronized void add(String path, int line, String message, FindingKind kind) {
+            Finding finding = new Finding(path, line, message, kind);
+            this.totalFindings++;
+            switch (finding.kind) {
+                case ERROR:
+                    this.errors++;
+                    break;
+                case WARNING:
+                    this.warnings++;
+                    break;
+                case NOT_CHECKED:
+                    this.notChecked++;
+                    break;
+                case MATCH:
+                    this.matches++;
+                    break;
+            }
             int index = Collections.binarySearch(this.findings, finding, FINDING_ORDER);
             if (index < 0) {
                 index = -index - 1;
@@ -110,6 +165,7 @@ public final class ProjectAnalysis {
             if (this.findings.size() < MAX_FINDINGS) {
                 this.findings.add(index, finding);
             } else {
+                this.findingsTruncated = true;
                 this.truncated = true;
                 if (FINDING_ORDER.compare(finding, this.findings.get(this.findings.size() - 1)) < 0) {
                     this.findings.remove(this.findings.size() - 1);
@@ -189,6 +245,7 @@ public final class ProjectAnalysis {
                     subdirs.add(file);
                 } else if (file.isFile()) {
                     if (out.size() >= MAX_FILES) {
+                        report.fileLimitReached = true;
                         report.truncated = true;
                         return out;
                     }
@@ -257,7 +314,8 @@ public final class ProjectAnalysis {
                         }
                         if (pattern.matcher(line).find()) {
                             String trimmed = line.trim();
-                            report.add(path, number, trimmed.length() > 300 ? trimmed.substring(0, 300) + "…" : trimmed);
+                            report.add(path, number, trimmed.length() > 300 ? trimmed.substring(0, 300) + "…" : trimmed,
+                                    FindingKind.MATCH);
                         }
                     }
                     read = true;
@@ -335,7 +393,7 @@ public final class ProjectAnalysis {
                     definitions.add(type + "/" + name.substring(0, dot));
                 }
             }
-            if (path.toLowerCase(Locale.ROOT).endsWith(".xml")) {
+            if (path.toLowerCase(Locale.ROOT).endsWith(".xml") && checksResourceReferences(path)) {
                 if (!textAllowed(file)) {
                     report.resourceIndexIncomplete = true;
                 } else {
@@ -431,26 +489,47 @@ public final class ProjectAnalysis {
             return false;
         }
         cancel(cancelled);
-        try (BufferedReader lines = new BufferedReader(new StringReader(text))) {
-            String line;
-            int number = 0;
-            while ((line = lines.readLine()) != null) {
-                number++;
-                if (number % CANCEL_CHECK_LINES == 1) {
-                    cancel(cancelled);
-                }
-                Matcher references = RESOURCE_REFERENCE.matcher(line);
-                while (references.find()) {
-                    String key = references.group(1) + "/" + references.group(2);
-                    if (!definitions.contains(key)) {
-                        report.add(path, number, "Возможно отсутствует ресурс @" + key + " (проверка приблизительная)");
+        // Only compiled Android resource XML resolves @type/name references. Files in res/raw
+        // (for example Firebase shrinker keep rules) and assets are arbitrary payloads: an @string
+        // there is not a missing Android resource and must not be reported as one.
+        if (checksResourceReferences(path)) {
+            try (BufferedReader lines = new BufferedReader(new StringReader(text))) {
+                String line;
+                int number = 0;
+                while ((line = lines.readLine()) != null) {
+                    number++;
+                    if (number % CANCEL_CHECK_LINES == 1) {
+                        cancel(cancelled);
+                    }
+                    Matcher references = RESOURCE_REFERENCE.matcher(line);
+                    while (references.find()) {
+                        String key = references.group(1) + "/" + references.group(2);
+                        if (!definitions.contains(key)) {
+                            report.add(path, number, "Возможно отсутствует ресурс @" + key + " (проверка приблизительная)",
+                                    FindingKind.WARNING);
+                        }
                     }
                 }
+            } catch (IOException error) {
+                report.add(path, 0, "Не удалось прочитать XML: " + error.getMessage(), FindingKind.NOT_CHECKED);
             }
-        } catch (IOException error) {
-            report.add(path, 0, "Не удалось прочитать XML: " + error.getMessage());
         }
         return true;
+    }
+
+    static boolean checksResourceReferences(String path) {
+        if (path.equals("AndroidManifest.xml")) {
+            return true;
+        }
+        if (!path.startsWith("res/")) {
+            return false;
+        }
+        int slash = path.indexOf('/', 4);
+        if (slash < 0) {
+            return false;
+        }
+        String directory = path.substring(4, slash);
+        return !directory.equals("raw") && !directory.startsWith("raw-");
     }
 
     private static boolean isEndMethod(String trimmed) {
