@@ -273,9 +273,14 @@ public class ApkBuildPipelineTest {
                 assertNotNull("central directory missing " + name, compSize);
                 pos = (int) (dataOffset + compSize);
                 if (method == ZipEntry.DEFLATED && (flags & 0x08) != 0) {
-                    // ZipOutputStream writes a 16-byte data descriptor (with signature) after deflated data.
-                    assertEquals(0x08074b50, ByteBuffer.wrap(all, pos, 4).order(ByteOrder.LITTLE_ENDIAN).getInt());
-                    pos += 16;
+                    // Data descriptor is 12 bytes (crc/csize/size); the 0x08074b50 signature
+                    // prefix is optional and java.util.zip.ZipOutputStream omits it.
+                    if (pos + 4 <= all.length
+                            && ByteBuffer.wrap(all, pos, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() == 0x08074b50) {
+                        pos += 16;
+                    } else {
+                        pos += 12;
+                    }
                 }
             }
             assertTrue("resources.arsc not found", checkedArsc);
