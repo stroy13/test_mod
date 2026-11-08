@@ -33,6 +33,7 @@ public class CommonEditPackageFieldTest {
         String activity = read(root().resolve("apkEditor/src/main/java/com/gmail/heagoo/apkeditor/CommonEditActivity.java"));
         String gradle = read(root().resolve("apkEditorPro/build.gradle"));
         assertTrue(gradle.contains("applicationId \"ru.apkeditor.plus\""));
+        assertTrue(activity.contains("import com.gmail.heagoo.apkeditor.base.BuildConfig;"));
         assertTrue(activity.contains("boolean canRenamePackage = BuildConfig.IS_PRO;"));
         assertTrue(activity.contains("this.pkgNameEt.setEnabled(canRenamePackage);"));
         assertFalse(activity.contains("getPackageName().endsWith(\"pro\")"));

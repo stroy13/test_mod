@@ -27,6 +27,7 @@ import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.gmail.heagoo.apkeditor.FileSelectDialog;
+import com.gmail.heagoo.apkeditor.base.BuildConfig;
 import com.gmail.heagoo.apkeditor.base.R;
 import com.gmail.heagoo.apkeditor.ce.ApkParser;
 import com.gmail.heagoo.apkeditor.ce.DexDecode;
