@@ -266,7 +266,7 @@ public final class ApkBuildPipeline {
                       Map<String, String> replaces, Map<String, String> added,
                       Set<String> deleted, SigningOptions options,
                       Progress report, Cancellation cancel, Logger logger) throws IOException {
-        Logger out = logger == null ? NO_LOG : logger;
+        Logger logSink = logger == null ? NO_LOG : logger;
         replaces = safeMap(replaces);
         added = safeMap(added);
         deleted = deleted == null ? Collections.emptySet() : deleted;
@@ -284,7 +284,7 @@ public final class ApkBuildPipeline {
                     throw new IOException("Duplicate ZIP entry: " + name);
                 }
                 if (deleted.contains(name) || isOldSignature(name)) {
-                    log(out, "skip " + name + (deleted.contains(name) ? " (deleted)" : " (old signature)"));
+                    log(logSink, "skip " + name + (deleted.contains(name) ? " (deleted)" : " (old signature)"));
                     continue;
                 }
                 entries.add(entry);
@@ -296,7 +296,7 @@ public final class ApkBuildPipeline {
                 }
                 totalBytes += new File(added.get(name)).length();
             }
-            log(out, "Merge entries: " + entries.size() + ", added: " + added.size()
+            log(logSink, "Merge entries: " + entries.size() + ", added: " + added.size()
                     + ", uncompressed total: " + totalBytes + " bytes");
             CountingOutputStream counting = new CountingOutputStream(
                     new BufferedOutputStream(new FileOutputStream(output), BUFFER_SIZE));
@@ -315,7 +315,7 @@ public final class ApkBuildPipeline {
                     if (replacementFile != null) {
                         validateReplacement(name, replacementFile, out);
                     }
-                    log(out, "merge " + name + ": sourceMethod="
+                    log(logSink, "merge " + name + ": sourceMethod="
                             + (entry.getMethod() == ZipEntry.STORED ? "STORED" : "DEFLATED")
                             + ", size=" + size
                             + (replacementFile != null ? ", replacement=" + replacementFile : ""));
@@ -333,7 +333,7 @@ public final class ApkBuildPipeline {
                     checkCancelled(cancel);
                     File file = new File(entry.getValue());
                     validateReplacement(entry.getKey(), file, out);
-                    log(out, "add " + entry.getKey() + ": size=" + file.length());
+                    log(logSink, "add " + entry.getKey() + ": size=" + file.length());
                     try (InputStream input = new BufferedInputStream(new FileInputStream(file), BUFFER_SIZE)) {
                         writeEntry(out, counting, entry.getKey(), input, file.length(), null, file, buffer,
                                 options.targetSdkVersion);
