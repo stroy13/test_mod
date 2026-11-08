@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -21,7 +22,6 @@ import org.antlr.runtime.Token;
 import org.antlr.runtime.TokenSource;
 import org.antlr.runtime.tree.CommonTreeNodeStream;
 
-/* loaded from: /tmp/apkx/classes26.dex */
 public final class SmaliCheck {
 
     private static final class InterruptibleReader extends FilterReader {
@@ -56,69 +56,67 @@ public final class SmaliCheck {
         checkInterruptedAtEntry();
         final List<String> errors = new ArrayList<>();
         File file = new File(path);
-        try {
-            Reader reader = new InterruptibleReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
-            try {
-                final smaliFlexLexer lexer = new smaliFlexLexer(reader, api);
-                lexer.setSourceFile(file);
-                TokenSource cancellableTokens = new TokenSource() {
-                    public String getSourceName() {
-                        return lexer.getSourceName();
-                    }
+        try (Reader reader = new InterruptibleReader(
+                new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+            final smaliFlexLexer lexer = new smaliFlexLexer(reader, api);
+            lexer.setSourceFile(file);
+            TokenSource cancellableTokens = new TokenSource() {
+                @Override
+                public String getSourceName() {
+                    return lexer.getSourceName();
+                }
 
-                    public Token nextToken() {
-                        SmaliCheck.checkInterrupted();
-                        Token t = lexer.nextToken();
-                        SmaliCheck.checkInterrupted();
-                        return t;
-                    }
-                };
-                CommonTokenStream tokens = new CommonTokenStream(cancellableTokens);
-                smaliParser parser = new smaliParser(tokens) {
-                    public void displayRecognitionError(String[] names, RecognitionException e) {
-                        errors.add(e.line + ":" + getErrorMessage(e, names));
-                    }
-                };
-                parser.setApiLevel(api);
-                parser.setAllowOdex(false);
-                parser.setVerboseErrors(false);
-                smaliParser.smali_file_return parsed = parser.smali_file();
-                if (lexer.getNumberOfSyntaxErrors() > 0) {
-                    errors.add("0:Лексических ошибок smali: " + lexer.getNumberOfSyntaxErrors());
+                @Override
+                public Token nextToken() {
+                    SmaliCheck.checkInterrupted();
+                    Token token = lexer.nextToken();
+                    SmaliCheck.checkInterrupted();
+                    return token;
                 }
-                if (parser.getNumberOfSyntaxErrors() > 0 || lexer.getNumberOfSyntaxErrors() > 0) {
-                    if (errors.isEmpty()) {
-                        errors.add("0:Ошибка синтаксиса smali");
-                    }
-                    String[] strArr = (String[]) errors.toArray(new String[0]);
-                    reader.close();
-                    return strArr;
+            };
+            CommonTokenStream tokens = new CommonTokenStream(cancellableTokens);
+            smaliParser parser = new smaliParser(tokens) {
+                @Override
+                public void displayRecognitionError(String[] names, RecognitionException error) {
+                    errors.add(error.line + ":" + getErrorMessage(error, names));
                 }
-                CommonTreeNodeStream tree = new CommonTreeNodeStream(parsed.getTree()) {
-                    public Object nextElement() {
-                        SmaliCheck.checkInterrupted();
-                        return super.nextElement();
-                    }
-                };
-                tree.setTokenStream(tokens);
-                smaliTreeWalker walker = new smaliTreeWalker(tree) {
-                    public void displayRecognitionError(String[] names, RecognitionException e) {
-                        errors.add(e.line + ":" + getErrorMessage(e, names));
-                    }
-                };
-                walker.setApiLevel(api);
-                walker.setVerboseErrors(false);
-                walker.setDexBuilder(new DexBuilder(Opcodes.forApi(api)));
-                walker.smali_file();
-                if (walker.getNumberOfSyntaxErrors() > 0 && errors.isEmpty()) {
-                    errors.add("0:Ошибка сборки smali");
-                }
-                checkInterrupted();
-                String[] strArr2 = (String[]) errors.toArray(new String[0]);
-                reader.close();
-                return strArr2;
-            } finally {
+            };
+            parser.setApiLevel(api);
+            parser.setAllowOdex(false);
+            parser.setVerboseErrors(false);
+            smaliParser.smali_file_return parsed = parser.smali_file();
+            if (lexer.getNumberOfSyntaxErrors() > 0) {
+                errors.add("0:Лексических ошибок smali: " + lexer.getNumberOfSyntaxErrors());
             }
+            if (parser.getNumberOfSyntaxErrors() > 0 || lexer.getNumberOfSyntaxErrors() > 0) {
+                if (errors.isEmpty()) {
+                    errors.add("0:Ошибка синтаксиса smali");
+                }
+                return errors.toArray(new String[0]);
+            }
+            CommonTreeNodeStream tree = new CommonTreeNodeStream(parsed.getTree()) {
+                @Override
+                public Object nextElement() {
+                    SmaliCheck.checkInterrupted();
+                    return super.nextElement();
+                }
+            };
+            tree.setTokenStream(tokens);
+            smaliTreeWalker walker = new smaliTreeWalker(tree) {
+                @Override
+                public void displayRecognitionError(String[] names, RecognitionException error) {
+                    errors.add(error.line + ":" + getErrorMessage(error, names));
+                }
+            };
+            walker.setApiLevel(api);
+            walker.setVerboseErrors(false);
+            walker.setDexBuilder(new DexBuilder(Opcodes.forApi(api)));
+            walker.smali_file();
+            if (walker.getNumberOfSyntaxErrors() > 0 && errors.isEmpty()) {
+                errors.add("0:Ошибка сборки smali");
+            }
+            checkInterrupted();
+            return errors.toArray(new String[0]);
         } catch (CancellationException cancelled) {
             InterruptedIOException stop = new InterruptedIOException("Smali check cancelled");
             stop.initCause(cancelled);
