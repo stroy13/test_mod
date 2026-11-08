@@ -203,7 +203,8 @@ public class ProjectAnalysisTest {
                 + "    <item type=\"string\" name=\"typed_name\">Typed</item>\n"
                 + "    <public type=\"id\" name=\"public_id\" id=\"0x7f010000\"/>\n"
                 + "</resources>\n");
-        write("res/layout/main.xml", "<TextView android:text=\"@string/typed_name\" android:id=\"@id/public_id\"/>\n");
+        write("res/layout/main.xml", "<TextView xmlns:android=\"http://schemas.android.com/apk/res/android\" "
+                + "android:text=\"@string/typed_name\" android:id=\"@id/public_id\"/>\n");
 
         ProjectAnalysis.Report report = ProjectAnalysis.diagnose(temporary.getRoot());
 
