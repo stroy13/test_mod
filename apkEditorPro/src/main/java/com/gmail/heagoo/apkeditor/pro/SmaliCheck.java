@@ -128,10 +128,10 @@ public final class SmaliCheck {
             }
             checkInterrupted(stop);
             return errors.toArray(new String[0]);
-        } catch (CancellationException cancelled) {
-            InterruptedIOException stop = new InterruptedIOException("Smali check cancelled");
-            stop.initCause(cancelled);
-            throw stop;
+        } catch (CancellationException cancelledSignal) {
+            InterruptedIOException stopSignal = new InterruptedIOException("Smali check cancelled");
+            stopSignal.initCause(cancelledSignal);
+            throw stopSignal;
         }
     }
 
