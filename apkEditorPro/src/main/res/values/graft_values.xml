@@ -79,4 +79,15 @@
 <string name="sign_schemes_title">APK signature schemes</string>
 <string name="tool_manager_summary">Choose versions, sources and update checks</string>
 <string name="tool_manager_title">Tools and versions</string>
+
+    <string name="cancel">Cancel</string>
+    <string name="build_stage_prepare">Preparing changes…</string>
+    <string name="build_stage_merge">Assembling APK</string>
+    <string name="build_stage_sign">Signing APK (v1/v2/v3)</string>
+    <string name="build_stage_verify">Verifying APK and signature</string>
+    <string name="build_stage_publish">Saving result</string>
+    <string name="build_indeterminate">Working…</string>
+    <string name="build_percent">%1$d%%</string>
+    <string name="build_elapsed">Elapsed %1$02d:%2$02d</string>
+    <string name="build_cancelling">Cancelling after the current file…</string>
 </resources>

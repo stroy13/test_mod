@@ -130,7 +130,7 @@
         <activity android:exported="false" android:name="com.gmail.heagoo.apkeditor.ApkInfoExActivity" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize"/>
         <activity android:name="com.gmail.heagoo.apkeditor.se.SimpleEditActivity"/>
         <activity android:name="com.gmail.heagoo.apkeditor.CommonEditActivity"/>
-        <activity android:name="com.gmail.heagoo.apkeditor.se.ApkCreateActivity"/>
+        <activity android:configChanges="keyboardHidden|orientation|screenSize" android:name="com.gmail.heagoo.apkeditor.se.ApkCreateActivity"/>
         <activity android:name="com.gmail.heagoo.imageviewlib.ViewZipImageActivity"/>
         <activity android:launchMode="singleTask" android:name="com.gmail.heagoo.apkeditor.ApkComposeActivity" android:screenOrientation="portrait"/>
         <activity android:name="com.gmail.heagoo.apkeditor.FileListActivity"/>

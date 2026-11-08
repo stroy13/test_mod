@@ -33,8 +33,16 @@ public class ResStringChunk {
     private List<Integer> addedStrPositions = new ArrayList<>();
 
     public static byte[] getLEB128(int val) {
-        // b11111111111111
-        if (val > 0x3fff) {
+        if (val < 0) {
+            throw new IllegalArgumentException("Negative LEB128 value: " + val);
+        }
+        if (val > 0x1fffff) {
+            byte b1 = (byte) ((val & 0x7f) | 0x80);
+            byte b2 = (byte) ((val >> 7) & 0x7f | 0x80);
+            byte b3 = (byte) ((val >> 14) & 0x7f | 0x80);
+            byte b4 = (byte) (val >> 21);
+            return new byte[]{b1, b2, b3, b4};
+        } else if (val > 0x3fff) {
             byte b1 = (byte) ((val & 0x7f) | 0x80);
             byte b2 = (byte) ((val >> 7) & 0x7f | 0x80);
             byte b3 = (byte) (val >> 14);
@@ -49,23 +57,16 @@ public class ResStringChunk {
     }
 
     public static final int[] getUtf8(byte[] array, int offset) {
-        int val = array[offset];
+        int val = array[offset] & 0xff;
+        offset += (val & 0x80) != 0 ? 2 : 1;
+        val = array[offset] & 0xff;
         int length;
-
         if ((val & 0x80) != 0) {
+            length = ((val & 0x7f) << 8) | (array[offset + 1] & 0xff);
             offset += 2;
         } else {
+            length = val;
             offset += 1;
-        }
-        val = array[offset];
-        if ((val & 0x80) != 0) {
-            offset += 2;
-        } else {
-            offset += 1;
-        }
-        length = 0;
-        while (array[offset + length] != 0) {
-            length++;
         }
         return new int[]{offset, length};
     }
@@ -73,10 +74,10 @@ public class ResStringChunk {
     public static final int[] getUtf16(byte[] array, int offset) {
         int val = ((array[offset + 1] & 0xFF) << 8 | array[offset] & 0xFF);
 
-        if (val == 0x8000) {
-            int high = (array[offset + 3] & 0xFF) << 8;
-            int low = (array[offset + 2] & 0xFF);
-            return new int[]{4, (high + low) * 2};
+        if ((val & 0x8000) != 0) {
+            int high = val & 0x7fff;
+            int low = (array[offset + 2] & 0xff) | ((array[offset + 3] & 0xff) << 8);
+            return new int[]{4, ((high << 16) | low) * 2};
         }
         return new int[]{2, val * 2};
     }
@@ -255,7 +256,7 @@ public class ResStringChunk {
 
         try {
             byte[] coded = _str.getBytes("UTF-8");
-            int len1 = _str.length();
+            int len1 = _str.codePointCount(0, _str.length());
             int len2 = coded.length;
             byte[] data1 = getLEB128(len1);
             byte[] data2 = getLEB128(len2);

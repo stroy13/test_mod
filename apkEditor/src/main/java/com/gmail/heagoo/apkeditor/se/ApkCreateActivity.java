@@ -23,6 +23,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,6 +37,7 @@ import com.gmail.heagoo.apkeditor.ce.IApkMaking;
 import com.gmail.heagoo.apkeditor.ce.IDescriptionUpdate;
 import com.gmail.heagoo.apkeditor.ce.e.ResourceEditor;
 import com.gmail.heagoo.apkeditor.dex.DexStringEditor;
+import com.gmail.heagoo.apkeditor.util.ApkBuildPipeline;
 import com.gmail.heagoo.apkeditor.util.SignHelper;
 import com.gmail.heagoo.apklib.sign.ImageTools;
 import com.gmail.heagoo.common.ActivityUtil;
@@ -47,11 +49,13 @@ import com.gmail.heagoo.common.RefInvoke;
 import com.gmail.heagoo.common.SDCard;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +88,22 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
     private Button removeBtn;
     private Button installBtn;
     private TextView detailTv;
+    private TextView stageTv;
+    private TextView percentTv;
+    private TextView elapsedTv;
+    private ProgressBar buildProgress;
+    private Button cancelBtn;
+    private volatile boolean cancelled;
+    private final Runnable elapsedTicker = new Runnable() {
+        @Override
+        public void run() {
+            if (!modifyFinished && elapsedTv != null) {
+                long seconds = Math.max(0, (System.currentTimeMillis() - startTime) / 1000);
+                elapsedTv.setText(getString(R.string.build_elapsed, seconds / 60, seconds % 60));
+                elapsedTv.postDelayed(this, 1000);
+            }
+        }
+    };
     // Record status
     private String outApkPath;
     private String errorMessage;
@@ -188,6 +208,16 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
         this.resultImg = (ImageView) this.findViewById(R.id.result_image);
         this.resultTv = (TextView) this.findViewById(R.id.result);
         this.detailTv = (TextView) this.findViewById(R.id.tv_detail);
+        this.stageTv = (TextView) this.findViewById(R.id.tv_stage);
+        this.percentTv = (TextView) this.findViewById(R.id.tv_percent);
+        this.elapsedTv = (TextView) this.findViewById(R.id.tv_elapsed);
+        this.buildProgress = (ProgressBar) this.findViewById(R.id.progress_build);
+        this.cancelBtn = (Button) this.findViewById(R.id.button_cancel);
+        this.cancelBtn.setOnClickListener(v -> {
+            cancelled = true;
+            cancelBtn.setEnabled(false);
+            detailTv.setText(R.string.build_cancelling);
+        });
 
         this.removeBtn = (Button) this.findViewById(R.id.button_uninstall);
         this.installBtn = (Button) this.findViewById(R.id.button_reinstall);
@@ -210,6 +240,9 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
 
         if (this.modifyFinished) {
             displayResult();
+        } else {
+            startTime = System.currentTimeMillis();
+            elapsedTv.post(elapsedTicker);
         }
     }
 
@@ -289,9 +322,17 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
         for (String filePath : filePath2Entries.keySet()) {
             List<String> entryList = filePath2Entries.get(filePath);
             Bitmap bitmap = BitmapFactory.decodeFile(filePath);
+            if (bitmap == null) {
+                zfile.close();
+                throw new IOException("Cannot decode replacement image: " + filePath);
+            }
             for (String entryName : entryList) {
                 // Get the size of original resource file
                 ZipEntry entry = zfile.getEntry(entryName);
+                if (entry == null) {
+                    zfile.close();
+                    throw new IOException("Image entry not found in APK: " + entryName);
+                }
                 InputStream input = zfile.getInputStream(entry);
 
                 BitmapFactory.Options options = new BitmapFactory.Options();
@@ -401,6 +442,12 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
         installLayout.setVisibility(View.VISIBLE);
 
         this.modifyFinished = true;
+        if (elapsedTv != null) {
+            elapsedTv.removeCallbacks(elapsedTicker);
+        }
+        if (cancelBtn != null) {
+            cancelBtn.setVisibility(View.GONE);
+        }
     }
 
     private boolean isSameSignature() {
@@ -442,6 +489,12 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
         this.handler.updateDescription(strDesc);
     }
 
+    private void updateBuildProgress(String stage, int percent) {
+        if (handler != null) {
+            handler.sendMessage(handler.obtainMessage(102, percent, 0, stage));
+        }
+    }
+
     private static class CreatingThread extends Thread {
 
         WeakReference<ApkCreateActivity> activityRef;
@@ -459,20 +512,38 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
             ApkCreateActivity activity = activityRef.get();
 
             try {
+                if (activity == null || activity.cancelled) {
+                    throw new java.io.InterruptedIOException("APK build cancelled");
+                }
+                activity.updateBuildProgress("prepare", -1);
                 // Call extra preparing interface
                 if (activity.makeInterfaces != null) {
                     for (IApkMaking interf : activity.makeInterfaces) {
+                        if (activity.cancelled) {
+                            throw new java.io.InterruptedIOException("APK build cancelled");
+                        }
                         interf.prepareReplaces(activity, activity.apkPath,
-                                activity.allReplaces, activityRef.get());
+                                activity.allReplaces, activity);
                     }
                 }
 
                 // To modify the class name in DEX file
-                if (activity.clsNameReplaces != null) {
-                    String targetPath = activity.workingDir + ".dex";
-                    DexStringEditor dexEditor = new DexStringEditor(activity.apkPath);
-                    dexEditor.replaceDexString(activity.clsNameReplaces, targetPath);
-                    activity.allReplaces.put("classes.dex", targetPath);
+                if (activity.clsNameReplaces != null && !activity.clsNameReplaces.isEmpty()) {
+                    try (ZipFile zip = new ZipFile(activity.apkPath)) {
+                        Enumeration<? extends ZipEntry> entries = zip.entries();
+                        int dexIndex = 0;
+                        while (entries.hasMoreElements()) {
+                            ZipEntry entry = entries.nextElement();
+                            String name = entry.getName();
+                            if (name.equals("classes.dex") || name.matches("classes[0-9]+\\.dex")) {
+                                String targetPath = activity.workingDir + ".cls" + dexIndex + ".dex";
+                                DexStringEditor dexEditor = new DexStringEditor(activity.apkPath, name);
+                                dexEditor.replaceDexString(activity.clsNameReplaces, targetPath);
+                                activity.allReplaces.put(name, targetPath);
+                                dexIndex++;
+                            }
+                        }
+                    }
                 }
 
                 // To modify resources.arsc
@@ -511,7 +582,8 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
 
                 if (BuildConfig.WITH_SIGN) {
                     SignHelper.sign(activity, apkPath, outputApkPath,
-                            jarPath2FilePath, null, null);
+                            jarPath2FilePath, null, null,
+                            activity::updateBuildProgress, () -> activity.cancelled);
                 } else {
                     StringBuilder sb = new StringBuilder();
                     int replaceLen = 0;
@@ -552,7 +624,7 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
         }
 
         // Modify resources.arsc
-        private void modifyResourceFile() {
+        private void modifyResourceFile() throws Exception {
             ZipFile zipFile = null;
             InputStream is = null;
             try {
@@ -583,7 +655,7 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
                 activity.allReplaces.put("resources.arsc", targetPath);
 
             } catch (Exception e) {
-                e.printStackTrace();
+                throw e;
             } finally {
                 closeQuietly(is);
                 closeQuietly(zipFile);
@@ -613,6 +685,27 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
         @SuppressWarnings("unused")
         public boolean isFinished() {
             return finished;
+        }
+    }
+
+    private static String stageLabel(ApkCreateActivity activity, String stage) {
+        if (stage == null) {
+            return activity.getString(R.string.build_stage_prepare);
+        }
+        if (stage.startsWith("merge")) {
+            return activity.getString(R.string.build_stage_merge);
+        }
+        switch (stage) {
+            case "sign":
+                return activity.getString(R.string.build_stage_sign);
+            case "verify":
+                return activity.getString(R.string.build_stage_verify);
+            case "publish":
+                return activity.getString(R.string.build_stage_publish);
+            case "done":
+                return activity.getString(R.string.succeed);
+            default:
+                return activity.getString(R.string.build_stage_prepare);
         }
     }
 
@@ -655,6 +748,28 @@ public class ApkCreateActivity extends CustomizedLangActivity implements OnClick
                     // Update description
                     if (activity != null) {
                         activity.detailTv.setText(strDesc);
+                    }
+                    break;
+                case 102:
+                    if (activity != null) {
+                        String stage = (String) msg.obj;
+                        int percent = msg.arg1;
+                        if (activity.stageTv != null) {
+                            activity.stageTv.setText(stageLabel(activity, stage));
+                        }
+                        if (activity.buildProgress != null && activity.percentTv != null) {
+                            if (percent < 0) {
+                                activity.buildProgress.setIndeterminate(true);
+                                activity.percentTv.setText(R.string.build_indeterminate);
+                            } else {
+                                activity.buildProgress.setIndeterminate(false);
+                                activity.buildProgress.setProgress(percent);
+                                activity.percentTv.setText(activity.getString(R.string.build_percent, percent));
+                            }
+                        }
+                        if (activity.detailTv != null && stage != null && stage.startsWith("merge:")) {
+                            activity.detailTv.setText(stage.substring(6));
+                        }
                     }
                     break;
             }
