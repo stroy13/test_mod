@@ -44,8 +44,9 @@ public class CommonEditPackageFieldTest {
     public void bothCommonEditLayoutsKeepThePackageFieldInteractive() throws Exception {
         for (String module : new String[]{"apkEditor", "apkEditorPro"}) {
             Path layout = root().resolve(module + "/src/main/res/layout/activity_commonedit.xml");
-            Element root = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-                    .parse(layout.toFile()).getDocumentElement();
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            Element root = factory.newDocumentBuilder().parse(layout.toFile()).getDocumentElement();
             NodeList edits = root.getElementsByTagName("EditText");
             Element field = null;
             for (int i = 0; i < edits.getLength(); i++) {
