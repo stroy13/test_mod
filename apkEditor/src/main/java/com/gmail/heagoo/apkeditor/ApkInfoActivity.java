@@ -3497,6 +3497,19 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.mfListAdapter = new ManifestListAdapter(this, this.decodeRootPath + "/AndroidManifest.xml", this);
         this.manifestList.setAdapter((ListAdapter) this.mfListAdapter);
         this.manifestList.setBackgroundColor(this.mfListAdapter.editorSurface());
+        View manifestHeader = findViewById(R.id.manifest_header);
+        if (manifestHeader != null) {
+            ManifestEditorPalette headerColors = this.mfListAdapter.editorPalette();
+            manifestHeader.setBackgroundColor(headerColors.gutter);
+            TextView headerName = (TextView) findViewById(R.id.manifest_header_name);
+            TextView headerType = (TextView) findViewById(R.id.manifest_header_type);
+            if (headerName != null) {
+                headerName.setTextColor(headerColors.text);
+            }
+            if (headerType != null) {
+                headerType.setTextColor(headerColors.gutterText);
+            }
+        }
         this.manifestList.setOnItemClickListener(this.mfListAdapter);
         this.manifestList.setOnItemLongClickListener(this.mfListAdapter);
         if (this.navigationMgr != null && this.resCurrentDir != null) {

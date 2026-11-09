@@ -19,6 +19,8 @@ import android.graphics.drawable.Drawable;
 final class ManifestRowBackground extends Drawable {
 
     private final Paint fill = new Paint();
+    private final Paint gutterPaint = new Paint();
+    private final Paint borderPaint = new Paint();
     private final Paint guide = new Paint();
     private final Paint arrow = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path triangle = new Path();
@@ -32,6 +34,8 @@ final class ManifestRowBackground extends Drawable {
     ManifestRowBackground(ManifestEditorPalette palette, float gutterWidth, float indentUnit,
                           int indent, float lineHeight, boolean collapsible, boolean collapsed) {
         this.fill.setColor(palette.surface);
+        this.gutterPaint.setColor(palette.gutter);
+        this.borderPaint.setColor(palette.gutterBorder);
         this.guide.setColor(palette.indentGuide);
         this.guide.setStrokeWidth(Math.max(1f, indentUnit / 24f));
         this.arrow.setColor(palette.arrow);
@@ -46,6 +50,15 @@ final class ManifestRowBackground extends Drawable {
     @Override
     public void draw(Canvas canvas) {
         canvas.drawRect(getBounds(), fill);
+        // The gutter is painted here, not by the number TextView: that view is
+        // only one line tall, so on a wrapped row its background stopped after
+        // the first line and the column looked like detached boxes.
+        if (leftInset > 0f) {
+            canvas.drawRect(getBounds().left, getBounds().top,
+                    getBounds().left + leftInset, getBounds().bottom, gutterPaint);
+            canvas.drawRect(getBounds().left + leftInset - 1f, getBounds().top,
+                    getBounds().left + leftInset, getBounds().bottom, borderPaint);
+        }
         if (unit <= 0f) {
             return;
         }
@@ -78,6 +91,8 @@ final class ManifestRowBackground extends Drawable {
     @Override
     public void setAlpha(int alpha) {
         fill.setAlpha(alpha);
+        gutterPaint.setAlpha(alpha);
+        borderPaint.setAlpha(alpha);
         guide.setAlpha(alpha);
         arrow.setAlpha(alpha);
         invalidateSelf();
@@ -86,6 +101,8 @@ final class ManifestRowBackground extends Drawable {
     @Override
     public void setColorFilter(ColorFilter colorFilter) {
         fill.setColorFilter(colorFilter);
+        gutterPaint.setColorFilter(colorFilter);
+        borderPaint.setColorFilter(colorFilter);
         guide.setColorFilter(colorFilter);
         arrow.setColorFilter(colorFilter);
         invalidateSelf();

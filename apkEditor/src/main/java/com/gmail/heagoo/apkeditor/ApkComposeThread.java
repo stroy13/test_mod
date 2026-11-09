@@ -285,113 +285,126 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
 
     @Override // java.lang.Thread, java.lang.Runnable
     public void run() {
-        System.currentTimeMillis();
-        boolean rebuildResNeeded = isResourceModified();
-        this.stepInfo.stepTotal = this.bSignApk ? 2 : 1;
-        if (rebuildResNeeded) {
-            this.stepInfo.stepTotal += 2;
-        }
-        if (this.modifiedSmaliFolders != null && !this.modifiedSmaliFolders.isEmpty()) {
-            this.stepInfo.stepTotal += this.modifiedSmaliFolders.size();
-        }
-        if (rebuildResNeeded) {
-            if (this.stopFlag) {
-                this.errMessage = "User request to stop";
-            } else {
+        try {
+            boolean rebuildResNeeded = isResourceModified();
+            this.stepInfo.stepTotal = this.bSignApk ? 2 : 1;
+            if (rebuildResNeeded) {
+                this.stepInfo.stepTotal += 2;
+            }
+            if (this.modifiedSmaliFolders != null && !this.modifiedSmaliFolders.isEmpty()) {
+                this.stepInfo.stepTotal += this.modifiedSmaliFolders.size();
+            }
+
+            if (rebuildResNeeded) {
+                if (isStopped()) {
+                    return;
+                }
                 setNextStep(this.ctx.getString(R.string.compose));
-                if (prepare()) {
-                    if (this.stopFlag) {
-                        this.errMessage = "User request to stop";
-                    }
-                }
-            }
-            if (!this.stopFlag) {
-                if (this.succeed) {
-                    this.taskCallback.taskSucceed();
+                if (!prepare() || !composeResource()) {
                     return;
-                } else {
-                    this.taskCallback.taskFailed(this.errMessage);
+                }
+                if (isStopped()) {
                     return;
                 }
             }
-            return;
-        }
-        if (this.modifiedSmaliFolders != null && !this.modifiedSmaliFolders.isEmpty()) {
-            boolean assembleError = false;
-            Iterator<String> it = this.modifiedSmaliFolders.iterator();
-            while (true) {
-                if (!it.hasNext()) {
-                    break;
-                }
-                String smaliFolder = it.next();
-                String smaliPath = this.decodedFilePath + "/" + smaliFolder;
-                String dexName = getDexNameBySmaliFolder(smaliFolder);
-                setNextStep(this.ctx.getString(R.string.assemble_dex_file) + ": " + dexName);
-                try {
-                    assembleSmali(smaliPath, dexName);
-                    if (this.stopFlag) {
-                        this.errMessage = "User request to stop";
-                        assembleError = true;
-                        break;
+
+            if (this.modifiedSmaliFolders != null && !this.modifiedSmaliFolders.isEmpty()) {
+                for (String smaliFolder : this.modifiedSmaliFolders) {
+                    if (isStopped()) {
+                        return;
                     }
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    this.errMessage = e.getMessage();
-                    assembleError = true;
+                    String smaliPath = this.decodedFilePath + "/" + smaliFolder;
+                    String dexName = getDexNameBySmaliFolder(smaliFolder);
+                    setNextStep(this.ctx.getString(R.string.assemble_dex_file) + ": " + dexName);
+                    try {
+                        assembleSmali(smaliPath, dexName);
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                        this.errMessage = this.ctx.getString(R.string.assemble_dex_file)
+                                + ": " + describe(e);
+                        return;
+                    }
+                    if (isStopped()) {
+                        return;
+                    }
                 }
             }
-        }
-        if (rebuildResNeeded) {
-            if (this.stopFlag) {
-                this.errMessage = "User request to stop";
-            } else {
+
+            if (rebuildResNeeded) {
+                if (isStopped()) {
+                    return;
+                }
                 setNextStep(this.ctx.getString(R.string.merge));
-                try {
-                    System.currentTimeMillis();
-                    mergeApk();
-                    removeResChanges();
-                } catch (Exception e2) {
-                    e2.printStackTrace();
-                    this.errMessage = this.ctx.getString(R.string.merge) + ": " + e2.getMessage();
-                }
-            }
-            if (!this.stopFlag) {
-            }
-        } else {
-            translate2OriginEntry();
-        }
-        if (this.bSignApk) {
-            if (this.stopFlag) {
-                this.errMessage = "User request to stop";
+                mergeApk();
+                removeResChanges();
             } else {
+                translate2OriginEntry();
+            }
+            if (isStopped()) {
+                return;
+            }
+            if (this.bSignApk) {
                 setNextStep(this.ctx.getString(R.string.sign));
-            }
-            if (!this.stopFlag) {
-            }
-        } else {
-            try {
-            } catch (Exception e3) {
-                this.errMessage = this.ctx.getString(R.string.merge) + ": " + e3.getMessage();
-            }
-            try {
-                if (!notSignApk()) {
-                    this.errMessage = this.ctx.getString(R.string.merge);
-                    if (!this.stopFlag) {
-                    }
+                if (!signApk()) {
+                    return;
                 }
-            } catch (Exception e4) {
-                this.errMessage = this.ctx.getString(R.string.merge) + ": " + e4.getMessage();
+            } else if (!notSignApk()) {
+                this.errMessage = this.ctx.getString(R.string.merge);
+                return;
             }
-        }
-        if (this.stopFlag) {
-            this.errMessage = "User request to stop";
-        } else {
+            if (isStopped()) {
+                return;
+            }
             setNextStep(this.ctx.getString(R.string.cleanup));
             cleanup();
             this.succeed = true;
+        } catch (Throwable t) {
+            t.printStackTrace();
+            this.succeed = false;
+            this.errMessage = describe(t);
+        } finally {
+            finishTask();
         }
+    }
+
+    /** True when the user asked to stop; records the reason for the dialog. */
+    private boolean isStopped() {
         if (!this.stopFlag) {
+            return false;
         }
+        this.errMessage = "User request to stop";
+        return true;
+    }
+
+    /**
+     * Reports the outcome exactly once. The decompiled method ended in an empty
+     * {@code if (!stopFlag) {}} block, so the build screen never left its first
+     * step. See the matching comment in ApkComposeThreadNew.
+     */
+    private void finishTask() {
+        ITaskCallback callback = this.taskCallback;
+        if (callback == null) {
+            return;
+        }
+        if (this.succeed) {
+            callback.taskSucceed();
+            return;
+        }
+        String message = this.errMessage;
+        if (message == null || message.trim().length() == 0) {
+            message = this.ctx.getString(R.string.lab_build_no_reason);
+        }
+        callback.taskFailed(message);
+    }
+
+    /** getMessage() is null for many runtime exceptions; never report a bare null. */
+    private static String describe(Throwable t) {
+        if (t == null) {
+            return "unknown error";
+        }
+        String message = t.getMessage();
+        return message == null || message.length() == 0
+                ? t.getClass().getSimpleName() : t.getClass().getSimpleName() + ": " + message;
     }
 
     private void translate2OriginEntry() {

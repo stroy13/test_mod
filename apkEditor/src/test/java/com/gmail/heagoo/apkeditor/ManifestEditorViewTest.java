@@ -117,6 +117,45 @@ public class ManifestEditorViewTest {
                 countOccurrences(src, "new StyleSpan(Typeface.ITALIC)"));
     }
 
+    @Test
+    public void manifestIsSplitIntoNumberedAttributeLines() throws Exception {
+        String src = read("apkEditor/src/main/java/com/gmail/heagoo/apkeditor/ManifestListAdapter.java");
+        assertTrue("the adapter must run the pretty printer",
+                src.contains("ManifestPrettyPrinter.format(source.toString())"));
+        assertTrue(src.contains("rec.owner = line.owner;"));
+        assertTrue(src.contains("rec.nonElement = line.nonElement;"));
+        assertTrue("saving must restore indentation", src.contains("private String buildContent()"));
+        assertTrue("long-press on an attribute must act on the whole element",
+                src.contains("lineRec = this.allXmlLines.get(lineRec.owner);"));
+        assertTrue("comments must not open a section", src.contains("if (lr.nonElement) {"));
+    }
+
+    @Test
+    public void headerBarExistsInEveryApkInfoLayout() throws Exception {
+        String[] layouts = {
+                "apkEditor/src/main/res/layout/activity_apkinfo.xml",
+                "apkEditor/src/main/res/layout-land/activity_apkinfo.xml",
+                "apkEditorPlus/src/main/res/layout/activity_apkinfo.xml",
+                "apkEditorPlus/src/main/res/layout-land/activity_apkinfo.xml"
+        };
+        for (String layout : layouts) {
+            String xml = read(layout);
+            assertTrue(layout + ": missing header", xml.contains("/manifest_header\""));
+            assertTrue(layout + ": missing file name", xml.contains("/manifest_header_name\""));
+            assertTrue(layout + ": missing type badge", xml.contains("/manifest_header_type\""));
+        }
+    }
+
+    @Test
+    public void gutterIsPaintedByTheRowBackground() throws Exception {
+        String src = read("apkEditor/src/main/java/com/gmail/heagoo/apkeditor/ManifestRowBackground.java");
+        assertTrue("the gutter must cover the whole row, not just the first line",
+                src.contains("gutterPaint"));
+        String adapter = read("apkEditor/src/main/java/com/gmail/heagoo/apkeditor/ManifestListAdapter.java");
+        assertFalse("a per-view gutter background stops after one line",
+                adapter.contains("viewHolder.lineNumber.setBackgroundColor"));
+    }
+
     private static int countOccurrences(String haystack, String needle) {
         int n = 0;
         int i = haystack.indexOf(needle);

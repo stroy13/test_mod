@@ -72,102 +72,133 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
 
     @Override // java.lang.Thread, java.lang.Runnable
     public void run() {
-        System.currentTimeMillis();
         File buildDir = new File(this.decodedFilePath + "/build");
         if (!buildDir.exists()) {
             buildDir.mkdir();
         }
-        boolean rebuildResource = needRebuildResource();
-        checkSmaliModification();
-        this.stepInfo.stepTotal = 0;
-        if (rebuildResource) {
+        try {
+            boolean rebuildResource = needRebuildResource();
+            checkSmaliModification();
+            this.stepInfo.stepTotal = 0;
+            if (rebuildResource) {
+                this.stepInfo.stepTotal++;
+            }
             this.stepInfo.stepTotal++;
-        }
-        this.stepInfo.stepTotal++;
-        if (this.modifiedSmaliFolders != null && !this.modifiedSmaliFolders.isEmpty()) {
-            this.stepInfo.stepTotal += this.modifiedSmaliFolders.size();
-        }
-        if (this.bSignApk) {
+            if (this.modifiedSmaliFolders != null && !this.modifiedSmaliFolders.isEmpty()) {
+                this.stepInfo.stepTotal += this.modifiedSmaliFolders.size();
+            }
+            if (this.bSignApk) {
+                this.stepInfo.stepTotal++;
+            }
             this.stepInfo.stepTotal++;
-        }
-        this.stepInfo.stepTotal++;
-        if (rebuildResource) {
-            if (this.stopFlag) {
-                this.errMessage = "User request to stop";
-            } else {
+
+            if (rebuildResource) {
+                if (isStopped()) {
+                    return;
+                }
                 setNextStep(this.ctx.getString(R.string.compose));
-                if (prepare()) {
-                    if (this.stopFlag) {
-                        this.errMessage = "User request to stop";
+                if (!prepare() || !composeResource()) {
+                    return;
+                }
+                if (isStopped()) {
+                    return;
+                }
+            }
+
+            this.builtDexFiles.clear();
+            if (this.modifiedSmaliFolders != null && !this.modifiedSmaliFolders.isEmpty()) {
+                for (String smaliFolder : this.modifiedSmaliFolders) {
+                    if (isStopped()) {
+                        return;
+                    }
+                    String smaliPath = this.decodedFilePath + "/" + smaliFolder;
+                    String dexName = getDexNameBySmaliFolder(smaliFolder);
+                    setNextStep(this.ctx.getString(R.string.assemble_dex_file) + ": " + dexName);
+                    try {
+                        assembleSmali(smaliPath, dexName);
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                        this.errMessage = this.ctx.getString(R.string.assemble_dex_file)
+                                + ": " + describe(e);
+                        return;
+                    }
+                    if (isStopped()) {
+                        return;
                     }
                 }
             }
-            if (this.stopFlag) {
-                if (this.succeed) {
-                    this.taskCallback.taskSucceed();
+
+            if (isStopped()) {
+                return;
+            }
+            setNextStep(this.ctx.getString(R.string.merge));
+            mergeApk();
+            if (isStopped()) {
+                return;
+            }
+            if (this.bSignApk) {
+                setNextStep(this.ctx.getString(R.string.sign));
+                if (!signApk()) {
                     return;
-                } else {
-                    this.taskCallback.taskFailed(this.errMessage);
+                }
+                if (isStopped()) {
                     return;
                 }
             }
+            setNextStep(this.ctx.getString(R.string.cleanup));
+            cleanup();
+            this.succeed = true;
+        } catch (Throwable t) {
+            t.printStackTrace();
+            this.succeed = false;
+            this.errMessage = describe(t);
+        } finally {
+            finishTask();
+        }
+    }
+
+    /** True when the user asked to stop; records the reason for the dialog. */
+    private boolean isStopped() {
+        if (!this.stopFlag) {
+            return false;
+        }
+        this.errMessage = "User request to stop";
+        return true;
+    }
+
+    /**
+     * Reports the outcome exactly once.
+     *
+     * <p>The decompiled method ended in an empty {@code if (!stopFlag) {}} block:
+     * the completion callback had been lost, so the build screen sat on
+     * "Step 1/6" forever even though the worker had already returned. Running
+     * this from {@code finally} means every exit path -- success, failure, stop,
+     * or an unexpected throw -- releases the UI.
+     */
+    private void finishTask() {
+        ITaskCallback callback = this.taskCallback;
+        if (callback == null) {
             return;
         }
-        this.builtDexFiles.clear();
-        if (this.modifiedSmaliFolders != null && !this.modifiedSmaliFolders.isEmpty()) {
-            boolean assembleError = false;
-            Iterator<String> it = this.modifiedSmaliFolders.iterator();
-            while (true) {
-                if (!it.hasNext()) {
-                    break;
-                }
-                String smaliFolder = it.next();
-                String smaliPath = this.decodedFilePath + "/" + smaliFolder;
-                String dexName = getDexNameBySmaliFolder(smaliFolder);
-                setNextStep(this.ctx.getString(R.string.assemble_dex_file) + ": " + dexName);
-                try {
-                    assembleSmali(smaliPath, dexName);
-                    if (this.stopFlag) {
-                        this.errMessage = "User request to stop";
-                        assembleError = true;
-                        break;
-                    }
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    this.errMessage = e.getMessage();
-                    assembleError = true;
-                }
-            }
+        if (this.succeed) {
+            callback.taskSucceed();
+            return;
         }
-        boolean assembleError2 = this.stopFlag;
-        if (assembleError2) {
-            this.errMessage = "User request to stop";
-        } else {
-            setNextStep(this.ctx.getString(R.string.merge));
-            try {
-                System.currentTimeMillis();
-                mergeApk();
-                if (this.bSignApk) {
-                    if (this.stopFlag) {
-                        this.errMessage = "User request to stop";
-                    } else {
-                        setNextStep(this.ctx.getString(R.string.sign));
-                    }
-                }
-                if (this.stopFlag) {
-                    this.errMessage = "User request to stop";
-                } else {
-                    setNextStep(this.ctx.getString(R.string.cleanup));
-                    cleanup();
-                    this.succeed = true;
-                }
-            } catch (Exception e2) {
-                e2.printStackTrace();
-                this.errMessage = this.ctx.getString(R.string.merge) + ": " + e2.getMessage();
-            }
+        String message = this.errMessage;
+        if (message == null || message.trim().length() == 0) {
+            message = this.ctx.getString(R.string.lab_build_no_reason);
         }
-        if (this.stopFlag) {
+        callback.taskFailed(message);
+    }
+
+    /** getMessage() is null for many runtime exceptions; never report a bare null. */
+    private static String describe(Throwable t) {
+        if (t == null) {
+            return "unknown error";
         }
+        String message = t.getMessage();
+        return message == null || message.length() == 0
+                ? t.getClass().getSimpleName() : t.getClass().getSimpleName() + ": " + message;
     }
 
     private long getLastModifyTime(File file) {

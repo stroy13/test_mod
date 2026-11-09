@@ -27,6 +27,12 @@ public interface IPatchContext {
 
     public void info(String format, boolean bBold, Object... args);
 
+    /**
+     * A structured per-file entry (see PatchLogFormat). Separate from info() so
+     * the log can colour the name, the count and the directory differently.
+     */
+    void fileEntry(String text);
+
     public void error(int resourceId, Object... args);
 
     public void patchFinished();

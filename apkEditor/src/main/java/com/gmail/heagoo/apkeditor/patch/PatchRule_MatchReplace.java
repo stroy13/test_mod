@@ -118,6 +118,15 @@ class PatchRule_MatchReplace extends PatchRule {
         return null;
     }
 
+    /** Plural-aware, localised "N matches replaced". */
+    private static String replacedCount(ApkInfoActivity activity, int count) {
+        if (activity == null) {
+            return String.valueOf(count);
+        }
+        return activity.getResources().getQuantityString(
+                R.plurals.patch_matches_replaced, count, count);
+    }
+
     private void executeOnEntry(ApkInfoActivity activity, ZipFile patchZip,
                                 IPatchContext patchCtx, String targetFile, Pattern pattern) {
         boolean modified = false;
@@ -160,9 +169,8 @@ class PatchRule_MatchReplace extends PatchRule {
                 try {
                     writeReplaces(filepath, content, sections);
                     modified = true;
-                    String message = patchCtx.getString(R.string.patch_info_num_replaced);
-                    message = targetFile + ": " + String.format(message, sections.size());
-                    patchCtx.info(message, false);
+                    patchCtx.fileEntry(PatchLogFormat.replacedFile(targetFile,
+                            replacedCount(activity, sections.size())));
                 } catch (IOException e) {
                     patchCtx.error(R.string.patch_error_write_to, targetFile);
                 }
@@ -196,8 +204,8 @@ class PatchRule_MatchReplace extends PatchRule {
                 try {
                     writeReplaces(filepath, lines, matchedIndexes);
                     modified = true;
-                    patchCtx.info(R.string.patch_info_num_replaced, false,
-                            matchedIndexes.size());
+                    patchCtx.fileEntry(PatchLogFormat.replacedFile(targetFile,
+                            replacedCount(activity, matchedIndexes.size())));
                 } catch (IOException e) {
                     patchCtx.error(R.string.patch_error_write_to, targetFile);
                 }

@@ -10,6 +10,10 @@ class LineRecord {
     int lineIndex;
     int sectionEnd;
     int sectionStart;
+    /** Start-tag line this attribute belongs to, or -1 for a line of its own. */
+    int owner = -1;
+    /** Comment / declaration / text: never opens or closes a section. */
+    boolean nonElement;
     private String tag;
     List<ManifestSyntax.Span> syntax = Collections.emptyList();
     boolean collapsed = false;

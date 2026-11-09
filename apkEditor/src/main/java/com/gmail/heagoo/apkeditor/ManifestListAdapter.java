@@ -76,24 +76,69 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
     }
 
     private void initData() {
+        StringBuilder source = new StringBuilder();
+        BufferedReader br = null;
         try {
-            BufferedReader br = new BufferedReader(new FileReader(this.xmlPath));
-            int index = 0;
-            while (true) {
-                String data = br.readLine();
-                if (data == null) {
-                    break;
-                }
-                LineRecord rec = new LineRecord(index, data, hanging);
-                this.allXmlLines.add(rec);
-                this.xmlLines.add(rec);
-                index++;
+            br = new BufferedReader(new FileReader(this.xmlPath));
+            String data;
+            while ((data = br.readLine()) != null) {
+                source.append(data).append('\n');
             }
-            br.close();
         } catch (Exception e) {
+            // fall through with whatever was read
+        } finally {
+            closeQuietly(br);
+        }
+        // The decoder puts a tag and all its attributes on one physical line.
+        // Split them so every attribute gets its own number, as in MT Manager.
+        List<ManifestPrettyPrinter.Line> lines = ManifestPrettyPrinter.format(source.toString());
+        if (lines.isEmpty() && source.length() > 0) {
+            // Never show an empty editor if the printer could not make sense of
+            // the file: fall back to the raw physical lines.
+            for (String raw : source.toString().split("\n")) {
+                lines.add(new ManifestPrettyPrinter.Line(raw, 0, -1));
+            }
+        }
+        int index = 0;
+        for (ManifestPrettyPrinter.Line line : lines) {
+            LineRecord rec = new LineRecord(index, line.text, hanging);
+            rec.indent = line.indent;
+            rec.owner = line.owner;
+            rec.nonElement = line.nonElement;
+            this.allXmlLines.add(rec);
+            this.xmlLines.add(rec);
+            index++;
         }
         initXmlLines();
         refreshSyntax();
+    }
+
+    private static void closeQuietly(BufferedReader reader) {
+        if (reader != null) {
+            try {
+                reader.close();
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    /**
+     * Rebuilds the file text. Indentation is restored here: {@link LineRecord}
+     * strips it for display, and the old code wrote the stripped text back, so
+     * any edit flattened the whole manifest to column zero.
+     */
+    private String buildContent() {
+        StringBuilder sb = new StringBuilder();
+        for (LineRecord rec : this.allXmlLines) {
+            if (rec.deleted) {
+                continue;
+            }
+            for (int i = 0; i < rec.indent; i++) {
+                sb.append("    ");
+            }
+            sb.append(rec.lineData).append('\n');
+        }
+        return sb.toString();
     }
 
     private void initXmlLines() {
@@ -101,14 +146,55 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
             Stack<LineRecord> stack = new Stack<>();
             for (int i = 0; i < this.xmlLines.size(); i++) {
                 LineRecord lr = this.xmlLines.get(i);
-                if (lr.indent > 0) {
+                if (lr.nonElement) {
+                    // A comment or the XML declaration is not an element. The
+                    // old text-only checks pushed multi-line comments onto the
+                    // section stack, which later threw EmptyStackException and
+                    // flattened every indent in the file.
+                    lr.sectionStart = lr.lineIndex;
+                    lr.sectionEnd = lr.lineIndex;
+                    continue;
+                }
+                if (lr.owner >= 0) {
+                    // An attribute line is not an element: it must never be
+                    // pushed as a section, or the stack desynchronises and every
+                    // indent gets reset by the EmptyStackException handler.
+                    LineRecord owner = this.allXmlLines.get(lr.owner);
+                    lr.sectionStart = owner.lineIndex;
+                    lr.sectionEnd = owner.lineIndex;
                     if (lr.lineData.endsWith("/>")) {
-                        lr.sectionStart = lr.lineIndex;
-                        lr.sectionEnd = lr.lineIndex;
-                    } else if (lr.lineData.startsWith("</")) {
+                        if (!stack.isEmpty() && stack.peek() == owner) {
+                            stack.pop();
+                        }
+                        owner.sectionStart = owner.lineIndex;
+                        owner.sectionEnd = lr.lineIndex;
+                    }
+                    continue;
+                }
+                if (lr.lineData.startsWith("<") && !lr.lineData.startsWith("</")
+                        && lr.lineData.indexOf('>') < 0) {
+                    // Start tag whose attributes follow on their own lines; the
+                    // closing '>' arrives later, so just open the section.
+                    lr.sectionStart = lr.lineIndex;
+                    lr.sectionEnd = lr.lineIndex;
+                    stack.push(lr);
+                    continue;
+                }
+                // End tags must be handled at any indent: </manifest> sits at
+                // column zero, and the old `indent > 0` guard skipped it, leaving
+                // the root element permanently on the stack.
+                if (lr.lineData.startsWith("</")) {
+                    if (!stack.isEmpty()) {
                         LineRecord startLine = stack.pop();
                         startLine.sectionEnd = lr.lineIndex;
                         lr.sectionStart = startLine.lineIndex;
+                        lr.sectionEnd = lr.lineIndex;
+                    }
+                    continue;
+                }
+                if (lr.indent > 0) {
+                    if (lr.lineData.endsWith("/>")) {
+                        lr.sectionStart = lr.lineIndex;
                         lr.sectionEnd = lr.lineIndex;
                     } else {
                         lr.sectionStart = lr.lineIndex;
@@ -171,7 +257,6 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
         int gutter = gutterWidth(viewHolder.lineNumber);
         if (viewHolder.lineNumber != null) {
             viewHolder.lineNumber.setWidth(gutter);
-            viewHolder.lineNumber.setBackgroundColor(colors.gutter);
             viewHolder.lineNumber.setTextColor(colors.gutterText);
             viewHolder.lineNumber.setText(String.valueOf(rec.lineIndex + 1));
         }
@@ -206,6 +291,11 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
     /** Writing surface colour, so the list background matches the rows. */
     int editorSurface() {
         return palette(this.activityRef.get(), null).surface;
+    }
+
+    /** Palette of the code view, for the header bar above the list. */
+    ManifestEditorPalette editorPalette() {
+        return palette(this.activityRef.get(), null);
     }
 
     /** Monospace, dense rows -- the code view reads like MT Manager's editor. */
@@ -370,24 +460,21 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
         }
         int startLine = lineRec.sectionStart;
         int endLine = lineRec.sectionEnd;
-        StringBuilder contentBuffer = new StringBuilder();
+        String content;
         synchronized (this.xmlLines) {
             for (int i = 0; i < this.allXmlLines.size(); i++) {
                 LineRecord rec = this.allXmlLines.get(i);
                 if (rec.lineIndex >= startLine && rec.lineIndex <= endLine) {
                     rec.deleted = true;
                 }
-                if (!rec.deleted) {
-                    contentBuffer.append(rec.lineData);
-                    contentBuffer.append('\n');
-                }
             }
+            content = buildContent();
             updateDisplayLineData();
             refreshSyntax();
         }
         notifyDataSetChanged();
         if (this.callback != null) {
-            this.callback.manifestChanged(contentBuffer.toString());
+            this.callback.manifestChanged(content);
             return null;
         }
         return null;
@@ -431,17 +518,14 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
             showPromoteDialog(this.activityRef.get());
             return;
         }
-        StringBuilder contentBuffer = new StringBuilder();
+        String content;
         synchronized (this) {
             for (LineRecord rec : this.allXmlLines) {
                 if (rec.lineIndex == lineIndex) {
                     rec.lineData = newLine;
                 }
-                if (!rec.deleted) {
-                    contentBuffer.append(rec.lineData);
-                    contentBuffer.append('\n');
-                }
             }
+            content = buildContent();
             Iterator<LineRecord> it = this.xmlLines.iterator();
             while (true) {
                 if (!it.hasNext()) {
@@ -459,7 +543,7 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
         }
         notifyDataSetChanged();
         if (this.callback != null) {
-            this.callback.manifestChanged(contentBuffer.toString());
+            this.callback.manifestChanged(content);
         }
     }
 
@@ -500,6 +584,12 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
         try {
             lineRec = this.xmlLines.get(position);
         } catch (Exception e) {
+        }
+        if (lineRec != null && lineRec.owner >= 0) {
+            // Long-pressing an attribute must offer the whole element, otherwise
+            // "delete section" would remove only the tag line and orphan its
+            // attributes.
+            lineRec = this.allXmlLines.get(lineRec.owner);
         }
         ManifestLongClickDlg dlg = new ManifestLongClickDlg(this.activityRef.get(), this.xmlPath, lineRec, this);
         dlg.show();

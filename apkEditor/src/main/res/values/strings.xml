@@ -292,6 +292,13 @@
     <string name="patch_start_apply" formatted="false">Apply patch rule at line %d &#8230;</string>
     <string name="all_rules_applied">All rules applied.</string>
     <string name="patch_examples_copied" formatted="false">Patch examples copied to %s</string>
+    <plurals name="patch_matches_replaced">
+        <item quantity="one">%d match replaced</item>
+        <item quantity="other">%d matches replaced</item>
+    </plurals>
+    <string name="patch_error_no_rule">GOTO target rule \'%s\' does not exist. Stopping.</string>
+    <string name="patch_error_goto_loop">The patch jumps between rules in a loop. Stopping.</string>
+    <string name="patch_error_rule_failed">Rule failed: %s</string>
     <string name="patch_error_no_entry" formatted="false">Cannot find \'%s\' inside the patch.</string>
     <string name="patch_error_cannot_parse" formatted="false">Cannot parse line %d: %s</string>
     <string name="patch_error_unknown_rule" formatted="false">Unsupported rule at line %d: %s</string>
@@ -659,4 +666,7 @@ Note: this is the original historical text; this edition does support signing."<
     
     <string name="smali_notice_intro">smali/baksmali is third-party software. Its original licence follows below.</string>
     
+    <string name="manifest_file_name">AndroidManifest.xml</string>
+    <string name="manifest_file_type">AXML</string>
+    <string name="lab_build_no_reason">The build failed but did not report a reason. See the build log.</string>
 </resources>
