@@ -25,6 +25,8 @@ public final class PatchLogPalette {
     public static final int FILE_ENTRY = 4;
     /** Phase notices such as "Parsing patch.txt" or "Decoding DEX". */
     public static final int PHASE = 5;
+    /** A MATCH_ASSIGN result, e.g. {@code LABEL_1="com.example"}. */
+    public static final int ASSIGN = 6;
 
     public final int text;
     public final int rule;
@@ -35,10 +37,11 @@ public final class PatchLogPalette {
     public final int count;
     public final int directory;
     public final int bullet;
+    public final int assign;
     public final boolean dark;
 
     private PatchLogPalette(boolean dark, int text, int rule, int phase, int error, int done,
-                            int fileName, int count, int directory, int bullet) {
+                            int fileName, int count, int directory, int bullet, int assign) {
         this.dark = dark;
         this.text = text;
         this.rule = rule;
@@ -49,32 +52,35 @@ public final class PatchLogPalette {
         this.count = count;
         this.directory = directory;
         this.bullet = bullet;
+        this.assign = assign;
     }
 
     public static PatchLogPalette dark() {
         return new PatchLogPalette(true,
-                0xFFD6DEEB, // text
-                0xFFC792EA, // rule     -- violet
-                0xFFFFCB6B, // phase    -- amber
-                0xFFFF8793, // error    -- red
-                0xFF7CE1A7, // done     -- green
-                0xFF82E9FF, // fileName -- cyan
-                0xFF9EDE7B, // count    -- light green
-                0xFF8A99AD, // directory-- muted slate
-                0xFFFFCB6B); // bullet  -- amber
+                0xFFC0CAF5, // text      -- soft periwinkle, never pure white
+                0xFFBB9AF7, // rule      -- violet
+                0xFFE0AF68, // phase     -- amber
+                0xFFF7768E, // error     -- rose
+                0xFF9ECE6A, // done      -- green
+                0xFF7AA2F7, // fileName  -- blue
+                0xFF73DACA, // count     -- teal
+                0xFFA9B1D6, // directory -- muted lavender
+                0xFFE0AF68, // bullet    -- amber
+                0xFFFF9E64); // assign   -- orange
     }
 
     public static PatchLogPalette light() {
         return new PatchLogPalette(false,
-                0xFF1F2733, // text
-                0xFF7A30B0, // rule
-                0xFF8A5A00, // phase
-                0xFFB32638, // error
-                0xFF167044, // done
-                0xFF00617A, // fileName
-                0xFF2C6E1E, // count
-                0xFF5A6675, // directory
-                0xFF8A5A00); // bullet
+                0xFF24283B, // text
+                0xFF7847BD, // rule
+                0xFF8F5E15, // phase
+                0xFFC6434D, // error
+                0xFF38703D, // done
+                0xFF1F5FBF, // fileName
+                0xFF00716C, // count
+                0xFF565F89, // directory
+                0xFF8F5E15, // bullet
+                0xFF9A4F00); // assign
     }
 
     public static PatchLogPalette forDark(boolean dark) {
@@ -92,6 +98,8 @@ public final class PatchLogPalette {
                 return done;
             case PHASE:
                 return phase;
+            case ASSIGN:
+                return assign;
             default:
                 return text;
         }
@@ -108,9 +116,9 @@ public final class PatchLogPalette {
      * @param surface the resolved dialog background
      */
     public boolean isReadableOn(int surface) {
-        int[] colors = {text, rule, phase, error, done, fileName, count, directory, bullet};
+        int[] colors = {text, rule, phase, error, done, fileName, count, directory, bullet, assign};
         for (int color : colors) {
-            if (contrast(color, surface) < 3.0d) {
+            if (contrast(color, surface) < 4.5d) {
                 return false;
             }
         }

@@ -15,6 +15,7 @@ import com.gmail.heagoo.apkeditor.FileSelectDialog;
 import com.gmail.heagoo.apkeditor.base.R;
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.Locale;
 
 public class KeySelectDlgHelper implements View.OnClickListener, FileSelectDialog.IFileSelection {
     private Context context;
@@ -58,15 +59,15 @@ public class KeySelectDlgHelper implements View.OnClickListener, FileSelectDialo
     }
 
     protected void setCustomKey() {
-        String privateKeyPath = this.pk8PathEt.getText().toString();
-        String publicKeyPath = this.x509PathEt.getText().toString();
+        String privateKeyPath = this.pk8PathEt.getText().toString().trim();
+        String publicKeyPath = this.x509PathEt.getText().toString().trim();
         if ("".equals(privateKeyPath) || "".equals(publicKeyPath)) {
             Toast.makeText(this.context, R.string.error_filepath_empty, 1).show();
             return;
         }
         File f1 = new File(publicKeyPath);
         File f2 = new File(privateKeyPath);
-        if (!f1.exists() || !f2.exists()) {
+        if (!f1.isFile() || !f2.isFile()) {
             Toast.makeText(this.context, R.string.error_filepath_notexist, 1).show();
             return;
         }
@@ -75,7 +76,10 @@ public class KeySelectDlgHelper implements View.OnClickListener, FileSelectDialo
         editor.putString(SettingActivity.STR_PRIVATEKEYPATH, privateKeyPath);
         editor.putString(SettingActivity.STR_PUBLICKEYPATH, publicKeyPath);
         editor.commit();
-        this.preferenceRef.get().setCustomValue();
+        KeyListPreference preference = this.preferenceRef.get();
+        if (preference != null) {
+            preference.setCustomValue();
+        }
     }
 
     @Override
@@ -84,7 +88,7 @@ public class KeySelectDlgHelper implements View.OnClickListener, FileSelectDialo
         if (id == R.id.btn_select_pk8) {
             new FileSelectDialog(this.context, this, ".pk8", ".pk8", this.context.getString(R.string.select_key_file)).show();
         } else if (id == R.id.btn_select_x509) {
-            new FileSelectDialog(this.context, this, ".x509.pem", ".pem", this.context.getString(R.string.select_key_file)).show();
+            new FileSelectDialog(this.context, this, ".x509.pem", ".x509.pem", this.context.getString(R.string.select_key_file)).show();
         }
     }
 
@@ -99,7 +103,8 @@ public class KeySelectDlgHelper implements View.OnClickListener, FileSelectDialo
 
     @Override
     public boolean isInterestedFile(String filename, String extraStr) {
-        return filename.endsWith(".pk8") || filename.endsWith(extraStr);
+        return filename != null && extraStr != null
+                && filename.toLowerCase(Locale.ROOT).endsWith(extraStr.toLowerCase(Locale.ROOT));
     }
 
     @Override

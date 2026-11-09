@@ -261,7 +261,15 @@ public class ApkComposeService extends Service implements ITaskCallback {
     }
 
     public void taskWarning(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            return;
+        }
         ITaskCallback ob;
+        synchronized (this.composeResult) {
+            if (!this.composeResult.warnings.contains(message)) {
+                this.composeResult.warnings.add(message);
+            }
+        }
         if (this.observer != null && (ob = this.observer.get()) != null) {
             ob.taskWarning(message);
         }
@@ -311,6 +319,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
     public class ComposeResult {
         public ITaskCallback.TaskStepInfo curStep;
         public String failMessage;
+        public final ArrayList<String> warnings = new ArrayList<>();
         public boolean ret;
         public boolean started = false;
         public boolean finished = false;
@@ -318,11 +327,12 @@ public class ApkComposeService extends Service implements ITaskCallback {
         public ComposeResult() {
         }
 
-        public void clear() {
+        public synchronized void clear() {
             this.started = false;
             this.finished = false;
             this.failMessage = null;
             this.curStep = null;
+            this.warnings.clear();
         }
     }
 
@@ -344,6 +354,17 @@ public class ApkComposeService extends Service implements ITaskCallback {
                 } else if (ApkComposeService.this.composeResult.curStep != null) {
                     _observer.setTaskStepInfo(ApkComposeService.this.composeResult.curStep);
                 }
+                // A warning is not a transient toast: replay it when the screen
+                // is recreated or the user returns from the background.
+                for (String warning : new ArrayList<>(ApkComposeService.this.composeResult.warnings)) {
+                    _observer.taskWarning(warning);
+                }
+            }
+        }
+
+        public void clearWarnings() {
+            synchronized (ApkComposeService.this.composeResult) {
+                ApkComposeService.this.composeResult.warnings.clear();
             }
         }
 

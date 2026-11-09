@@ -128,7 +128,7 @@ class PatchRule_MatchAssign extends PatchRule {
                     String valueBeforeAssign = strAssign.substring(position + 1);
                     String assignedVal = getRealValue(valueBeforeAssign, groupStrs);
                     patchCtx.setVariableValue(name, assignedVal);
-                    patchCtx.info("%s=\"%s\"", false, name, assignedVal);
+                    patchCtx.assignment(name, assignedVal);
                 }
             }
 

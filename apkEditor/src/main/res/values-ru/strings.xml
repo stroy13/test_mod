@@ -503,7 +503,7 @@ APK Editor предназначен для пользователей Android, �
     
     <string name="lab_early_save_failed">Не удалось сохранить временные правки; восстановление после поворота может быть ограничено.</string>
     
-    <string name="lab_key_custom_desc">Выберите хранилище и имя ключа</string>
+    <string name="lab_key_custom_desc">Выберите личный ключ (.pk8) и сертификат (.x509.pem)</string>
     
     <string name="lab_key_editor_desc">Другой сертификат. Приложения, подписанные ранее, могут не обновиться.</string>
     
@@ -603,4 +603,9 @@ APK Editor предназначен для пользователей Android, �
     <string name="lab_build_no_reason">Сборка завершилась с ошибкой, но причина не сообщена. Смотрите журнал сборки.</string>
     <string name="aapt2_fallback_types">AAPT2 не умеет собирать типы ресурсов %1$s — их переименовал обфускатор. Сборка продолжена прежним AAPT, который их принимает.</string>
     <string name="aapt2_fallback_generic">AAPT2 отверг неизвестный ему тип ресурса. Сборка продолжена прежним AAPT, который принимает любые имена типов.</string>
+    <string name="build_warning_title">Предупреждение сборки</string>
+    <string name="build_warning_copy">Копировать</string>
+    <string name="build_warning_dismiss">Скрыть</string>
+    <string name="build_warning_copied">Предупреждение скопировано в буфер обмена.</string>
+    <string name="patch_dex_prepare_failed">Не удалось подготовить DEX-скрипт \'%1$s\': %2$s</string>
 </resources>

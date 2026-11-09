@@ -126,6 +126,7 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         ThemedDocument.load(this.webView, R.raw.about_patch);
         this.logLayout = view.findViewById(R.id.log_layout);
         this.logTv = (TextView) view.findViewById(R.id.tv_patchlog);
+        this.logTv.setTextColor(logPalette().text);
         setContentView(view);
         if (getWindow() != null) {
             getWindow().setBackgroundDrawable(new ColorDrawable(0));
@@ -313,7 +314,7 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
             this.logSaveError = null;
             this.patchRunning = true;
             this.logTv.setText("");
-            appendText(getContext().getString(R.string.patch_started_log, this.patchPath) + Document.LINE_SEPARATOR_UNIX, false, false);
+            appendStyledText(getContext().getString(R.string.patch_started_log, this.patchPath) + Document.LINE_SEPARATOR_UNIX, PatchLogPalette.PHASE);
             this.logLayout.setVisibility(0);
             this.webView.setVisibility(8);
             findViewById(R.id.btn_patch_log_last).setEnabled(false);
@@ -628,6 +629,11 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         appendStyledText(text, PatchLogPalette.FILE_ENTRY);
     }
 
+    @Override
+    public void assignment(String name, String value) {
+        appendStyledText(name + "=\"" + value + "\"" + Document.LINE_SEPARATOR_UNIX, PatchLogPalette.ASSIGN);
+    }
+
     public void error(int resourceId, Object... args) {
         this.errorCount.incrementAndGet();
         ApkInfoActivity activity = this.activityRef.get();
@@ -667,7 +673,7 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
     }
 
     private void applyLogStyle(SpannableStringBuilder text, int start, int end, int style) {
-        if (style == PatchLogPalette.PLAIN || start < 0 || end > text.length() || start >= end) {
+        if (start < 0 || end > text.length() || start >= end) {
             return;
         }
         PatchLogPalette palette = logPalette();

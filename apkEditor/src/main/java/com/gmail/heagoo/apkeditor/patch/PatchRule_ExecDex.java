@@ -4,16 +4,8 @@ import android.content.Context;
 
 import com.gmail.heagoo.apkeditor.ApkInfoActivity;
 import com.gmail.heagoo.apkeditor.base.R;
-import com.gmail.heagoo.common.IOUtils;
-import com.gmail.heagoo.common.SDCard;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -110,7 +102,10 @@ class PatchRule_ExecDex extends PatchRule {
             return null;
         }
 
-        // Internal storage where the DexClassLoader writes the optimized dex file to.
+        // Android 14+ refuses to load a writable DEX file. Stage the script in
+        // private app storage, close it, and remove the write bits before the
+        // class loader ever sees it. Shared storage cannot guarantee this.
+        final File dexDirectory = activity.getDir("patch_dex", Context.MODE_PRIVATE);
         final File optimizedDexOutputPath = activity.getDir("outdex", Context.MODE_PRIVATE);
 
         ZipEntry ze = patchZip.getEntry(scriptName);
@@ -119,30 +114,21 @@ class PatchRule_ExecDex extends PatchRule {
             return null;
         }
 
-        // Extract to sdcard
-        InputStream is = null;
-        OutputStream os = null;
-        String dexPath = null;
+        File dexFile;
         try {
-            dexPath = SDCard.makeWorkingDir(activity) + "script.dex";
-            os = new BufferedOutputStream(new FileOutputStream(dexPath));
-            is = new BufferedInputStream(patchZip.getInputStream(ze));
-            IOUtils.copy(is, os);
+            dexFile = PatchDexFile.extract(dexDirectory, patchZip.getInputStream(ze));
         } catch (Exception e) {
-            logger.error(R.string.general_error, "Cannot extract '" + scriptName + "' to SD card.");
+            logger.error(R.string.patch_dex_prepare_failed, scriptName, String.valueOf(e.getMessage()));
             return null;
-        } finally {
-            closeQuietly(is);
-            closeQuietly(os);
         }
 
-        // Initialize the class loader with the secondary dex file.
-        DexClassLoader cl = new DexClassLoader(dexPath,
-                optimizedDexOutputPath.getAbsolutePath(),
-                null,
-                activity.getClassLoader());
-
         try {
+            // Initialize the class loader only after the file is read-only.
+            DexClassLoader cl = new DexClassLoader(dexFile.getAbsolutePath(),
+                    optimizedDexOutputPath.getAbsolutePath(),
+                    null,
+                    activity.getClassLoader());
+
             // Load the library class from the class loader.
             Class<?> entryClass = cl.loadClass(mainClass);
 

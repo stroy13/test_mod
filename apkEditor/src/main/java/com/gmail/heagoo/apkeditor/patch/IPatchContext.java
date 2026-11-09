@@ -33,6 +33,9 @@ public interface IPatchContext {
      */
     void fileEntry(String text);
 
+    /** A variable produced by MATCH_ASSIGN, logged in its own colour. */
+    void assignment(String name, String value);
+
     public void error(int resourceId, Object... args);
 
     public void patchFinished();

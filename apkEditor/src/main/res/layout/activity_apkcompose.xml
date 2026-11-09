@@ -200,4 +200,54 @@
         </LinearLayout>
     </FrameLayout>
 
+    <LinearLayout
+        android:id="@+id/layout_build_warning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dip"
+        android:background="?labCardBackground"
+        android:orientation="vertical"
+        android:padding="12dip"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/build_warning_title"
+            android:textColor="?labAccent"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_build_warning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dip"
+            android:textColor="?labText"
+            android:textIsSelectable="true"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dip"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btn_copy_build_warning"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/build_warning_copy" />
+
+            <Button
+                android:id="@+id/btn_dismiss_build_warning"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dip"
+                android:layout_weight="1"
+                android:text="@string/build_warning_dismiss" />
+        </LinearLayout>
+    </LinearLayout>
+
 </LinearLayout>

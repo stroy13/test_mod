@@ -19,7 +19,7 @@ public class PatchLogPaletteTest {
     @Test
     public void everyLineKindHasItsOwnHue() {
         PatchLogPalette p = PatchLogPalette.dark();
-        int[] hues = {p.text, p.rule, p.phase, p.error, p.done, p.fileName, p.count, p.directory};
+        int[] hues = {p.text, p.rule, p.phase, p.error, p.done, p.fileName, p.count, p.directory, p.assign};
         for (int i = 0; i < hues.length; i++) {
             for (int j = i + 1; j < hues.length; j++) {
                 assertTrue("colours " + i + " and " + j + " must differ", hues[i] != hues[j]);
@@ -34,6 +34,7 @@ public class PatchLogPaletteTest {
         assertEquals(p.error, p.lineColor(PatchLogPalette.ERROR));
         assertEquals(p.done, p.lineColor(PatchLogPalette.DONE));
         assertEquals(p.phase, p.lineColor(PatchLogPalette.PHASE));
+        assertEquals(p.assign, p.lineColor(PatchLogPalette.ASSIGN));
         assertEquals(p.text, p.lineColor(PatchLogPalette.PLAIN));
         assertEquals(p.text, p.lineColor(999));
     }
@@ -45,6 +46,7 @@ public class PatchLogPaletteTest {
         assertTrue(PatchLogPalette.isBold(PatchLogPalette.ERROR));
         assertTrue(PatchLogPalette.isBold(PatchLogPalette.DONE));
         assertFalse(PatchLogPalette.isBold(PatchLogPalette.PLAIN));
+        assertFalse(PatchLogPalette.isBold(PatchLogPalette.ASSIGN));
         assertFalse("entries bold only their file name", PatchLogPalette.isBold(PatchLogPalette.FILE_ENTRY));
     }
 
