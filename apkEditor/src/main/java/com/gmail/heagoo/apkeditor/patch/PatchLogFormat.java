@@ -1,5 +1,8 @@
 package com.gmail.heagoo.apkeditor.patch;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Layout of the patch log.
  *
@@ -16,8 +19,28 @@ public final class PatchLogFormat {
 
     /** Marks a file that was actually rewritten. */
     public static final String BULLET = "\u2022 ";
+    /** Separates the file name from the localised count. */
+    public static final String SEPARATOR = " \u2014 ";
     private static final String HEAD_INDENT = "  ";
     private static final String SUB_INDENT = "    ";
+
+    /** Colourable regions of an entry. */
+    public static final int PART_BULLET = 0;
+    public static final int PART_NAME = 1;
+    public static final int PART_COUNT = 2;
+    public static final int PART_DIRECTORY = 3;
+
+    public static final class Part {
+        public final int start;
+        public final int end;
+        public final int kind;
+
+        Part(int start, int end, int kind) {
+            this.start = start;
+            this.end = end;
+            this.kind = kind;
+        }
+    }
 
     private PatchLogFormat() {
     }
@@ -37,13 +60,58 @@ public final class PatchLogFormat {
         StringBuilder sb = new StringBuilder();
         sb.append(HEAD_INDENT).append(BULLET).append(name);
         if (countText != null && countText.length() > 0) {
-            sb.append(" \u2014 ").append(countText);
+            sb.append(SEPARATOR).append(countText);
         }
         sb.append('\n');
         if (dir.length() > 0) {
             sb.append(SUB_INDENT).append(dir).append('\n');
         }
         return sb.toString();
+    }
+
+    /**
+     * Locates the colourable parts of an entry produced by {@link #replacedFile}.
+     *
+     * <p>Derived from the text rather than carried alongside it, because the log
+     * preview is rebuilt from a bounded buffer and may start or end mid-entry.
+     * Anything unrecognised is simply left uncoloured.
+     */
+    public static List<Part> parts(String entry) {
+        List<Part> out = new ArrayList<>();
+        if (entry == null) {
+            return out;
+        }
+        int bulletAt = entry.indexOf(BULLET);
+        if (bulletAt < 0) {
+            return out;
+        }
+        int nameStart = bulletAt + BULLET.length();
+        int lineEnd = entry.indexOf('\n', nameStart);
+        if (lineEnd < 0) {
+            lineEnd = entry.length();
+        }
+        out.add(new Part(bulletAt, nameStart, PART_BULLET));
+        int dash = entry.indexOf(SEPARATOR, nameStart);
+        if (dash >= 0 && dash + SEPARATOR.length() <= lineEnd) {
+            out.add(new Part(nameStart, dash, PART_NAME));
+            out.add(new Part(dash + SEPARATOR.length(), lineEnd, PART_COUNT));
+        } else if (nameStart < lineEnd) {
+            out.add(new Part(nameStart, lineEnd, PART_NAME));
+        }
+        if (lineEnd < entry.length()) {
+            int dirStart = lineEnd + 1;
+            int dirEnd = entry.indexOf('\n', dirStart);
+            if (dirEnd < 0) {
+                dirEnd = entry.length();
+            }
+            while (dirStart < dirEnd && entry.charAt(dirStart) == ' ') {
+                dirStart++;
+            }
+            if (dirStart < dirEnd) {
+                out.add(new Part(dirStart, dirEnd, PART_DIRECTORY));
+            }
+        }
+        return out;
     }
 
     /** Last path segment; the whole string when there is no separator. */

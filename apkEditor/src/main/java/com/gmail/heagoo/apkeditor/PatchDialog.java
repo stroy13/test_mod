@@ -17,6 +17,7 @@ import android.os.Looper;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
+import android.text.style.TypefaceSpan;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -27,6 +28,7 @@ import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.ColorUtils;
 import com.gmail.heagoo.apkeditor.FileSelectDialog;
@@ -36,6 +38,8 @@ import com.gmail.heagoo.apkeditor.ce.ManifestInfo;
 import com.gmail.heagoo.apkeditor.ce.ManifestParser;
 import com.gmail.heagoo.apkeditor.patch.IPatchContext;
 import com.gmail.heagoo.apkeditor.patch.PatchExecutor;
+import com.gmail.heagoo.apkeditor.patch.PatchLogFormat;
+import com.gmail.heagoo.apkeditor.patch.PatchLogPalette;
 import com.gmail.heagoo.apkeditor.patch.PatchPreflight;
 import com.gmail.heagoo.common.IOUtils;
 import com.gmail.heagoo.common.SDCard;
@@ -69,6 +73,7 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
     private final Handler logHandler;
     private View logLayout;
     private volatile String logSaveError;
+    private PatchLogPalette logPalette;
     private TextView logTv;
     private final AtomicBoolean logUpdatePending;
     private ManifestInfo manifestInfo;
@@ -588,7 +593,14 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
             sb = new StringBuilder();
         }
         String message = sb.append(txt).append(Document.LINE_SEPARATOR_UNIX).toString();
-        int style = resourceId == R.string.all_rules_applied ? 3 : bold ? 1 : 0;
+        int style;
+        if (resourceId == R.string.all_rules_applied) {
+            style = PatchLogPalette.DONE;
+        } else if (resourceId == R.string.patch_start_parse || resourceId == R.string.decode_dex_file) {
+            style = PatchLogPalette.PHASE;
+        } else {
+            style = bold ? PatchLogPalette.RULE : PatchLogPalette.PLAIN;
+        }
         appendStyledText(message, style);
     }
 
@@ -611,6 +623,11 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         appendText(message, bold, false);
     }
 
+    @Override
+    public void fileEntry(String text) {
+        appendStyledText(text, PatchLogPalette.FILE_ENTRY);
+    }
+
     public void error(int resourceId, Object... args) {
         this.errorCount.incrementAndGet();
         ApkInfoActivity activity = this.activityRef.get();
@@ -630,31 +647,72 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
         }
     }
 
-    private int logColor(int style) {
-        TypedValue v = new TypedValue();
-        if (style == 1 && getContext().getTheme().resolveAttribute(R.attr.labAccent, v, true)) {
-            return v.data;
+    /**
+     * Palette of the log. The dialog keeps its themed surface, so the hues are
+     * chosen for the matching light/dark variant and checked for contrast
+     * against that surface.
+     */
+    private PatchLogPalette logPalette() {
+        if (this.logPalette == null) {
+            TypedValue v = new TypedValue();
+            boolean light = getContext().getTheme().resolveAttribute(R.attr.labSurface, v, true)
+                    && ColorUtils.calculateLuminance(resolveColor(v)) > 0.5d;
+            this.logPalette = PatchLogPalette.forDark(!light);
         }
-        boolean light = getContext().getTheme().resolveAttribute(R.attr.labSurface, v, true) && ColorUtils.calculateLuminance(v.data) > 0.5d;
-        if (style == 2) {
-            return Color.parseColor(light ? "#B32638" : "#FF8793");
-        }
-        if (style == 3) {
-            return Color.parseColor(light ? "#167044" : "#7CE1A7");
-        }
-        return Color.parseColor(light ? "#365CC5" : "#9BB8FF");
+        return this.logPalette;
+    }
+
+    private int resolveColor(TypedValue v) {
+        return v.resourceId != 0 ? ContextCompat.getColor(getContext(), v.resourceId) : v.data;
     }
 
     private void applyLogStyle(SpannableStringBuilder text, int start, int end, int style) {
-        if (style == 0 || start < 0 || end > text.length() || start >= end) {
+        if (style == PatchLogPalette.PLAIN || start < 0 || end > text.length() || start >= end) {
             return;
         }
-        text.setSpan(new ForegroundColorSpan(logColor(style)), start, end, 33);
-        text.setSpan(new StyleSpan(1), start, end, 33);
+        PatchLogPalette palette = logPalette();
+        if (style == PatchLogPalette.FILE_ENTRY) {
+            // One entry, several hues: the name leads in cyan, the count reads as
+            // a success, the directory recedes in muted monospace.
+            String entry = text.subSequence(start, end).toString();
+            for (PatchLogFormat.Part part : PatchLogFormat.parts(entry)) {
+                int from = start + part.start;
+                int to = start + part.end;
+                if (from < start || to > end || to <= from) {
+                    continue;
+                }
+                int color;
+                switch (part.kind) {
+                    case PatchLogFormat.PART_BULLET:
+                        color = palette.bullet;
+                        break;
+                    case PatchLogFormat.PART_NAME:
+                        color = palette.fileName;
+                        break;
+                    case PatchLogFormat.PART_COUNT:
+                        color = palette.count;
+                        break;
+                    default:
+                        color = palette.directory;
+                        break;
+                }
+                text.setSpan(new ForegroundColorSpan(color), from, to, 33);
+                if (part.kind == PatchLogFormat.PART_NAME) {
+                    text.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), from, to, 33);
+                } else if (part.kind == PatchLogFormat.PART_DIRECTORY) {
+                    text.setSpan(new TypefaceSpan("monospace"), from, to, 33);
+                }
+            }
+            return;
+        }
+        text.setSpan(new ForegroundColorSpan(palette.lineColor(style)), start, end, 33);
+        if (PatchLogPalette.isBold(style)) {
+            text.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), start, end, 33);
+        }
     }
 
     private void appendText(String txt, boolean bold, boolean red) {
-        appendStyledText(txt, red ? 2 : bold ? 1 : 0);
+        appendStyledText(txt, red ? PatchLogPalette.ERROR : bold ? PatchLogPalette.RULE : PatchLogPalette.PLAIN);
     }
 
     private void appendStyledText(final String txt, final int style) {

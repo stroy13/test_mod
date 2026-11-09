@@ -86,6 +86,10 @@ public final class PatchPreflight {
         }
 
         @Override // com.gmail.heagoo.apkeditor.patch.IPatchContext
+        public void fileEntry(String text) {
+        }
+
+        @Override // com.gmail.heagoo.apkeditor.patch.IPatchContext
         public void error(int id, Object... args) {
             this.errors++;
             if (this.out.length() > 100000) {

@@ -169,8 +169,8 @@ class PatchRule_MatchReplace extends PatchRule {
                 try {
                     writeReplaces(filepath, content, sections);
                     modified = true;
-                    patchCtx.info(PatchLogFormat.replacedFile(targetFile,
-                            replacedCount(activity, sections.size())), false);
+                    patchCtx.fileEntry(PatchLogFormat.replacedFile(targetFile,
+                            replacedCount(activity, sections.size())));
                 } catch (IOException e) {
                     patchCtx.error(R.string.patch_error_write_to, targetFile);
                 }
@@ -204,8 +204,8 @@ class PatchRule_MatchReplace extends PatchRule {
                 try {
                     writeReplaces(filepath, lines, matchedIndexes);
                     modified = true;
-                    patchCtx.info(PatchLogFormat.replacedFile(targetFile,
-                            replacedCount(activity, matchedIndexes.size())), false);
+                    patchCtx.fileEntry(PatchLogFormat.replacedFile(targetFile,
+                            replacedCount(activity, matchedIndexes.size())));
                 } catch (IOException e) {
                     patchCtx.error(R.string.patch_error_write_to, targetFile);
                 }

@@ -600,4 +600,5 @@ APK Editor предназначен для пользователей Android, �
     
     <string name="manifest_file_name">AndroidManifest.xml</string>
     <string name="manifest_file_type">AXML</string>
+    <string name="lab_build_no_reason">Сборка завершилась с ошибкой, но причина не сообщена. Смотрите журнал сборки.</string>
 </resources>

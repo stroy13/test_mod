@@ -668,4 +668,5 @@ Note: this is the original historical text; this edition does support signing."<
     
     <string name="manifest_file_name">AndroidManifest.xml</string>
     <string name="manifest_file_type">AXML</string>
+    <string name="lab_build_no_reason">The build failed but did not report a reason. See the build log.</string>
 </resources>
