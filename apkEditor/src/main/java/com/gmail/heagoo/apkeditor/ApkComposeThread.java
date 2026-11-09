@@ -13,6 +13,7 @@ import com.gmail.heagoo.apkeditor.ce.IApkMaking;
 import com.gmail.heagoo.apkeditor.ce.IDescriptionUpdate;
 import com.gmail.heagoo.apkeditor.smali.ISmaliAssembleCallback;
 import com.gmail.heagoo.apkeditor.util.Aapt2Pipeline;
+import com.gmail.heagoo.apkeditor.util.Aapt2ResourceTypes;
 import com.gmail.heagoo.apkeditor.util.BundledFrameworkFiles;
 import com.gmail.heagoo.apkeditor.util.SignHelper;
 import com.gmail.heagoo.apkeditor.util.ToolFramework;
@@ -637,61 +638,78 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
     }
 
     private boolean composeResource() {
-        boolean z;
-        String str;
-        String selectedAapt;
         this.tempApkPath = this.targetApkPath + ".in";
         try {
             String selectedFramework = ToolFramework.selected(this.ctx, this.androidJarPath);
             String aaptChoice = PreferenceManager.getDefaultSharedPreferences(this.ctx).getString("AaptVersion", "legacy");
-            if ("aapt2".equals(aaptChoice)) {
-                z = false;
-                str = "/res";
-            } else if ("aapt2-37".equals(aaptChoice)) {
-                z = false;
-                str = "/res";
-            } else {
-                String selectedAapt2 = this.aaptPath;
-                if (!"aaptz-2022".equals(aaptChoice)) {
-                    selectedAapt = selectedAapt2;
-                } else {
-                    File z2 = new File(this.ctx.getApplicationInfo().nativeLibraryDir, "libaaptz_exec.so");
-                    if (!z2.isFile()) {
-                        this.errMessage = "AAPTz доступен только в ARM32-сборке приложения. Выберите другой AAPT.";
+            boolean wantsAapt2 = "aapt2".equals(aaptChoice) || "aapt2-37".equals(aaptChoice);
+            if (wantsAapt2) {
+                Set<String> unsupported = Aapt2ResourceTypes.unsupportedIn(
+                        new File(this.decodedFilePath + "/res"));
+                if (!unsupported.isEmpty()) {
+                    warnAapt2Fallback(Aapt2ResourceTypes.describe(unsupported));
+                    wantsAapt2 = false;
+                }
+            }
+            if (wantsAapt2) {
+                try {
+                    boolean newest = "aapt2-37".equals(aaptChoice);
+                    if (Build.VERSION.SDK_INT < (newest ? 30 : 28)) {
+                        throw new IOException(newest ? "AAPT2 37 requires Android 11 or newer" : "AAPT2 requires Android 9 or newer; select the original AAPT on Android 8.");
+                    }
+                    String aapt2 = new File(this.ctx.getApplicationInfo().nativeLibraryDir, newest ? "libaapt2_37.so" : "libaapt2_exec.so").getAbsolutePath();
+                    Aapt2Pipeline.build(aapt2, selectedFramework, this.decodedFilePath + "/res", this.decodedFilePath + "/AndroidManifest.xml", this.tempApkPath);
+                    return true;
+                } catch (Exception e) {
+                    // A renamed type that only ever held values has no directory
+                    // to spot, so the compiler is the one that finds it. Fall
+                    // back to the original AAPT rather than fail the build.
+                    if (!Aapt2ResourceTypes.isUnknownTypeFailure(e.getMessage())) {
+                        this.errMessage = e.getMessage();
                         return false;
                     }
-                    String selectedAapt3 = z2.getAbsolutePath();
-                    selectedAapt = selectedAapt3;
+                    warnAapt2Fallback(null);
                 }
-                boolean noVersionVectorOption = getNoVersionVectorOption(this.ctx, selectedAapt);
-                String[] command1 = {selectedAapt, "package", "-f", "-I", selectedFramework, "-S", this.decodedFilePath + "/res", "-M", this.decodedFilePath + "/AndroidManifest.xml", "-F", this.tempApkPath};
-                String[] command2 = {selectedAapt, "package", "-f", "-I", selectedFramework, "-S", this.decodedFilePath + "/res", "-M", this.decodedFilePath + "/AndroidManifest.xml", "-F", this.tempApkPath, "--no-version-vectors"};
-                System.currentTimeMillis();
-                CommandRunner cr = new CommandRunner();
-                boolean ret = cr.runCommand(noVersionVectorOption ? command2 : command1, (String[]) null, (String) null, 300000, true);
-                LOGGER.info("stdout: " + cr.getStdOut() + ", ret=" + ret);
-                if (ret) {
-                    return true;
-                }
-                LOGGER.info("stderr: " + cr.getStdError());
-                this.errMessage = cr.getStdError();
-                return false;
             }
-            try {
-                boolean newest = "aapt2-37".equals(aaptChoice);
-                if (Build.VERSION.SDK_INT < (newest ? 30 : 28)) {
-                    throw new IOException(newest ? "AAPT2 37 requires Android 11 or newer" : "AAPT2 requires Android 9 or newer; select the original AAPT on Android 8.");
+            String selectedAapt = this.aaptPath;
+            if ("aaptz-2022".equals(aaptChoice)) {
+                File z = new File(this.ctx.getApplicationInfo().nativeLibraryDir, "libaaptz_exec.so");
+                if (!z.isFile()) {
+                    this.errMessage = "AAPTz доступен только в ARM32-сборке приложения. Выберите другой AAPT.";
+                    return false;
                 }
-                String aapt2 = new File(this.ctx.getApplicationInfo().nativeLibraryDir, newest ? "libaapt2_37.so" : "libaapt2_exec.so").getAbsolutePath();
-                Aapt2Pipeline.build(aapt2, selectedFramework, this.decodedFilePath + str, this.decodedFilePath + "/AndroidManifest.xml", this.tempApkPath);
+                selectedAapt = z.getAbsolutePath();
+            }
+            boolean noVersionVectorOption = getNoVersionVectorOption(this.ctx, selectedAapt);
+            String[] command1 = {selectedAapt, "package", "-f", "-I", selectedFramework, "-S", this.decodedFilePath + "/res", "-M", this.decodedFilePath + "/AndroidManifest.xml", "-F", this.tempApkPath};
+            String[] command2 = {selectedAapt, "package", "-f", "-I", selectedFramework, "-S", this.decodedFilePath + "/res", "-M", this.decodedFilePath + "/AndroidManifest.xml", "-F", this.tempApkPath, "--no-version-vectors"};
+            CommandRunner cr = new CommandRunner();
+            boolean ret = cr.runCommand(noVersionVectorOption ? command2 : command1, (String[]) null, (String) null, 300000, true);
+            LOGGER.info("stdout: " + cr.getStdOut() + ", ret=" + ret);
+            if (ret) {
                 return true;
-            } catch (Exception e) {
-                this.errMessage = e.getMessage();
-                return z;
             }
-        } catch (Exception e2) {
-            this.errMessage = e2.getMessage();
+            LOGGER.info("stderr: " + cr.getStdError());
+            this.errMessage = cr.getStdError();
             return false;
+        } catch (Exception e) {
+            this.errMessage = e.getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Tells the user the build is continuing with the original AAPT.
+     *
+     * @param types offending type names, or null when the compiler found them
+     */
+    private void warnAapt2Fallback(String types) {
+        String message = types == null
+                ? this.ctx.getString(R.string.aapt2_fallback_generic)
+                : this.ctx.getString(R.string.aapt2_fallback_types, types);
+        LOGGER.info(message, true);
+        if (this.taskCallback != null) {
+            this.taskCallback.taskWarning(message);
         }
     }
 

@@ -122,6 +122,44 @@ public class ComposePipelineTest {
         }
     }
 
+    /** Obfuscated resource types must not strand the build on AAPT2. */
+    @Test
+    public void unknownResourceTypesFallBackToOriginalAapt() throws Exception {
+        for (String name : new String[]{"ApkComposeThreadNew.java", "ApkComposeThread.java"}) {
+            String src = read(name);
+            int start = src.indexOf("    private boolean composeResource() {");
+            assertTrue(name + ": composeResource() must exist", start > 0);
+            int end = src.indexOf("    private void warnAapt2Fallback", start);
+            if (end < 0) {
+                end = src.indexOf("    public boolean prepare()", start);
+            }
+            assertTrue(name + ": fallback helper must follow composeResource()", end > start);
+            String body = src.substring(start, end);
+            assertTrue(name + ": preflight must inspect the decoded resources",
+                    body.contains("Aapt2ResourceTypes.unsupportedIn("));
+            assertTrue(name + ": compiler failure must be classified",
+                    body.contains("Aapt2ResourceTypes.isUnknownTypeFailure(e.getMessage())"));
+            assertTrue(name + ": the original AAPT path must remain reachable",
+                    body.contains("CommandRunner cr = new CommandRunner();"));
+            assertTrue(name + ": fallback must be explained to the user",
+                    body.contains("warnAapt2Fallback("));
+        }
+    }
+
+    @Test
+    public void fallbackWarningIsLocalisedAndExplainsTheToolChange() throws Exception {
+        String en = new String(Files.readAllBytes(root().resolve(
+                "apkEditor/src/main/res/values/strings.xml")), StandardCharsets.UTF_8);
+        String ru = new String(Files.readAllBytes(root().resolve(
+                "apkEditor/src/main/res/values-ru/strings.xml")), StandardCharsets.UTF_8);
+        for (String key : new String[]{"aapt2_fallback_types", "aapt2_fallback_generic"}) {
+            assertTrue(key + " missing in English", en.contains("name=\"" + key + "\""));
+            assertTrue(key + " missing in Russian", ru.contains("name=\"" + key + "\""));
+        }
+        assertTrue(en.contains("name=\"aapt2_fallback_types\">AAPT2 cannot compile the resource types %1$s"));
+        assertTrue(ru.contains("name=\"aapt2_fallback_types\">AAPT2 не умеет собирать типы ресурсов %1$s"));
+    }
+
     @Test
     public void failureWithoutReasonStillExplainsItself() throws Exception {
         for (String name : new String[]{"ApkComposeThreadNew.java", "ApkComposeThread.java"}) {

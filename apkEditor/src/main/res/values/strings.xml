@@ -669,4 +669,6 @@ Note: this is the original historical text; this edition does support signing."<
     <string name="manifest_file_name">AndroidManifest.xml</string>
     <string name="manifest_file_type">AXML</string>
     <string name="lab_build_no_reason">The build failed but did not report a reason. See the build log.</string>
+    <string name="aapt2_fallback_types">AAPT2 cannot compile the resource types %1$s (renamed by an obfuscator). Building with the original AAPT, which accepts them.</string>
+    <string name="aapt2_fallback_generic">AAPT2 rejected a resource type it does not know. Building with the original AAPT, which accepts any type name.</string>
 </resources>
