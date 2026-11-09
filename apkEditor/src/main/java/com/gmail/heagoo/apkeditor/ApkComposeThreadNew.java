@@ -9,6 +9,7 @@ import com.gmail.heagoo.apkeditor.ce.IApkMaking;
 import com.gmail.heagoo.apkeditor.ce.IDescriptionUpdate;
 import com.gmail.heagoo.apkeditor.smali.ISmaliAssembleCallback;
 import com.gmail.heagoo.apkeditor.util.Aapt2Pipeline;
+import com.gmail.heagoo.apkeditor.util.Aapt2ResourceTypes;
 import com.gmail.heagoo.apkeditor.util.SignHelper;
 import com.gmail.heagoo.apkeditor.util.ToolFramework;
 import com.gmail.heagoo.apkeditor.util.ZipEngine;
@@ -434,17 +435,30 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
             String selectedFramework = ToolFramework.selected(this.ctx, this.androidJarPath);
             String aaptChoice = PreferenceManager.getDefaultSharedPreferences(this.ctx).getString("AaptVersion", "legacy");
             if ("aapt2".equals(aaptChoice) || "aapt2-37".equals(aaptChoice)) {
-                try {
-                    boolean newest = "aapt2-37".equals(aaptChoice);
-                    if (Build.VERSION.SDK_INT < (newest ? 30 : 28)) {
-                        throw new IOException(newest ? "AAPT2 37 requires Android 11 or newer" : "AAPT2 requires Android 9 or newer; select the original AAPT on Android 8.");
+                Set<String> unsupported = Aapt2ResourceTypes.unsupportedIn(
+                        new File(this.decodedFilePath + "/res"));
+                if (!unsupported.isEmpty()) {
+                    warnAapt2Fallback(Aapt2ResourceTypes.describe(unsupported));
+                } else {
+                    try {
+                        boolean newest = "aapt2-37".equals(aaptChoice);
+                        if (Build.VERSION.SDK_INT < (newest ? 30 : 28)) {
+                            throw new IOException(newest ? "AAPT2 37 requires Android 11 or newer" : "AAPT2 requires Android 9 or newer; select the original AAPT on Android 8.");
+                        }
+                        String aapt2 = new File(this.ctx.getApplicationInfo().nativeLibraryDir, newest ? "libaapt2_37.so" : "libaapt2_exec.so").getAbsolutePath();
+                        Aapt2Pipeline.build(aapt2, selectedFramework, this.decodedFilePath + "/res", this.decodedFilePath + "/AndroidManifest.xml", this.resourceApkPath);
+                        return true;
+                    } catch (Exception e) {
+                        // A renamed type that only ever held values has no
+                        // directory to spot, so the compiler is the one that
+                        // finds it. Fall back rather than fail the build.
+                        if (Aapt2ResourceTypes.isUnknownTypeFailure(e.getMessage())) {
+                            warnAapt2Fallback(null);
+                        } else {
+                            this.errMessage = e.getMessage();
+                            return false;
+                        }
                     }
-                    String aapt2 = new File(this.ctx.getApplicationInfo().nativeLibraryDir, newest ? "libaapt2_37.so" : "libaapt2_exec.so").getAbsolutePath();
-                    Aapt2Pipeline.build(aapt2, selectedFramework, this.decodedFilePath + "/res", this.decodedFilePath + "/AndroidManifest.xml", this.resourceApkPath);
-                    return true;
-                } catch (Exception e) {
-                    this.errMessage = e.getMessage();
-                    return false;
                 }
             }
             String selectedAapt = this.aaptPath;
@@ -485,6 +499,21 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
         } catch (Exception e2) {
             this.errMessage = e2.getMessage();
             return false;
+        }
+    }
+
+    /**
+     * Tells the user the build is continuing with the original AAPT.
+     *
+     * @param types offending type names, or null when the compiler found them
+     */
+    private void warnAapt2Fallback(String types) {
+        String message = types == null
+                ? this.ctx.getString(R.string.aapt2_fallback_generic)
+                : this.ctx.getString(R.string.aapt2_fallback_types, types);
+        LOGGER.info(message, true);
+        if (this.taskCallback != null) {
+            this.taskCallback.taskWarning(message);
         }
     }
 

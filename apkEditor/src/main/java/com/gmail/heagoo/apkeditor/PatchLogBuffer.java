@@ -1,5 +1,7 @@
 package com.gmail.heagoo.apkeditor;
 
+import com.gmail.heagoo.apkeditor.patch.PatchLogFormat;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -10,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -22,6 +25,20 @@ public final class PatchLogBuffer {
     private static final int HEAD_LIMIT = 2000;
     public static final int NORMAL = 0;
     public static final int SUCCESS = 3;
+    /** A structured per-file entry; mirrors {@code PatchLogPalette.FILE_ENTRY}. */
+    public static final int FILE_ENTRY = 4;
+    /** A phase notice; mirrors {@code PatchLogPalette.PHASE}. */
+    public static final int PHASE = 5;
+    /**
+     * Highest style this buffer preserves.
+     *
+     * <p>The buffer used to clamp everything above {@link #SUCCESS} back to
+     * {@link #NORMAL}, so the per-file entries and phase notices added with the
+     * coloured log lost their style on the way in and rendered in the default
+     * white -- the headings kept their colour only because they fell inside the
+     * old range. Keep this in step with {@code PatchLogPalette}.
+     */
+    public static final int MAX_STYLE = PHASE;
     public static final int TAIL_LIMIT = 24000;
     private final File completed;
     private final File pending;
@@ -92,24 +109,53 @@ public final class PatchLogBuffer {
     public static PatchLogBuffer read(File file) throws IOException {
         PatchLogBuffer log = new PatchLogBuffer(null, file);
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
-        while (true) {
+        try {
+            // A file entry spans two lines (name + directory). Group them before
+            // recording so the whole block can be coloured in parts, including
+            // for logs written before the styles sidecar existed.
+            StringBuilder entry = null;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (isEntryHead(line)) {
+                    if (entry != null) {
+                        log.record(entry.toString(), FILE_ENTRY);
+                    }
+                    entry = new StringBuilder(line).append('\n');
+                } else if (entry != null && isEntryDirectory(line)) {
+                    entry.append(line).append('\n');
+                    log.record(entry.toString(), FILE_ENTRY);
+                    entry = null;
+                } else {
+                    if (entry != null) {
+                        log.record(entry.toString(), FILE_ENTRY);
+                        entry = null;
+                    }
+                    log.record(line + "\n", looksLikeError(line) ? ERROR : NORMAL);
+                }
+            }
+            if (entry != null) {
+                log.record(entry.toString(), FILE_ENTRY);
+            }
+        } finally {
             try {
-                String line = reader.readLine();
-                if (line == null) {
-                    reader.close();
-                    log.restoreStyles(file);
-                    return log;
-                }
-                log.record(line + "\n", looksLikeError(line) ? 2 : 0);
-            } catch (Throwable th) {
-                try {
-                    reader.close();
-                } catch (Throwable th2) {
-                    th.addSuppressed(th2);
-                }
-                throw th;
+                reader.close();
+            } catch (IOException e) {
+                // The log was read in full; a failing close must not hide it.
             }
         }
+        log.restoreStyles(file);
+        return log;
+    }
+
+    /** "  • File.smali — N matches replaced". */
+    private static boolean isEntryHead(String line) {
+        return line.startsWith("  " + PatchLogFormat.BULLET);
+    }
+
+    /** The indented directory line that follows an entry head. */
+    private static boolean isEntryDirectory(String line) {
+        return line.startsWith("    ") && line.trim().length() > 0
+                && !line.trim().startsWith(PatchLogFormat.BULLET);
     }
 
     private static boolean looksLikeError(String line) {
@@ -122,8 +168,8 @@ public final class PatchLogBuffer {
     }
 
     public synchronized void append(String text, int style) {
-        if (style < 1 || style > 3) {
-            style = 0;
+        if (style < NORMAL || style > MAX_STYLE) {
+            style = NORMAL;
         }
         if (this.writer != null && this.writeFailure == null) {
             try {
@@ -155,7 +201,10 @@ public final class PatchLogBuffer {
         }
         if (style != 0 && !text.isEmpty()) {
             Segment last = this.styles.peekLast();
-            if (last != null && last.style == style && last.end == start) {
+            // A FILE_ENTRY segment is one structured block. Merging consecutive
+            // entries would hand the renderer several bullets in one range, and
+            // PatchLogFormat.parts() colours only the first entry it finds.
+            if (last != null && last.style == style && style != FILE_ENTRY && last.end == start) {
                 last.end = this.total;
             } else {
                 this.styles.addLast(new Segment(start, this.total, style));
@@ -224,52 +273,90 @@ public final class PatchLogBuffer {
         return truncatedNotice + "\n\n" + ((Object) this.head) + "\n\n" + errorsHeading + "\n" + ((Object) this.errors) + "\n" + tailHeading + "\n" + ((Object) this.tail);
     }
 
+    /**
+     * Reloads the colours saved beside a finished log.
+     *
+     * <p>The sidecar is only trusted when its trailer still describes the text
+     * file it was written for; a log that was edited, truncated or replaced
+     * since then falls back to the plain reading. Previously the parsed
+     * segments were collected into a local deque that was never installed, so
+     * reopening the last log always came back uncoloured.
+     */
     private void restoreStyles(File text) {
-        boolean valid;
         File side = colors(text);
-        if (side.isFile()) {
-            ArrayDeque<Segment> restored = new ArrayDeque<>();
-            boolean valid2 = false;
-            long offset = this.total - this.tail.length();
-            try {
-                BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(side), "UTF-8"));
-                long previous = 0;
-                while (true) {
-                    try {
-                        String line = in.readLine();
-                        if (line == null) {
-                            break;
-                        }
-                        String[] parts = line.split(" ");
-                        valid = false;
-                        if (parts.length == 4 && parts[0].equals("END")) {
-                            break;
-                        }
-                        if (parts.length != 3) {
-                            in.close();
-                            return;
-                        }
-                        long begin = Long.parseLong(parts[0]);
-                        long end = Long.parseLong(parts[1]);
-                        int style = Integer.parseInt(parts[2]);
-                        if (begin < previous || end < begin || end > this.total || style < 1) {
-                            break;
-                        }
-                        if (style > 3) {
-                            break;
-                        }
-                        previous = end;
-                        if (end > offset) {
-                            restored.addLast(new Segment(Math.max(begin, offset), end, style));
-                        }
-                    } catch (Throwable th) {
-                        valid = false;
-                        Throwable th2 = th;
+        if (!side.isFile()) {
+            return;
+        }
+        ArrayDeque<Segment> restored = new ArrayDeque<>();
+        long offset = this.total - this.tail.length();
+        boolean complete = false;
+        BufferedReader in = null;
+        try {
+            in = new BufferedReader(new InputStreamReader(new FileInputStream(side), "UTF-8"));
+            long previous = 0;
+            String line;
+            while ((line = in.readLine()) != null) {
+                String[] parts = line.split(" ");
+                if (parts.length == 4 && parts[0].equals("END")) {
+                    complete = Long.parseLong(parts[1]) == text.length()
+                            && Long.parseLong(parts[2]) == text.lastModified()
+                            && Long.parseLong(parts[3]) == this.total;
+                    break;
+                }
+                if (parts.length != 3) {
+                    return;
+                }
+                long begin = Long.parseLong(parts[0]);
+                long end = Long.parseLong(parts[1]);
+                int style = Integer.parseInt(parts[2]);
+                if (begin < previous || end < begin || end > this.total
+                        || style < HEADING || style > MAX_STYLE) {
+                    return;
+                }
+                previous = end;
+                if (end > offset) {
+                    restored.addLast(new Segment(Math.max(begin, offset), end, style));
+                }
+            }
+        } catch (IOException e) {
+            return;
+        } catch (RuntimeException e) {
+            return;
+        } finally {
+            closeQuietly(in);
+        }
+        if (complete) {
+            boolean hasEntryStyle = false;
+            for (Segment segment : restored) {
+                if (segment.style == FILE_ENTRY) {
+                    hasEntryStyle = true;
+                    break;
+                }
+            }
+            ArrayList<Segment> merged = new ArrayList<>(restored);
+            if (!hasEntryStyle) {
+                // Logs saved by the first coloured-log release kept headings in
+                // the sidecar but dropped file entries on the way in. Keep the
+                // entries inferred from their shape so reopening them is coloured
+                // too, without overriding the authoritative heading/error spans.
+                for (Segment segment : this.styles) {
+                    if (segment.style == FILE_ENTRY) {
+                        merged.add(new Segment(segment.start, segment.end, segment.style));
                     }
                 }
+            }
+            merged.sort(Comparator.comparingLong(segment -> segment.start));
+            this.styles.clear();
+            this.styles.addAll(merged);
+        }
+    }
+
+    private static void closeQuietly(BufferedReader in) {
+        if (in != null) {
+            try {
                 in.close();
             } catch (IOException e) {
-            } catch (RuntimeException e2) {
+                // Nothing useful to do while restoring an optional sidecar.
             }
         }
     }
@@ -325,11 +412,9 @@ public final class PatchLogBuffer {
     }
 
     public synchronized File source() {
-        File file;
         if (this.writer == null && (this.pending == null || !this.pending.exists())) {
-            file = this.completed;
+            return this.completed;
         }
-        file = this.pending;
-        return file;
+        return this.pending;
     }
 }
