@@ -93,8 +93,9 @@ public class PatchDexFileTest {
 
         @Override
         public void close() {
+            // ByteArrayInputStream has no native resource; record the close so
+            // the test can prove staging closed the stream before chmod.
             closed = true;
-            super.close();
         }
     }
 }
