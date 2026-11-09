@@ -16,6 +16,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 /* loaded from: /tmp/apkx/classes5.dex */
 public final class PatchLogBuffer {
@@ -29,6 +30,8 @@ public final class PatchLogBuffer {
     public static final int FILE_ENTRY = 4;
     /** A phase notice; mirrors {@code PatchLogPalette.PHASE}. */
     public static final int PHASE = 5;
+    /** A MATCH_ASSIGN result; mirrors {@code PatchLogPalette.ASSIGN}. */
+    public static final int ASSIGN = 6;
     /**
      * Highest style this buffer preserves.
      *
@@ -38,7 +41,7 @@ public final class PatchLogBuffer {
      * white -- the headings kept their colour only because they fell inside the
      * old range. Keep this in step with {@code PatchLogPalette}.
      */
-    public static final int MAX_STYLE = PHASE;
+    public static final int MAX_STYLE = ASSIGN;
     public static final int TAIL_LIMIT = 24000;
     private final File completed;
     private final File pending;
@@ -72,6 +75,10 @@ public final class PatchLogBuffer {
             this.ranges = ranges;
         }
     }
+
+    /** Legacy logs had no sidecar style for MATCH_ASSIGN results. */
+    private static final Pattern ASSIGN_LINE =
+            Pattern.compile("^[A-Za-z_][A-Za-z0-9_]*=\".*\"$");
 
     private static final class Segment {
         long end;
@@ -130,7 +137,8 @@ public final class PatchLogBuffer {
                         log.record(entry.toString(), FILE_ENTRY);
                         entry = null;
                     }
-                    log.record(line + "\n", looksLikeError(line) ? ERROR : NORMAL);
+                    int style = looksLikeAssignment(line) ? ASSIGN : looksLikeError(line) ? ERROR : NORMAL;
+                    log.record(line + "\n", style);
                 }
             }
             if (entry != null) {
@@ -156,6 +164,10 @@ public final class PatchLogBuffer {
     private static boolean isEntryDirectory(String line) {
         return line.startsWith("    ") && line.trim().length() > 0
                 && !line.trim().startsWith(PatchLogFormat.BULLET);
+    }
+
+    private static boolean looksLikeAssignment(String line) {
+        return ASSIGN_LINE.matcher(line).matches();
     }
 
     private static boolean looksLikeError(String line) {

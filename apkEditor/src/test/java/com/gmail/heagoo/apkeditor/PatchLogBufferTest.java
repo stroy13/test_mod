@@ -57,7 +57,7 @@ public class PatchLogBufferTest {
     public void everyPaletteStyleSurvivesTheBuffer() throws IOException {
         PatchLogBuffer log = start();
         int[] styles = {PatchLogPalette.RULE, PatchLogPalette.ERROR, PatchLogPalette.DONE,
-                PatchLogPalette.FILE_ENTRY, PatchLogPalette.PHASE};
+                PatchLogPalette.FILE_ENTRY, PatchLogPalette.PHASE, PatchLogPalette.ASSIGN};
         for (int style : styles) {
             log.append("line " + style + "\n", style);
         }
@@ -297,10 +297,28 @@ public class PatchLogBufferTest {
     }
 
     @Test
+    public void assignmentStyleSurvivesReopenAndLegacyLogsAreRecognised() throws IOException {
+        PatchLogBuffer log = start();
+        log.append("LABEL_1=\"com.example\"\n", PatchLogPalette.ASSIGN);
+        log.finish();
+        PatchLogBuffer reopened = PatchLogBuffer.read(log.source());
+        assertEquals(PatchLogPalette.ASSIGN,
+                covering(reopened.styledPreview(""), "LABEL_1").style);
+
+        File legacy = new File(tmp.getRoot(), "legacy_patch_log.txt");
+        Files.write(Paths.get(legacy.getAbsolutePath()),
+                "LABEL_2=\"157107\"\n".getBytes(StandardCharsets.UTF_8));
+        PatchLogBuffer old = PatchLogBuffer.read(legacy);
+        assertEquals(PatchLogPalette.ASSIGN,
+                covering(old.styledPreview(""), "LABEL_2").style);
+    }
+
+    @Test
     public void paletteAndBufferAgreeOnTheStyleRange() {
         assertEquals(PatchLogPalette.FILE_ENTRY, PatchLogBuffer.FILE_ENTRY);
         assertEquals(PatchLogPalette.PHASE, PatchLogBuffer.PHASE);
-        assertEquals(PatchLogPalette.PHASE, PatchLogBuffer.MAX_STYLE);
+        assertEquals(PatchLogPalette.ASSIGN, PatchLogBuffer.ASSIGN);
+        assertEquals(PatchLogPalette.ASSIGN, PatchLogBuffer.MAX_STYLE);
         List<PatchLogFormat.Part> parts = PatchLogFormat.parts(ENTRY);
         assertFalse(parts.isEmpty());
     }

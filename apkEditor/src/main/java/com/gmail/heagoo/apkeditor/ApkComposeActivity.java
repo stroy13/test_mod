@@ -51,6 +51,7 @@ import com.gmail.heagoo.neweditor.Document;
 import com.gmail.heagoo.neweditor.ParserRule;
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Map;
 
 public class ApkComposeActivity extends CustomizedLangActivity implements ITaskCallback, View.OnClickListener {
@@ -72,6 +73,9 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
     private LinearLayout fixLayout;
     private TextView fixTipTv;
     private Button hideWarningBtn;
+    private LinearLayout buildWarningLayout;
+    private TextView buildWarningTv;
+    private final ArrayList<String> buildWarnings = new ArrayList<>();
     private String intentAction;
     private boolean isActivityVisible;
     private MyHandler msgHandler;
@@ -205,6 +209,10 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         this.hideWarningBtn.setOnClickListener(this);
         this.bgButton = (Button) findViewById(R.id.btn_bg);
         this.bgButton.setOnClickListener(this);
+        this.buildWarningLayout = (LinearLayout) findViewById(R.id.layout_build_warning);
+        this.buildWarningTv = (TextView) findViewById(R.id.tv_build_warning);
+        findViewById(R.id.btn_copy_build_warning).setOnClickListener(this);
+        findViewById(R.id.btn_dismiss_build_warning).setOnClickListener(this);
     }
 
     public void setTaskStepInfo(ITaskCallback.TaskStepInfo stepInfo) {
@@ -225,7 +233,43 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
     }
 
     public void taskWarning(String message) {
-        this.msgHandler.toast(message);
+        this.msgHandler.warning(message);
+    }
+
+    private void showBuildWarning(String message) {
+        if (message == null || message.trim().isEmpty() || this.buildWarnings.contains(message)) {
+            return;
+        }
+        this.buildWarnings.add(message);
+        StringBuilder sb = new StringBuilder();
+        for (String warning : this.buildWarnings) {
+            if (sb.length() > 0) {
+                sb.append("\n\n");
+            }
+            sb.append(warning);
+        }
+        this.buildWarningTv.setText(sb.toString());
+        this.buildWarningLayout.setVisibility(View.VISIBLE);
+    }
+
+    private void dismissBuildWarnings() {
+        this.buildWarnings.clear();
+        this.buildWarningTv.setText("");
+        this.buildWarningLayout.setVisibility(View.GONE);
+        if (this.binder != null) {
+            this.binder.clearWarnings();
+        }
+    }
+
+    private String buildWarningText() {
+        StringBuilder sb = new StringBuilder();
+        for (String warning : this.buildWarnings) {
+            if (sb.length() > 0) {
+                sb.append("\n\n");
+            }
+            sb.append(warning);
+        }
+        return sb.toString();
     }
 
     public void updateComposeInfo() {
@@ -418,6 +462,15 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
             this.hideWarningBtn.setVisibility(8);
             return;
         }
+        if (id == R.id.btn_copy_build_warning) {
+            ClipboardUtil.copyToClipboard(this, buildWarningText());
+            Toast.makeText((Context) this, R.string.build_warning_copied, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (id == R.id.btn_dismiss_build_warning) {
+            dismissBuildWarnings();
+            return;
+        }
         if (id == R.id.btn_bg) {
             finish();
         } else if (id == R.id.result && this.targetApkPath != null) {
@@ -495,6 +548,7 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
                 this.binder.setBuildHooker(createBuildHooker(m));
             }
             this.progressTv.setText("");
+            dismissBuildWarnings();
             this.composingLayout.setVisibility(0);
             this.composedLayout.setVisibility(8);
             this.binder.buildAgain();
@@ -565,6 +619,7 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
     private static class MyHandler extends Handler {
         public static final int FAILED = 3;
         public static final int SHOW_MESSAGE = 4;
+        public static final int SHOW_WARNING = 5;
         public static final int STEPINFO = 1;
         public static final int SUCCEED = 2;
         private WeakReference<ApkComposeActivity> activityRef;
@@ -572,6 +627,10 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
 
         public MyHandler(ApkComposeActivity a) {
             this.activityRef = new WeakReference<>(a);
+        }
+
+        public void warning(String msg) {
+            sendMessage(obtainMessage(SHOW_WARNING, msg));
         }
 
         public void toast(String msg) {
@@ -609,6 +668,9 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
                         break;
                     case 4:
                         Toast.makeText((Context) apkComposeActivity, (CharSequence) this.tmpMessage, 1).show();
+                        break;
+                    case SHOW_WARNING:
+                        apkComposeActivity.showBuildWarning((String) msg.obj);
                         break;
                 }
             }

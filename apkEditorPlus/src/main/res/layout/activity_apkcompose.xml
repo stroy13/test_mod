@@ -42,4 +42,12 @@
             </LinearLayout>
         </LinearLayout>
     </FrameLayout>
+    <LinearLayout android:orientation="vertical" android:id="@+id/layout_build_warning" android:background="?labCardBackground" android:padding="12.0dip" android:visibility="gone" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_margin="12.0dip">
+        <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="?labAccent" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/build_warning_title" />
+        <TextView android:textSize="14.0sp" android:textColor="?labText" android:id="@+id/tv_build_warning" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="6.0dip" android:textIsSelectable="true" />
+        <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="8.0dip">
+            <Button android:id="@+id/btn_copy_build_warning" android:layout_width="0.0dip" android:layout_height="wrap_content" android:text="@string/build_warning_copy" android:layout_weight="1.0" />
+            <Button android:id="@+id/btn_dismiss_build_warning" android:layout_width="0.0dip" android:layout_height="wrap_content" android:layout_marginLeft="8.0dip" android:text="@string/build_warning_dismiss" android:layout_weight="1.0" />
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>

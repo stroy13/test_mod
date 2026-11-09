@@ -571,7 +571,7 @@ Note: this is the original historical text; this edition does support signing."<
     
     <string name="lab_early_save_failed">Could not save temporary edits; rotation recovery may be limited.</string>
     
-    <string name="lab_key_custom_desc">Select a keystore and alias</string>
+    <string name="lab_key_custom_desc">Select the private key (.pk8) and certificate (.x509.pem)</string>
     
     <string name="lab_key_editor_desc">Different certificate. Previously signed apps may not update over old versions.</string>
     
@@ -671,4 +671,9 @@ Note: this is the original historical text; this edition does support signing."<
     <string name="lab_build_no_reason">The build failed but did not report a reason. See the build log.</string>
     <string name="aapt2_fallback_types">AAPT2 cannot compile the resource types %1$s (renamed by an obfuscator). Building with the original AAPT, which accepts them.</string>
     <string name="aapt2_fallback_generic">AAPT2 rejected a resource type it does not know. Building with the original AAPT, which accepts any type name.</string>
+    <string name="build_warning_title">Build warning</string>
+    <string name="build_warning_copy">Copy</string>
+    <string name="build_warning_dismiss">Dismiss</string>
+    <string name="build_warning_copied">Warning copied to clipboard.</string>
+    <string name="patch_dex_prepare_failed">Could not prepare DEX script \'%1$s\': %2$s</string>
 </resources>
