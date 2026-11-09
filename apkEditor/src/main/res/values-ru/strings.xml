@@ -158,6 +158,15 @@
     <string name="patch_capital">ПАТЧ</string>
     <string name="patch_error_cannot_parse" formatted="false">Не удаётся выполнить анализ строки %d: %s</string>
     <string name="patch_error_invalid_target" formatted="false">Недействительная или неподдерживаемая цель в строке %d: %s</string>
+    <plurals name="patch_matches_replaced">
+        <item quantity="one">%d совпадение заменено</item>
+        <item quantity="few">%d совпадения заменено</item>
+        <item quantity="many">%d совпадений заменено</item>
+        <item quantity="other">%d совпадений заменено</item>
+    </plurals>
+    <string name="patch_error_no_rule">Правило перехода \'%s\' не найдено. Проверка остановлена.</string>
+    <string name="patch_error_goto_loop">Патч зациклился на переходах между правилами. Остановлено.</string>
+    <string name="patch_error_rule_failed">Правило завершилось с ошибкой: %s</string>
     <string name="patch_error_no_entry">"Не удаётся найти '%s' внутри патча."</string>
     <string name="patch_error_no_match">В %s совпадений не найдено.</string>
     <string name="patch_error_no_match_content">Не определено сравниваемое содержимое.</string>
@@ -589,4 +598,6 @@ APK Editor предназначен для пользователей Android, �
     
     <string name="smali_notice_intro">smali/baksmali — стороннее программное обеспечение. Ниже приведён перевод уведомления о лицензиях; оригинал можно открыть отдельной кнопкой.</string>
     
+    <string name="manifest_file_name">AndroidManifest.xml</string>
+    <string name="manifest_file_type">AXML</string>
 </resources>

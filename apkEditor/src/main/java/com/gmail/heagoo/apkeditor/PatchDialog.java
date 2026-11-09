@@ -578,8 +578,8 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
     public void info(int resourceId, boolean bold, Object... args) {
         StringBuilder sb;
         String txt = this.activityRef.get().getString(resourceId);
-        if (args != null) {
-            txt = String.format(txt, args);
+        if (args != null && args.length > 0) {
+            txt = safeFormat(txt, args);
         }
         if (bold) {
             sb = new StringBuilder();
@@ -595,8 +595,11 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
     public void info(String format, boolean bold, Object... args) {
         StringBuilder sb;
         String txt = format;
-        if (args != null) {
-            txt = String.format(txt, args);
+        // Only format when arguments were actually supplied: running
+        // String.format over a plain message makes a literal '%' in a file path
+        // throw UnknownFormatConversionException on the patch worker thread.
+        if (args != null && args.length > 0) {
+            txt = safeFormat(txt, args);
         }
         if (bold) {
             sb = new StringBuilder();
@@ -610,11 +613,21 @@ public class PatchDialog extends Dialog implements View.OnClickListener, IPatchC
 
     public void error(int resourceId, Object... args) {
         this.errorCount.incrementAndGet();
-        String txt = this.activityRef.get().getString(resourceId);
-        if (args != null) {
-            txt = String.format(txt, args);
+        ApkInfoActivity activity = this.activityRef.get();
+        String txt = activity == null ? "" : activity.getString(resourceId);
+        if (args != null && args.length > 0) {
+            txt = safeFormat(txt, args);
         }
         appendText(txt + Document.LINE_SEPARATOR_UNIX, false, true);
+    }
+
+    /** A malformed format string must not abort the patch. */
+    private static String safeFormat(String format, Object[] args) {
+        try {
+            return String.format(format, args);
+        } catch (RuntimeException e) {
+            return format;
+        }
     }
 
     private int logColor(int style) {
