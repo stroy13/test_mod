@@ -90,13 +90,15 @@ public final class PatchLogFormat {
         if (lineEnd < 0) {
             lineEnd = entry.length();
         }
-        out.add(new Part(bulletAt, nameStart, PART_BULLET));
+        addPart(out, bulletAt, nameStart, PART_BULLET);
         int dash = entry.indexOf(SEPARATOR, nameStart);
         if (dash >= 0 && dash + SEPARATOR.length() <= lineEnd) {
-            out.add(new Part(nameStart, dash, PART_NAME));
-            out.add(new Part(dash + SEPARATOR.length(), lineEnd, PART_COUNT));
-        } else if (nameStart < lineEnd) {
-            out.add(new Part(nameStart, lineEnd, PART_NAME));
+            addPart(out, nameStart, dash, PART_NAME);
+            // A preview cut exactly after the separator leaves an empty count;
+            // an empty span would trip SpannableStringBuilder's bounds checks.
+            addPart(out, dash + SEPARATOR.length(), lineEnd, PART_COUNT);
+        } else {
+            addPart(out, nameStart, lineEnd, PART_NAME);
         }
         if (lineEnd < entry.length()) {
             int dirStart = lineEnd + 1;
@@ -107,11 +109,16 @@ public final class PatchLogFormat {
             while (dirStart < dirEnd && entry.charAt(dirStart) == ' ') {
                 dirStart++;
             }
-            if (dirStart < dirEnd) {
-                out.add(new Part(dirStart, dirEnd, PART_DIRECTORY));
-            }
+            addPart(out, dirStart, dirEnd, PART_DIRECTORY);
         }
         return out;
+    }
+
+    /** Never emits an empty or reversed span. */
+    private static void addPart(List<Part> out, int start, int end, int kind) {
+        if (start >= 0 && end > start) {
+            out.add(new Part(start, end, kind));
+        }
     }
 
     /** Last path segment; the whole string when there is no separator. */
