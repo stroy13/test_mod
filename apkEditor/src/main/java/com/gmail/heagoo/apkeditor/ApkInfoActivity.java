@@ -3552,9 +3552,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         View manifestHeader = findViewById(R.id.manifest_header);
         if (manifestHeader != null) {
             android.view.ViewGroup.LayoutParams headerParams = manifestHeader.getLayoutParams();
-            headerParams.height = (int) (48 * getResources().getDisplayMetrics().density + 0.5f);
+            headerParams.height = (int) (36 * getResources().getDisplayMetrics().density + 0.5f);
             manifestHeader.setLayoutParams(headerParams);
-            manifestHeader.setBackgroundColor(headerColors.gutter);
+            manifestHeader.setBackgroundColor(headerColors.dark ? 0xff171717 : headerColors.gutter);
             TextView headerName = (TextView) findViewById(R.id.manifest_header_name);
             TextView headerType = (TextView) findViewById(R.id.manifest_header_type);
             if (headerName != null) {
@@ -3582,8 +3582,14 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 }
                 public void afterTextChanged(Editable text) { }
             });
-            Button saveManifest = new Button(this);
+            TextView saveManifest = new TextView(this);
             saveManifest.setText(R.string.lab_save_manifest);
+            saveManifest.setTextSize(12);
+            saveManifest.setTextColor(headerColors.text);
+            saveManifest.setGravity(android.view.Gravity.CENTER);
+            int savePadding = (int) (10 * getResources().getDisplayMetrics().density);
+            saveManifest.setPadding(savePadding, 0, savePadding, 0);
+            saveManifest.setBackgroundResource(android.R.drawable.list_selector_background);
             saveManifest.setContentDescription(getString(R.string.lab_save_manifest));
             saveManifest.setOnClickListener(v -> {
                 if (saveInlineManifest(true)) Toast.makeText(this, R.string.lab_manifest_saved, Toast.LENGTH_SHORT).show();

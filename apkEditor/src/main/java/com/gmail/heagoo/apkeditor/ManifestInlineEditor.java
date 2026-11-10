@@ -8,6 +8,7 @@ import android.text.Editable;
 import android.text.Layout;
 import android.text.TextWatcher;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -46,6 +47,9 @@ public final class ManifestInlineEditor extends AppCompatEditText {
     private static final class SyntaxColor extends ForegroundColorSpan {
         SyntaxColor(int color) { super(color); }
     }
+    private static final class CommentStyle extends StyleSpan {
+        CommentStyle() { super(Typeface.ITALIC); }
+    }
 
     public ManifestInlineEditor(Context context, ManifestEditorPalette colors) {
         super(context);
@@ -57,13 +61,13 @@ public final class ManifestInlineEditor extends AppCompatEditText {
         minFling = config.getScaledMinimumFlingVelocity();
         maxFling = config.getScaledMaximumFlingVelocity();
         gutterWidth = (int) (52 * density + 0.5f);
-        setTypeface(Typeface.MONOSPACE);
+        setTypeface(Typeface.DEFAULT);
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         setGravity(android.view.Gravity.TOP | android.view.Gravity.START);
         setSingleLine(false);
         setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
                 | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-        setTypeface(Typeface.MONOSPACE);
+        setTypeface(Typeface.DEFAULT);
         setBackgroundColor(colors.surface);
         setTextColor(colors.text);
         setPadding(gutterWidth + (int) (8 * density), (int) (8 * density), (int) (8 * density), (int) (8 * density));
@@ -71,7 +75,7 @@ public final class ManifestInlineEditor extends AppCompatEditText {
         setHorizontallyScrolling(false);
         setBreakStrategy(Layout.BREAK_STRATEGY_SIMPLE);
         setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NONE);
-        numberPaint.setTypeface(Typeface.MONOSPACE);
+        numberPaint.setTypeface(Typeface.DEFAULT);
         numberPaint.setTextSize(getTextSize());
         numberPaint.setTextAlign(Paint.Align.RIGHT);
         addTextChangedListener(new TextWatcher() {
@@ -127,7 +131,7 @@ public final class ManifestInlineEditor extends AppCompatEditText {
                             continue;
                         }
                     }
-                    spans.add(new int[]{start, stop, color});
+                    spans.add(new int[]{start, stop, color, span.kind});
                 }
                 offset = end + 1;
             }
@@ -135,7 +139,12 @@ public final class ManifestInlineEditor extends AppCompatEditText {
             post(() -> {
                 if (generation != current || getText() != editable) return;
                 for (SyntaxColor span : editable.getSpans(0, editable.length(), SyntaxColor.class)) editable.removeSpan(span);
-                for (int[] span : spans) editable.setSpan(new SyntaxColor(span[2]), span[0], span[1], 33);
+                for (CommentStyle span : editable.getSpans(0, editable.length(), CommentStyle.class)) editable.removeSpan(span);
+                for (int[] span : spans) {
+                    editable.setSpan(new SyntaxColor(span[2]), span[0], span[1], 33);
+                    if (span.length > 3 && span[3] == ManifestSyntax.COMMENT)
+                        editable.setSpan(new CommentStyle(), span[0], span[1], 33);
+                }
             });
         });
     }
@@ -268,8 +277,14 @@ public final class ManifestInlineEditor extends AppCompatEditText {
             for (int line = first; line <= last && line < layout.getLineCount(); line++) {
                 int lineStart = layout.getLineStart(line);
                 if (lineStart == 0 || text.charAt(lineStart - 1) == '\n') {
-                    canvas.drawText(Integer.toString(physical), x + gutterWidth - 6,
+                    canvas.drawText(Integer.toString(physical), x + gutterWidth - 6 * density,
                             getTotalPaddingTop() + layout.getLineBaseline(line), numberPaint);
+                } else {
+                    // Visual marker only; no arrow or line break enters the XML.
+                    numberPaint.setColor(palette.indentGuide);
+                    canvas.drawText("↪", x + gutterWidth + 5 * density,
+                            getTotalPaddingTop() + layout.getLineBaseline(line), numberPaint);
+                    numberPaint.setColor(palette.gutterText);
                 }
                 int lineEnd = layout.getLineEnd(line);
                 if (lineStart == 0 || text.charAt(lineStart - 1) == '\n') {

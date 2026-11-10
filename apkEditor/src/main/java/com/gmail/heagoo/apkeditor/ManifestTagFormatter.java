@@ -50,6 +50,8 @@ final class ManifestTagFormatter {
         while (i < n && !space(tag.charAt(i)) && tag.charAt(i) != '>' && tag.charAt(i) != '/') i++;
         if (i == 1) return tag;
         java.util.ArrayList<int[]> spaces = new java.util.ArrayList<>();
+        int attributes = 0;
+        boolean manifest = tag.substring(1, i).equals("manifest");
         while (i < n) {
             int ws = i;
             while (i < n && space(tag.charAt(i))) i++;
@@ -66,11 +68,14 @@ final class ManifestTagFormatter {
             int close = tag.indexOf(quote, i);
             if (close < 0) return tag;
             i = close + 1;
-            // Preserve existing multiline formatting; only split inline separators.
-            if (tag.substring(ws, attr).indexOf('\n') < 0 && tag.substring(ws, attr).indexOf('\r') < 0)
+            attributes++;
+            // Keep the first xmlns declaration next to <manifest as in the reference.
+            boolean keepFirst = manifest && attributes == 1 && tag.startsWith("xmlns", attr);
+            if (!keepFirst && tag.substring(ws, attr).indexOf('\n') < 0 && tag.substring(ws, attr).indexOf('\r') < 0)
                 spaces.add(new int[]{ws, attr});
         }
-        if (spaces.isEmpty()) return tag;
+        // A single attribute fits naturally beside its element name.
+        if (attributes <= 1 || spaces.isEmpty()) return tag;
         StringBuilder result = new StringBuilder();
         int previous = 0;
         for (int[] range : spaces) {
