@@ -19,6 +19,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.EditText;
 import android.widget.TextView;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
@@ -474,8 +475,11 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
         }
         notifyDataSetChanged();
         if (this.callback != null) {
-            this.callback.manifestChanged(content);
-            return null;
+            if (!this.callback.manifestChanged(content)) {
+                reload();
+                return this.activityRef.get().getString(R.string.lab_manifest_save_failed);
+            }
+            reload();
         }
         return null;
     }
@@ -493,30 +497,37 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
             return !containMainAction(lineRec);
         }
         if ("action".equals(tag)) {
-            return !lineRec.lineData.contains("android.intent.action.MAIN");
+            return !sectionContains(lineRec, "android.intent.action.MAIN");
         }
-        if (!"category".equals(tag)) {
-            return true;
+        if ("category".equals(tag)) {
+            return !sectionContains(lineRec, "android.intent.category.LAUNCHER");
         }
-        boolean bContain = lineRec.lineData.contains("android.intent.category.LAUNCHER");
-        return !bContain;
+        return true;
     }
 
     private boolean containMainAction(LineRecord lineRec) {
-        for (int i = lineRec.sectionStart; i < lineRec.sectionEnd; i++) {
+        return sectionContains(lineRec, "android.intent.action.MAIN");
+    }
+
+    private boolean sectionContains(LineRecord lineRec, String value) {
+        int start = Math.max(0, lineRec.sectionStart);
+        int end = Math.min(this.allXmlLines.size() - 1, lineRec.sectionEnd);
+        for (int i = start; i <= end; i++) {
             LineRecord rec = this.allXmlLines.get(i);
-            if ("action".equals(rec.getSectionTag()) && rec.lineData.contains("android.intent.action.MAIN")) {
-                return true;
-            }
+            if (!rec.deleted && rec.lineData.contains(value)) return true;
         }
         return false;
     }
 
     @Override
     public void xmlLineChanged(int lineIndex, String newLine) {
+        applyLineChange(lineIndex, newLine);
+    }
+
+    private boolean applyLineChange(int lineIndex, String newLine) {
         if (!isProVersion()) {
             showPromoteDialog(this.activityRef.get());
-            return;
+            return false;
         }
         String content;
         synchronized (this) {
@@ -542,18 +553,19 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
             refreshSyntax();
         }
         notifyDataSetChanged();
-        if (this.callback != null) {
-            this.callback.manifestChanged(content);
-        }
+        boolean saved = this.callback != null && this.callback.manifestChanged(content);
+        // Rebuild section boundaries after tag edits and restore from disk on failure.
+        reload();
+        return saved;
     }
 
     @Override
-    public void manifestChanged(String newContent) {
+    public boolean manifestChanged(String newContent) {
         if (!isProVersion()) {
             showPromoteDialog(this.activityRef.get());
-        } else if (this.callback != null) {
-            this.callback.manifestChanged(newContent);
+            return false;
         }
+        return this.callback != null && this.callback.manifestChanged(newContent);
     }
 
     void reload() {
@@ -573,8 +585,25 @@ class ManifestListAdapter extends BaseAdapter implements IManifestChangeCallback
         } catch (Exception e) {
         }
         if (lineRec != null) {
-            XmlLineDialog dlg = new XmlLineDialog(this.activityRef.get(), this, lineRec.lineIndex, lineRec.lineData);
-            dlg.show();
+            final Activity activity = this.activityRef.get();
+            if (activity == null) return;
+            final int index = lineRec.lineIndex;
+            final EditText editor = new EditText(activity);
+            editor.setText(lineRec.lineData);
+            editor.setSingleLine(false);
+            editor.setTypeface(Typeface.MONOSPACE);
+            editor.setSelection(editor.length());
+            final AlertDialog dialog = new AlertDialog.Builder(activity)
+                    .setTitle(R.string.lab_manifest_edit_line)
+                    .setView(editor)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(R.string.save, null)
+                    .create();
+            dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                    .setOnClickListener(view -> {
+                        if (applyLineChange(index, editor.getText().toString())) dialog.dismiss();
+                    }));
+            dialog.show();
         }
     }
 

@@ -76,9 +76,6 @@ class LineRecord {
         if (endPos == -1) {
             if (this.sectionStart == this.sectionEnd) {
                 endPos = data.indexOf("/>");
-                if (endPos != -1) {
-                    endPos--;
-                }
             } else {
                 endPos = data.indexOf(">");
             }

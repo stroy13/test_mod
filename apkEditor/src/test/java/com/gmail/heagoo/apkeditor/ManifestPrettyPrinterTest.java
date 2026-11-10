@@ -44,6 +44,16 @@ public class ManifestPrettyPrinterTest {
             + "    </application>\n"
             + "</manifest>\n";
 
+    @Test
+    public void oversizedTagDoesNotLoseRemainingAttributes() {
+        StringBuilder xml = new StringBuilder("<manifest");
+        for (int i = 0; i < 4100; i++) xml.append(" a").append(i).append("=\"x\"");
+        xml.append(" />");
+        List<ManifestPrettyPrinter.Line> lines = ManifestPrettyPrinter.format(xml.toString());
+        assertEquals(1, lines.size());
+        assertEquals(xml.toString(), lines.get(0).text);
+    }
+
     private static String render(List<ManifestPrettyPrinter.Line> lines) {
         StringBuilder sb = new StringBuilder();
         for (ManifestPrettyPrinter.Line line : lines) {

@@ -460,8 +460,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         String versionPath = prjDirectory + "/.prj_version";
         String infoPath = prjDirectory + "/ae.prj";
         try {
-            IOUtils.writeToFile(versionPath, "1");
-            return IOUtils.writeObjectToFile(infoPath, prjInfo);
+            AtomicProjectFile.writeText(new File(versionPath), "1");
+            AtomicProjectFile.writeObject(new File(infoPath), prjInfo);
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -535,8 +536,8 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (saveAll && !this.isFullDecoding) {
             IOUtils.writeObjectToFile(path6, this.fileEntry2ZipEntry);
         }
-        state.putString("fileEntry2ZipEntry_file", path6);
-        state.putString("curConfig", this.curConfig.toString());
+        state.putString("fileEntry2ZipEntry_file", this.isFullDecoding ? null : path6);
+        state.putString("curConfig", this.curConfig);
         state.putSerializable("langConfigList", this.langConfigList);
         state.putBoolean("stringModified", this.stringModified);
         state.putBoolean("manifestModified", this.manifestModified);
@@ -618,23 +619,14 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             return;
         }
         try {
-            if (this.indexSaveTask != null && !this.indexSaveTask.get().booleanValue()) {
-                String indexPath = SDCard.makeWorkingDir(this);
-                IOUtils.writeObjectToFile(indexPath + "allStringValues", this.allStringValues);
-                IOUtils.writeObjectToFile(indexPath + "fileEntry2ZipEntry", this.fileEntry2ZipEntry);
-            }
-            if (this.projectName != null) {
-                String prjRoot = SDCard.makeDir(this, ".projects");
-                workingPath = prjRoot + this.projectName + "/";
-            } else {
-                workingPath = SDCard.makeWorkingDir(this);
-            }
-        } catch (Exception ignored) {
-            if (workingPath == null) {
-                workingPath = "";
-            }
+            File session = new File(getCacheDir(), "activity-state-" + this.earlyEditToken);
+            if (!session.isDirectory() && !session.mkdirs()) throw new IOException("Cannot create session directory");
+            workingPath = session.getAbsolutePath() + "/";
+        } catch (Exception e) {
+            super.onSaveInstanceState(savedInstanceState);
+            return;
         }
-        ActivityState_V1 state = saveCurrentState(workingPath);
+        ActivityState_V1 state = saveCurrentState(workingPath, true, null);
         state.toBundle(savedInstanceState);
         super.onSaveInstanceState(savedInstanceState);
     }
@@ -796,127 +788,149 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (dealed) {
             return;
         }
-        AlertDialog.Builder dlg = new AlertDialog.Builder(this).setMessage(R.string.sure_to_exit_editing).setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-            @Override // android.content.DialogInterface.OnClickListener
-            public final void onClick(DialogInterface dialogInterface, int i) {
-                ApkInfoActivity.this.m61xd7b44d3f(dialogInterface, i);
-            }
-        }).setNegativeButton(R.string.no, (DialogInterface.OnClickListener) null);
-        if (this.projectName == null && (this.parseThread == null || !this.parseThread.isAlive())) {
-            dlg.setMessage(R.string.sure_to_exit);
-            dlg.setNeutralButton(R.string.save_as_project, new DialogInterface.OnClickListener() {
-                @Override // android.content.DialogInterface.OnClickListener
-                public final void onClick(DialogInterface dialogInterface, int i) {
-                    ApkInfoActivity.this.m62x9aa0b69e(dialogInterface, i);
-                }
-            });
+        AlertDialog.Builder dlg = new AlertDialog.Builder(this)
+                .setMessage(R.string.lab_project_exit_message)
+                .setPositiveButton(R.string.lab_exit_without_project_save, (dialog, which) -> {
+                    if (this.parseThread != null && this.parseThread.isAlive()) this.parseThread.stopParse();
+                    finish();
+                })
+                .setNegativeButton(android.R.string.cancel, null);
+        if (canSaveProject()) {
+            dlg.setNeutralButton(R.string.lab_save_project_and_exit, (dialog, which) -> saveProject(true));
         }
         dlg.show();
     }
 
-    void m61xd7b44d3f(DialogInterface dialog, int which) {
-        if (this.parseThread != null && this.parseThread.isAlive()) {
-            this.parseThread.stopParse();
-            this.parseThread = null;
+    private boolean canSaveProject() {
+        return this.resourceParsed && this.lastLoadError == null && this.allStringValues != null
+                && this.resListAdapter != null && this.decodeRootPath != null
+                && new File(this.decodeRootPath).isDirectory()
+                && (this.parseThread == null || !this.parseThread.isAlive());
+    }
+
+    private void requestProjectSave() {
+        if (!canSaveProject()) {
+            Toast.makeText(this, R.string.lab_project_wait, Toast.LENGTH_LONG).show();
+            return;
         }
-        finish();
+        saveProject(false);
     }
 
-    void m62x9aa0b69e(DialogInterface dialog, int which) {
-        saveAsProject();
-    }
-
-    private void saveProject() {
-        new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() {
-            ProjectInfo_V1 prjInfo;
-            String prjRoot;
-
-            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
-            public void process() {
-                try {
-                    this.prjRoot = SDCard.makeDir(ApkInfoActivity.this, ".projects");
-                    this.prjInfo = ApkInfoActivity.loadProject(this.prjRoot + ApkInfoActivity.this.projectName);
-                    ActivityState_V1 state = ApkInfoActivity.this.saveCurrentState(this.prjRoot + ApkInfoActivity.this.projectName + "/", true, new File(this.prjRoot + ApkInfoActivity.this.projectName));
-                    this.prjInfo.state = state;
-                } catch (Exception e) {
-                    Toast.makeText((Context) ApkInfoActivity.this, (CharSequence) String.format(ApkInfoActivity.this.getString(R.string.general_error), e.getMessage()), 1).show();
-                }
+    /** Copy an external staged file once; files already inside the project remain stable. */
+    private Map<String, String> projectFiles(Map<String, String> input, File project, File dest) throws IOException {
+        Map<String, String> result = new HashMap<>();
+        if (input == null) return result;
+        int index = 0;
+        String root = project.getCanonicalPath() + File.separator;
+        for (Map.Entry<String, String> entry : input.entrySet()) {
+            if (entry.getValue() == null) throw new IOException("Missing file: " + entry.getKey());
+            File source = new File(entry.getValue());
+            if (!source.isFile()) throw new IOException("Missing file: " + source);
+            if (source.getCanonicalPath().startsWith(root)) {
+                result.put(entry.getKey(), source.getAbsolutePath());
+            } else {
+                File target = new File(dest, Integer.toString(index++));
+                CheckpointFiles.copy(source, target);
+                result.put(entry.getKey(), target.getAbsolutePath());
             }
-
-            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
-            public void afterProcess() {
-                if (this.prjInfo == null) {
-                    return;
-                }
-                boolean ret = ApkInfoActivity.this.storeProject(this.prjRoot + ApkInfoActivity.this.projectName, this.prjInfo);
-                if (!ret) {
-                    Toast.makeText((Context) ApkInfoActivity.this, R.string.cannot_save_project, 1).show();
-                } else {
-                    ApkInfoActivity.this.finish();
-                }
-            }
-        }, -1).show();
+        }
+        return result;
     }
 
-    private void saveAsProject() {
+    private void saveProject(final boolean exitAfterSave) {
+        if (!canSaveProject()) {
+            Toast.makeText(this, R.string.lab_project_wait, Toast.LENGTH_LONG).show();
+            return;
+        }
         new ProcessingDialog(this, new ProcessingDialog.ProcessingInterface() {
-            String errorMessage = null;
             File projectDir;
-            ActivityState_V1 state;
-            File targetDir;
+            File snapshot;
+            boolean created;
+            String error;
+            String savedName;
 
-            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
-            public void process() {
-                String projectName = "UNKNOWN";
-                if (ApkInfoActivity.this.apkInfo != null) {
-                    projectName = ApkInfoActivity.this.apkInfo.label;
-                }
+            @Override public void process() {
                 try {
-                    String parentFolder = SDCard.makeDir(ApkInfoActivity.this, ".projects");
-                    String projectFolder = parentFolder + projectName;
-                    this.projectDir = new File(projectFolder);
-                    if (this.projectDir.exists()) {
-                        this.projectDir = FileCopyDialog.getTargetNonExistFile(projectFolder, true);
+                    File root = new File(SDCard.makeDir(ApkInfoActivity.this, ".projects"));
+                    ProjectInfo_V1 info;
+                    if (ApkInfoActivity.this.projectName == null) {
+                        String label = ApkInfoActivity.this.apkInfo == null ? "UNKNOWN" : ApkInfoActivity.this.apkInfo.label;
+                        if (label == null || label.trim().isEmpty()) label = "UNKNOWN";
+                        label = label.replaceAll("[\\\\/]+", "_").trim();
+                        if (label.equals(".") || label.equals("..") || label.isEmpty()) label = "UNKNOWN";
+                        this.projectDir = new File(root, label);
+                        if (this.projectDir.exists()) this.projectDir = FileCopyDialog.getTargetNonExistFile(this.projectDir.getAbsolutePath(), true);
+                        if (!this.projectDir.mkdir()) throw new IOException("Cannot create project: " + this.projectDir);
+                        this.created = true;
+                        info = new ProjectInfo_V1();
+                        File original = new File(this.projectDir, "original.apk");
+                        CheckpointFiles.copy(new File(ApkInfoActivity.this.apkPath), original);
+                        info.apkPath = original.getAbsolutePath();
+                        File decoded = new File(this.projectDir, "decoded");
+                        CheckpointFiles.copy(new File(ApkInfoActivity.this.decodeRootPath), decoded);
+                        info.decodeRootPath = decoded.getAbsolutePath();
+                    } else {
+                        this.projectDir = new File(root, ApkInfoActivity.this.projectName);
+                        info = ApkInfoActivity.loadProject(this.projectDir.getAbsolutePath());
+                        if (info == null) throw new IOException("Cannot load project metadata");
                     }
-                    boolean ret = this.projectDir.mkdirs();
-                    if (!ret) {
-                        this.errorMessage = ApkInfoActivity.this.getString(R.string.cannot_save_project);
-                        return;
+                    this.savedName = this.projectDir.getName();
+                    this.snapshot = new File(this.projectDir, "state-" + UUID.randomUUID());
+                    if (!this.snapshot.mkdir()) throw new IOException("Cannot create project state");
+                    ActivityState_V1 state = ApkInfoActivity.this.saveCurrentState(this.snapshot.getAbsolutePath() + "/", true, null);
+                    String[] keys = {"allStringValues_file", "changedStringValues_file", "fileEntry2ZipEntry_file", "res_added_file", "res_replaced_file", "res_deleted_file"};
+                    for (String key : keys) {
+                        String path = state.getString(key);
+                        if (path != null && (!new File(path).isFile() || IOUtils.readObjectFromFile(path) == null))
+                            throw new IOException("Cannot save state: " + key);
                     }
-                    String targetFolder = PathUtil.replaceNameWith(ApkInfoActivity.this.decodeRootPath, projectName);
-                    this.targetDir = new File(targetFolder);
-                    if (this.targetDir.exists()) {
-                        this.targetDir = FileCopyDialog.getTargetNonExistFile(targetFolder, true);
+                    if (!ApkInfoActivity.this.isFullDecoding) {
+                        Map<String, String> added = projectFiles(ApkInfoActivity.this.resListAdapter.getAddedFiles(), this.projectDir, new File(this.snapshot, "added"));
+                        Map<String, String> replaced = projectFiles(ApkInfoActivity.this.resListAdapter.getReplacedFiles(), this.projectDir, new File(this.snapshot, "replaced"));
+                        if (!added.isEmpty()) {
+                            File file = new File(this.snapshot, "res_added");
+                            AtomicProjectFile.writeObject(file, (java.io.Serializable) added);
+                            state.putString("res_added_file", file.getAbsolutePath());
+                        }
+                        if (!replaced.isEmpty()) {
+                            File file = new File(this.snapshot, "res_replaced");
+                            AtomicProjectFile.writeObject(file, (java.io.Serializable) replaced);
+                            state.putString("res_replaced_file", file.getAbsolutePath());
+                        }
                     }
-                    boolean ret2 = new File(ApkInfoActivity.this.decodeRootPath).renameTo(this.targetDir);
-                    if (!ret2) {
-                        this.errorMessage = ApkInfoActivity.this.getString(R.string.cannot_rename_decode_folder);
-                        return;
+                    if (this.created) {
+                        String current = state.getString("res_current_dir");
+                        if (current != null) {
+                            String oldRoot = new File(ApkInfoActivity.this.decodeRootPath).getCanonicalPath();
+                            String cur = new File(current).getCanonicalPath();
+                            String newRoot = new File(info.decodeRootPath).getCanonicalPath();
+                            state.putString("res_current_dir", cur.equals(oldRoot) || cur.startsWith(oldRoot + File.separator)
+                                    ? newRoot + cur.substring(oldRoot.length()) : newRoot);
+                        }
                     }
-                    ApkInfoActivity.this.resListAdapter.renamePathAsFolderRename(ApkInfoActivity.this.decodeRootPath + "/", this.targetDir.getPath() + "/");
-                    this.state = ApkInfoActivity.this.saveCurrentState(this.projectDir.getPath() + "/", true, this.projectDir);
-                    if (this.state == null) {
-                        this.errorMessage = "Cannot save project state.";
-                    }
+                    info.state = state;
+                    if (!ApkInfoActivity.this.storeProject(this.projectDir.getAbsolutePath(), info))
+                        throw new IOException("Cannot save project metadata");
                 } catch (Exception e) {
-                    this.errorMessage = String.format(ApkInfoActivity.this.getString(R.string.general_error), e.getMessage());
+                    this.error = e.toString();
+                    if (this.created && this.projectDir != null) CheckpointFiles.delete(this.projectDir);
+                    else if (this.snapshot != null) CheckpointFiles.delete(this.snapshot);
                 }
             }
 
-            @Override // com.gmail.heagoo.apkeditor.ProcessingDialog.ProcessingInterface
-            public void afterProcess() {
-                if (this.errorMessage != null) {
-                    Toast.makeText((Context) ApkInfoActivity.this, (CharSequence) this.errorMessage, 1).show();
+            @Override public void afterProcess() {
+                if (this.error != null) {
+                    new AlertDialog.Builder(ApkInfoActivity.this).setMessage(getString(R.string.cannot_save_project) + "\n" + this.error)
+                            .setPositiveButton(android.R.string.ok, null).show();
                     return;
                 }
-                ProjectInfo_V1 prjInfo = new ProjectInfo_V1();
-                prjInfo.state = this.state;
-                prjInfo.apkPath = ApkInfoActivity.this.apkPath;
-                prjInfo.decodeRootPath = this.targetDir.getPath();
-                boolean ret = ApkInfoActivity.this.storeProject(this.projectDir.getPath(), prjInfo);
-                if (!ret) {
-                    Toast.makeText((Context) ApkInfoActivity.this, R.string.cannot_save_project, 1).show();
-                } else {
+                Toast.makeText(ApkInfoActivity.this, R.string.lab_project_saved, Toast.LENGTH_LONG).show();
+                if (exitAfterSave) {
+                    ApkInfoActivity.this.finish();
+                } else if (this.created) {
+                    Intent intent = new Intent(ApkInfoActivity.this, ApkInfoActivity.class);
+                    ActivityUtil.attachParam(intent, "projectName", this.savedName);
+                    ApkInfoActivity.this.startActivity(intent);
                     ApkInfoActivity.this.finish();
                 }
             }
@@ -982,9 +996,10 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 }
                 break;
             case 1001:
-                this.resListAdapter.replaceFile(this.savedParam_extraStr, this.savedParam_filePath);
-                if ((this.decodeRootPath + "/AnfroidManifest.xml").equals(this.savedParam_extraStr)) {
-                    setManifestModified(true);
+                if ((this.decodeRootPath + "/AndroidManifest.xml").equals(this.savedParam_extraStr)) {
+                    if (replaceFile(this.savedParam_extraStr, this.savedParam_filePath)) setManifestModified(true);
+                } else {
+                    this.resListAdapter.replaceFile(this.savedParam_extraStr, this.savedParam_filePath);
                 }
                 if (this.savedParam_listener != null) {
                     this.savedParam_listener.somethingChanged();
@@ -1046,6 +1061,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     private void initView() {
+        findViewById(R.id.project_save_button).setOnClickListener(v -> requestProjectSave());
         Throwable th = null;
         Resources res = getResources();
         this.textIcon = res.getDrawable(R.drawable.icon_text);
@@ -3684,20 +3700,20 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         return null;
     }
 
-    protected void replaceFile(String replacedPath, String replacingPath) {
-        FileInputStream in = null;
-        FileOutputStream out = null;
+    protected boolean replaceFile(String replacedPath, String replacingPath) {
         try {
-            try {
-                in = new FileInputStream(replacingPath);
-                out = new FileOutputStream(replacedPath);
-                IOUtils.copy(in, out);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } finally {
-            closeQuietly(in);
-            closeQuietly(out);
+            AtomicProjectFile.replace(new File(replacedPath), temp -> {
+                try (FileInputStream in = new FileInputStream(replacingPath);
+                     FileOutputStream out = new FileOutputStream(temp)) {
+                    IOUtils.copy(in, out);
+                    out.getFD().sync();
+                }
+            });
+            return true;
+        } catch (IOException e) {
+            new AlertDialog.Builder(this).setMessage(getString(R.string.lab_manifest_save_failed) + "\n" + e)
+                    .setPositiveButton(android.R.string.ok, null).show();
+            return false;
         }
     }
 
@@ -4044,28 +4060,15 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     @Override // com.gmail.heagoo.apkeditor.IManifestChangeCallback
-    public void manifestChanged(String newContent) {
-        FileOutputStream fos = null;
+    public boolean manifestChanged(String newContent) {
         try {
-            fos = new FileOutputStream(this.decodeRootPath + "/AndroidManifest.xml");
-            fos.write(newContent.getBytes());
+            AtomicProjectFile.writeText(new File(this.decodeRootPath, "AndroidManifest.xml"), newContent);
             this.manifestModified = true;
+            return true;
         } catch (IOException e) {
-            if (fos == null) {
-                return;
-            }
-        } catch (Throwable th) {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e2) {
-                }
-            }
-            throw th;
-        }
-        try {
-            fos.close();
-        } catch (IOException e3) {
+            new AlertDialog.Builder(this).setMessage(getString(R.string.lab_manifest_save_failed) + "\n" + e)
+                    .setPositiveButton(android.R.string.ok, null).show();
+            return false;
         }
     }
 

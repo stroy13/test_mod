@@ -35,6 +35,7 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
     private String aaptPath;
     private String androidJarPath;
     private boolean bSignApk;
+    private boolean manifestModified;
     private String binRootPath;
     private Context ctx;
     private String decodedFilePath;
@@ -69,6 +70,7 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
     @Override // com.gmail.heagoo.apkeditor.ComposeThread
     public void setModification(boolean strModified, boolean manifestModified, boolean resFileModified, List<String> modifiedSmaliFolders, Map<String, String> addedFiles, Map<String, String> replacedFiles, Set<String> deletedFiles, Map<String, String> fileEntry2ZipEntry, boolean bSignApk) {
         this.bSignApk = bSignApk;
+        this.manifestModified = manifestModified;
     }
 
     @Override // java.lang.Thread, java.lang.Runnable
@@ -78,7 +80,7 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
             buildDir.mkdir();
         }
         try {
-            boolean rebuildResource = needRebuildResource();
+            boolean rebuildResource = this.manifestModified || needRebuildResource();
             checkSmaliModification();
             this.stepInfo.stepTotal = 0;
             if (rebuildResource) {
