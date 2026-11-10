@@ -52,9 +52,11 @@ public class Aapt2DummyResourcesTest {
     @Test public void realAapt2CompilesAndLinksRepairedMixedResources() throws Exception {
         String sdk = System.getenv("ANDROID_SDK_ROOT");
         if (sdk == null) sdk = System.getenv("ANDROID_HOME");
+        if (System.getenv("CI") != null) assertNotNull("Android SDK required in CI", sdk);
         Assume.assumeNotNull(sdk);
         File aapt = new File(sdk, "build-tools/37.0.0/aapt2");
         File framework = new File(sdk, "platforms/android-37.0/android.jar");
+        if (System.getenv("CI") != null) assertTrue("AAPT2 and framework required in CI", aapt.isFile() && framework.isFile());
         Assume.assumeTrue(aapt.isFile() && framework.isFile());
         Path root = folder.newFolder("integration").toPath();
         Path res = Files.createDirectory(root.resolve("res"));
@@ -72,6 +74,9 @@ public class Aapt2DummyResourcesTest {
                 .append("\" name=\"dummy_ae_0\">false</item>\n");
         misc.append("</resources>");
         Files.write(values.resolve("other.xml"), misc.toString().getBytes(StandardCharsets.UTF_8));
+        String publicXml = "<resources><public type=\"attr\" name=\"dummy_ae_2\" id=\"0x7f010002\"/>"
+                + "<public type=\"array\" name=\"dummy_ae_3\" id=\"0x7f020003\"/></resources>";
+        Files.write(values.resolve("public.xml"), publicXml.getBytes(StandardCharsets.UTF_8));
         Path manifest = root.resolve("AndroidManifest.xml");
         Files.write(manifest, "<manifest package=\"com.example.dummy\"><application/></manifest>".getBytes(StandardCharsets.UTF_8));
         Process broken = new ProcessBuilder(aapt.toString(), "compile", "--legacy", "--no-crunch", "--dir", res.toString(), "-o", root.resolve("broken.zip").toString()).redirectErrorStream(true).start();
