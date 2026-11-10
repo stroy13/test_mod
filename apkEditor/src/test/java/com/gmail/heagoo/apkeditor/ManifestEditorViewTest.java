@@ -41,6 +41,14 @@ public class ManifestEditorViewTest {
     }
 
     @Test
+    public void inlineEditorKeepsNumbersWithoutIndentStripes() throws Exception {
+        String editor = read("apkEditor/src/main/java/com/gmail/heagoo/apkeditor/ManifestInlineEditor.java");
+        assertFalse("indent guides must not be drawn over the code", editor.contains("guideX"));
+        assertTrue("the number gutter must remain", editor.contains("Integer.toString(physical)"));
+        assertTrue("wrapped-line marker must remain", editor.contains("canvas.drawText(\"↪\""));
+    }
+
+    @Test
     public void highlightingIsNotDebouncedUntilScrollingStops() throws Exception {
         String editor = read("apkEditor/src/main/java/com/gmail/heagoo/apkeditor/ManifestInlineEditor.java");
         int start = editor.indexOf("@Override protected void onScrollChanged");

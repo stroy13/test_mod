@@ -329,17 +329,6 @@ public final class ManifestInlineEditor extends AppCompatEditText {
                     numberPaint.setColor(palette.gutterText);
                 }
                 int lineEnd = layout.getLineEnd(line);
-                if (lineStart == 0 || text.charAt(lineStart - 1) == '\n') {
-                    int indent = 0;
-                    while (lineStart + indent < lineEnd && text.charAt(lineStart + indent) == ' ') indent++;
-                    gutterPaint.setColor(palette.indentGuide);
-                    float space = getPaint().measureText(" ");
-                    for (int column = 4; column <= indent && column <= 80; column += 4) {
-                        float guideX = getTotalPaddingLeft() + column * space;
-                        canvas.drawRect(guideX, getTotalPaddingTop() + layout.getLineTop(line),
-                                guideX + density, getTotalPaddingTop() + layout.getLineBottom(line), gutterPaint);
-                    }
-                }
                 if (lineEnd > lineStart && text.charAt(lineEnd - 1) == '\n') physical++;
             }
         }
