@@ -19,6 +19,7 @@
         </RelativeLayout>
         <Button android:layout_gravity="center" android:id="@id/save_button" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="40.0dip" android:layout_marginLeft="4.0dip" android:layout_marginRight="4.0dip" android:text="@string/build" />
     </LinearLayout>
+    <Button android:id="@+id/project_save_button" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginLeft="8dp" android:layout_marginRight="8dp" android:text="@string/lab_save_project" android:contentDescription="@string/lab_save_project" />
     <FrameLayout android:background="?labSurface" android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_weight="1.0">
         <LinearLayout android:orientation="vertical" android:id="@id/string_layout" android:layout_width="fill_parent" android:layout_height="fill_parent">
             <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent" android:layout_height="wrap_content">

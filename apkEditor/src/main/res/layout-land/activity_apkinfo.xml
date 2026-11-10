@@ -168,6 +168,8 @@
                 android:visibility="invisible" />
         </LinearLayout>
 
+        <Button android:id="@+id/project_save_button" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginLeft="8dp" android:layout_marginRight="8dp" android:text="@string/lab_save_project" android:contentDescription="@string/lab_save_project" />
+
         <FrameLayout
             android:layout_width="fill_parent"
             android:layout_height="0.0dip"

@@ -91,8 +91,8 @@ class ManifestLongClickDlg extends Dialog {
                             ((ApkInfoActivity) ManifestLongClickDlg.this.activityRef.get()).saveParams(filePath, extraStr, null);
                             OpenFiles.openFile((Activity) ManifestLongClickDlg.this.activityRef.get(), filePath, 1001);
                         } else {
-                            ((ApkInfoActivity) ManifestLongClickDlg.this.activityRef.get()).replaceFile(extraStr, filePath);
-                            ((ApkInfoActivity) ManifestLongClickDlg.this.activityRef.get()).setManifestModified(true);
+                            ApkInfoActivity activity = (ApkInfoActivity) ManifestLongClickDlg.this.activityRef.get();
+                            if (activity.replaceFile(extraStr, filePath)) activity.setManifestModified(true);
                         }
                     }
 

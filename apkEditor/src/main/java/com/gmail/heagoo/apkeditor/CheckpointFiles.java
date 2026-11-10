@@ -31,6 +31,9 @@ public final class CheckpointFiles {
             for (File f : children) {
                 copy(f, new File(dest, f.getName()));
             }
+            if (!dest.setLastModified(source.lastModified())) {
+                throw new IOException("Не сохранить время папки: " + dest);
+            }
             return;
         }
         if (source.isFile()) {
@@ -62,6 +65,12 @@ public final class CheckpointFiles {
                         in.close();
                         if (size != dest.length() || size != source.length() || modified != source.lastModified()) {
                             throw new IOException("Файл изменился во время копирования: " + source);
+                        }
+                        // Build caches and smali recompilation use mtimes to decide
+                        // what changed. Copying in a different order must not make
+                        // an older cached resource.apk or dex appear newer.
+                        if (!dest.setLastModified(modified)) {
+                            throw new IOException("Не сохранить время файла: " + dest);
                         }
                         return;
                     } finally {

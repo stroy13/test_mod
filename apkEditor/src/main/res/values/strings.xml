@@ -676,4 +676,12 @@ Note: this is the original historical text; this edition does support signing."<
     <string name="build_warning_dismiss">Dismiss</string>
     <string name="build_warning_copied">Warning copied to clipboard.</string>
     <string name="patch_dex_prepare_failed">Could not prepare DEX script \'%1$s\': %2$s</string>
+    <string name="lab_save_project">Save project</string>
+    <string name="lab_save_project_and_exit">Save and exit</string>
+    <string name="lab_exit_without_project_save">Exit without saving project</string>
+    <string name="lab_project_exit_message">Save the project before exiting? File edits already written to disk are not undone by exiting.</string>
+    <string name="lab_project_wait">Wait until the project has finished loading.</string>
+    <string name="lab_project_saved">Project saved</string>
+    <string name="lab_manifest_edit_line">Edit manifest line (XML)</string>
+    <string name="lab_manifest_save_failed">Could not save AndroidManifest.xml. The previous file was kept.</string>
 </resources>

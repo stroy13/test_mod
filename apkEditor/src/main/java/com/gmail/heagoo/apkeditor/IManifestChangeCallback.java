@@ -1,7 +1,7 @@
 package com.gmail.heagoo.apkeditor;
 
 interface IManifestChangeCallback {
-    void manifestChanged(String str);
+    boolean manifestChanged(String str);
 
     String tryToDeleteSection(LineRecord lineRecord);
 }

@@ -118,6 +118,9 @@ public final class ManifestPrettyPrinter {
             emitRaw(out, source.substring(pos, next), depth);
             pos = next;
         }
+        // Never expose a truncated model to the editor: callers can fall back
+        // to the physical lines instead of overwriting the rest of the file.
+        if (pos < n || out.size() >= MAX_LINES) return new ArrayList<>();
         return out;
     }
 
@@ -197,6 +200,9 @@ public final class ManifestPrettyPrinter {
             }
             attributes.add(attrName + "=" + value);
         }
+
+        while (p < bodyEnd && isSpace(tag.charAt(p))) p++;
+        if (p < bodyEnd) return -1; // exceeded the attribute limit: keep the entire tag
 
         String close = selfClosing ? " />" : ">";
         if (attributes.isEmpty()) {
