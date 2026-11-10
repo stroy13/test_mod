@@ -10,6 +10,9 @@ import android.text.TextWatcher;
 import android.text.style.ForegroundColorSpan;
 import android.util.TypedValue;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
+import android.view.ViewConfiguration;
+import android.widget.OverScroller;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,6 +35,12 @@ public final class ManifestInlineEditor extends AppCompatEditText {
     private Future<?> pendingHighlight;
     private int generation;
     private boolean draggingScrollbar;
+    private boolean draggingContent;
+    private float downX, downY, lastY;
+    private long downTime;
+    private VelocityTracker velocity;
+    private final OverScroller scroller;
+    private final int touchSlop, minFling, maxFling;
     private float dragOffset;
     private final float density;
     private static final class SyntaxColor extends ForegroundColorSpan {
@@ -42,6 +51,11 @@ public final class ManifestInlineEditor extends AppCompatEditText {
         super(context);
         this.palette = colors;
         density = getResources().getDisplayMetrics().density;
+        scroller = new OverScroller(context);
+        ViewConfiguration config = ViewConfiguration.get(context);
+        touchSlop = config.getScaledTouchSlop();
+        minFling = config.getScaledMinimumFlingVelocity();
+        maxFling = config.getScaledMaximumFlingVelocity();
         gutterWidth = (int) (52 * density + 0.5f);
         setTypeface(Typeface.MONOSPACE);
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
@@ -55,6 +69,8 @@ public final class ManifestInlineEditor extends AppCompatEditText {
         setPadding(gutterWidth + (int) (8 * density), (int) (8 * density), (int) (8 * density), (int) (8 * density));
         setVerticalScrollBarEnabled(false);
         setHorizontallyScrolling(false);
+        setBreakStrategy(Layout.BREAK_STRATEGY_SIMPLE);
+        setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NONE);
         numberPaint.setTypeface(Typeface.MONOSPACE);
         numberPaint.setTextSize(getTextSize());
         numberPaint.setTextAlign(Paint.Align.RIGHT);
@@ -133,6 +149,8 @@ public final class ManifestInlineEditor extends AppCompatEditText {
         generation++;
         removeCallbacks(highlight);
         if (pendingHighlight != null) pendingHighlight.cancel(true);
+        scroller.abortAnimation();
+        endTouch();
         super.onDetachedFromWindow();
     }
 
@@ -151,15 +169,25 @@ public final class ManifestInlineEditor extends AppCompatEditText {
     }
     @Override public boolean onTouchEvent(MotionEvent event) {
         int action = event.getActionMasked();
-        if (action == MotionEvent.ACTION_DOWN && scrollRange() > 0
-                && event.getX() >= getWidth() - 32 * density
-                && event.getY() >= thumbTop() - 16 * density
-                && event.getY() <= thumbTop() + thumbHeight() + 16 * density) {
-            draggingScrollbar = true;
-            dragOffset = event.getY() - thumbTop();
-            getParent().requestDisallowInterceptTouchEvent(true);
-            return true;
+        if (action == MotionEvent.ACTION_DOWN) {
+            scroller.abortAnimation();
+            draggingContent = false;
+            downX = event.getX(); downY = lastY = event.getY(); downTime = event.getEventTime();
+            if (velocity != null) velocity.recycle();
+            velocity = VelocityTracker.obtain();
+            velocity.addMovement(event);
+            // Keep the editor's gesture even when a containing view can scroll.
+            if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
+            if (scrollRange() > 0 && downX >= getWidth() - 32 * density
+                    && downY >= thumbTop() - 16 * density
+                    && downY <= thumbTop() + thumbHeight() + 16 * density) {
+                draggingScrollbar = true;
+                dragOffset = downY - thumbTop();
+                return true;
+            }
+            return super.onTouchEvent(event);
         }
+        if (velocity != null) velocity.addMovement(event);
         if (draggingScrollbar) {
             if (action == MotionEvent.ACTION_MOVE) {
                 float track = getHeight() - thumbHeight();
@@ -167,11 +195,61 @@ public final class ManifestInlineEditor extends AppCompatEditText {
                 scrollTo(getScrollX(), Math.round(fraction * scrollRange()));
             } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
                 draggingScrollbar = false;
-                getParent().requestDisallowInterceptTouchEvent(false);
+                endTouch();
             }
             return true;
         }
+        if (action == MotionEvent.ACTION_MOVE) {
+            float dy = event.getY() - downY;
+            if (!draggingContent && ManifestScrollGesture.startsScroll(event.getX() - downX, dy,
+                    touchSlop, event.getEventTime() - downTime, ViewConfiguration.getLongPressTimeout(), scrollRange())) {
+                // Cancel TextView's tap/selection gesture, then handle scrolling ourselves.
+                MotionEvent cancel = MotionEvent.obtain(event);
+                cancel.setAction(MotionEvent.ACTION_CANCEL);
+                super.onTouchEvent(cancel);
+                cancel.recycle();
+                draggingContent = true;
+                lastY = downY;
+            }
+            if (draggingContent) {
+                int y = ManifestScrollGesture.clamp(Math.round(getScrollY() + lastY - event.getY()), scrollRange());
+                scrollTo(getScrollX(), y);
+                lastY = event.getY();
+                return true;
+            }
+        }
+        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+            if (draggingContent) {
+                if (action == MotionEvent.ACTION_UP && velocity != null) {
+                    velocity.computeCurrentVelocity(1000, maxFling);
+                    int speed = Math.round(-velocity.getYVelocity());
+                    if (Math.abs(speed) >= minFling) {
+                        scroller.fling(getScrollX(), getScrollY(), 0, speed,
+                                getScrollX(), getScrollX(), 0, scrollRange());
+                        postInvalidateOnAnimation();
+                    }
+                }
+                draggingContent = false;
+                endTouch();
+                return true;
+            }
+            boolean result = super.onTouchEvent(event);
+            endTouch();
+            return result;
+        }
         return super.onTouchEvent(event);
+    }
+
+    private void endTouch() {
+        if (velocity != null) { velocity.recycle(); velocity = null; }
+        if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(false);
+    }
+
+    @Override public void computeScroll() {
+        if (scroller.computeScrollOffset()) {
+            scrollTo(getScrollX(), Math.max(0, Math.min(scrollRange(), scroller.getCurrY())));
+            postInvalidateOnAnimation();
+        }
     }
 
     @Override protected void onDraw(Canvas canvas) {
