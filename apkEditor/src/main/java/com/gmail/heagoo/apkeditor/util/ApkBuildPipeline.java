@@ -40,7 +40,7 @@ import java.util.zip.ZipOutputStream;
  * temporary files, signs with apksig (v1/v2/v3), verifies the result and publishes it
  * with an atomic rename. Original compression methods are preserved (native libraries
  * are NOT forcibly uncompressed, which previously multiplied APK size). Only
- * resources.arsc is forced to STORED for targetSdk 30+, and STORED native libraries /
+ * resources.arsc is always forced to STORED, and STORED native libraries /
  * resources.arsc are aligned for modern Android loaders.
  */
 public final class ApkBuildPipeline {
@@ -247,6 +247,20 @@ public final class ApkBuildPipeline {
         }
     }
 
+    /** Repack an unsigned full-edit output with the same storage/alignment rules. */
+    public static void normalizeUnsigned(File apk) throws IOException {
+        File parent = apk.getAbsoluteFile().getParentFile();
+        File temp = File.createTempFile("apkbuild-", ".unsigned", parent);
+        try {
+            SigningOptions options = new SigningOptions(null, null, 1, 0,
+                    false, false, false, false, 6);
+            merge(apk, temp, null, null, null, options, null, null);
+            atomicReplace(temp, apk);
+        } finally {
+            deleteQuietly(temp);
+        }
+    }
+
     private static void requireReadable(String path) throws IOException {
         File file = path == null ? null : new File(path);
         if (file == null || !file.isFile() || !file.canRead()) {
@@ -360,7 +374,8 @@ public final class ApkBuildPipeline {
                                    ZipEntry sourceEntry, File replacementFile,
                                    byte[] buffer, int targetSdkVersion) throws IOException {
         // Preserve the source compression method. Forcing every .so to STORED inflated
-        // game APKs several times over. resources.arsc must be STORED on targetSdk 30+.
+        // game APKs several times over. Always store resources.arsc: the manifest target SDK
+        // may be absent, misread, or changed by a replacement.
         boolean stored = (sourceEntry != null && sourceEntry.getMethod() == ZipEntry.STORED)
                 || mustStore(name, targetSdkVersion);
         ZipEntry entry = new ZipEntry(name);
@@ -449,7 +464,7 @@ public final class ApkBuildPipeline {
     }
 
     private static boolean mustStore(String name, int targetSdkVersion) {
-        return targetSdkVersion >= 30 && name.toLowerCase(Locale.ROOT).equals("resources.arsc");
+        return name.equals("resources.arsc");
     }
 
     private static boolean isOldSignature(String name) {

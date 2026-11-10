@@ -62,6 +62,17 @@ jobs:
           fi
           tail -n 15 /tmp/test.log
 
+      - name: Проверка AAPT2 для dummy-ресурсов
+        run: |
+          set -e
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          AAPT2="$SDK_ROOT/build-tools/37.0.0/aapt2"
+          mkdir -p /tmp/dummy-aapt2/res/values
+          printf '%s\n' '<resources><item type="anim" name="dummy_ae_0">@null</item><item type="animator" name="dummy_ae_1">@null</item></resources>' > /tmp/dummy-aapt2/res/values/dummy.xml
+          printf '%s\n' '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.dummy"><application/></manifest>' > /tmp/dummy-aapt2/AndroidManifest.xml
+          "$AAPT2" compile --legacy --no-crunch --dir /tmp/dummy-aapt2/res -o /tmp/dummy-aapt2/flats.zip
+          "$AAPT2" link -I "$SDK_ROOT/platforms/android-37.0/android.jar" --manifest /tmp/dummy-aapt2/AndroidManifest.xml -o /tmp/dummy-aapt2/test.apk /tmp/dummy-aapt2/flats.zip
+
       - name: Сборка debug APK
         run: |
           set +e

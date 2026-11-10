@@ -265,6 +265,41 @@ public class ApkBuildPipelineTest {
     }
 
     @Test
+    public void compressedResourceTableIsStoredAndAlignedAfterSigningEvenWithUnknownTarget() throws Exception {
+        File source = folder.newFile("compressed-table.apk");
+        try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(source))) {
+            put(out, "assets/prefix.bin", new byte[57], ZipEntry.DEFLATED);
+            put(out, "resources.arsc", minimalArsc(), ZipEntry.DEFLATED);
+            put(out, "AndroidManifest.xml", MANIFEST, ZipEntry.DEFLATED);
+            put(out, "classes.dex", minimalDex(), ZipEntry.DEFLATED);
+        }
+        ApkBuildPipeline.SigningOptions defaults = options();
+        ApkBuildPipeline.SigningOptions unknownTarget = new ApkBuildPipeline.SigningOptions(
+                defaults.privateKey, defaults.certificate, 26, 0, true, true, true, false, 6);
+        File target = new File(folder.getRoot(), "signed-compressed-table.apk");
+        ApkBuildPipeline.build(source, target, null, null, null, unknownTarget, null, null);
+        try (ZipFile zip = new ZipFile(target)) {
+            assertEquals(ZipEntry.STORED, zip.getEntry("resources.arsc").getMethod());
+        }
+        // Find the local header in the final signed file, not just the pre-signing ZIP.
+        byte[] data = Files.readAllBytes(target.toPath());
+        byte[] name = "resources.arsc".getBytes(StandardCharsets.UTF_8);
+        boolean found = false;
+        for (int i = 0; i + 30 + name.length <= data.length; i++) {
+            ByteBuffer header = ByteBuffer.wrap(data, i, 30).slice().order(ByteOrder.LITTLE_ENDIAN);
+            if (header.getInt(0) != 0x04034b50 || (header.getShort(26) & 0xffff) != name.length) continue;
+            boolean matches = true;
+            for (int j = 0; j < name.length; j++) if (data[i + 30 + j] != name[j]) matches = false;
+            if (!matches) continue;
+            assertEquals(ZipEntry.STORED, header.getShort(8) & 0xffff);
+            assertEquals(0, (i + 30 + name.length + (header.getShort(28) & 0xffff)) % 4);
+            found = true;
+            break;
+        }
+        assertTrue("resources.arsc local header not found", found);
+    }
+
+    @Test
     public void invalidEditedManifestIsRejectedBeforePublish() throws Exception {
         File source = sourceApk();
         File target = new File(folder.getRoot(), "gen_signed.apk");
