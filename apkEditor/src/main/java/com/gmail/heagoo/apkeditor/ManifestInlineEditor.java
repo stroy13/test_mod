@@ -35,6 +35,8 @@ public final class ManifestInlineEditor extends AppCompatEditText {
     });
     private Future<?> pendingHighlight;
     private int generation;
+    private boolean highlightPosted, refreshAfterHighlight;
+    private int highlightedFirst = -1, highlightedLast = -1;
     private boolean draggingScrollbar;
     private boolean draggingContent;
     private float downX, downY, lastY;
@@ -60,7 +62,7 @@ public final class ManifestInlineEditor extends AppCompatEditText {
         touchSlop = config.getScaledTouchSlop();
         minFling = config.getScaledMinimumFlingVelocity();
         maxFling = config.getScaledMaximumFlingVelocity();
-        gutterWidth = (int) (52 * density + 0.5f);
+        gutterWidth = (int) (36 * density + 0.5f);
         setTypeface(Typeface.DEFAULT);
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         setGravity(android.view.Gravity.TOP | android.view.Gravity.START);
@@ -82,27 +84,50 @@ public final class ManifestInlineEditor extends AppCompatEditText {
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 lineIndex.replace(s, start, before, count);
-                scheduleHighlight();
+                invalidateHighlight();
             }
             public void afterTextChanged(Editable editable) { }
         });
     }
 
-    private void scheduleHighlight() {
+    private void invalidateHighlight() {
         generation++;
+        highlightedFirst = highlightedLast = -1;
         if (pendingHighlight != null) pendingHighlight.cancel(true);
+        pendingHighlight = null;
         removeCallbacks(highlight);
-        postDelayed(highlight, 180);
+        highlightPosted = false;
+        refreshAfterHighlight = false;
+        queueHighlight(100);
+    }
+
+    private void queueHighlight(long delay) {
+        if (pendingHighlight != null) {
+            refreshAfterHighlight = true;
+        } else if (!highlightPosted) {
+            highlightPosted = true;
+            postDelayed(highlight, delay);
+        }
+    }
+
+    private boolean viewportCovered() {
+        Layout layout = getLayout();
+        if (layout == null || highlightedFirst < 0) return false;
+        int top = Math.max(0, getScrollY() - getTotalPaddingTop());
+        int first = layout.getLineStart(layout.getLineForVertical(top));
+        int last = layout.getLineEnd(layout.getLineForVertical(top + getHeight()));
+        return first >= highlightedFirst && last <= highlightedLast;
     }
 
     private void highlightNow() {
+        highlightPosted = false;
         Editable editable = getText();
         Layout layout = getLayout();
         if (editable == null || layout == null || getHeight() == 0) return;
         int top = Math.max(0, getScrollY() - getTotalPaddingTop());
-        int firstLine = Math.max(0, layout.getLineForVertical(top) - 8);
+        int firstLine = Math.max(0, layout.getLineForVertical(top) - 45);
         int lastLine = Math.min(layout.getLineCount() - 1,
-                layout.getLineForVertical(top + getHeight()) + 8);
+                layout.getLineForVertical(top + getHeight()) + 45);
         final int first = layout.getLineStart(firstLine);
         final int last = layout.getLineEnd(lastLine);
         final String source = editable.toString();
@@ -119,7 +144,7 @@ public final class ManifestInlineEditor extends AppCompatEditText {
                 for (ManifestSyntax.Span span : ManifestSyntax.tokenize(line, state)) {
                     int start = offset + span.start, stop = offset + span.end;
                     if (stop <= first || start >= last || span.start >= span.end) continue;
-                    if (spans.size() >= 2000) break;
+                    if (spans.size() >= 4000) break;
                     int color = palette.spanColor(span.kind, line.charAt(span.start));
                     if (span.kind == ManifestSyntax.ATTRIBUTE) {
                         int colon = line.indexOf(':', span.start);
@@ -138,6 +163,7 @@ public final class ManifestInlineEditor extends AppCompatEditText {
             if (Thread.currentThread().isInterrupted()) return;
             post(() -> {
                 if (generation != current || getText() != editable) return;
+                pendingHighlight = null;
                 for (SyntaxColor span : editable.getSpans(0, editable.length(), SyntaxColor.class)) editable.removeSpan(span);
                 for (CommentStyle span : editable.getSpans(0, editable.length(), CommentStyle.class)) editable.removeSpan(span);
                 for (int[] span : spans) {
@@ -145,19 +171,34 @@ public final class ManifestInlineEditor extends AppCompatEditText {
                     if (span.length > 3 && span[3] == ManifestSyntax.COMMENT)
                         editable.setSpan(new CommentStyle(), span[0], span[1], 33);
                 }
+                highlightedFirst = first;
+                // If the budget was exhausted, don't claim the rest was coloured.
+                highlightedLast = spans.size() >= 4000 && !spans.isEmpty()
+                        ? spans.get(spans.size() - 1)[1] : last;
+                boolean refresh = refreshAfterHighlight;
+                refreshAfterHighlight = false;
+                if (refresh && !viewportCovered()) queueHighlight(16);
             });
         });
     }
 
     @Override protected void onScrollChanged(int x, int y, int oldX, int oldY) {
         super.onScrollChanged(x, y, oldX, oldY);
-        if (y != oldY && highlight != null) scheduleHighlight();
+        if (y != oldY && highlight != null && !viewportCovered()) queueHighlight(16);
+    }
+
+    @Override protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        highlightedFirst = highlightedLast = -1;
+        queueHighlight(0);
     }
 
     @Override protected void onDetachedFromWindow() {
         generation++;
         removeCallbacks(highlight);
+        highlightPosted = false;
         if (pendingHighlight != null) pendingHighlight.cancel(true);
+        pendingHighlight = null;
         scroller.abortAnimation();
         endTouch();
         super.onDetachedFromWindow();

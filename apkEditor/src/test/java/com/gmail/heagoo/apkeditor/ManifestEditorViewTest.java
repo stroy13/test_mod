@@ -41,6 +41,20 @@ public class ManifestEditorViewTest {
     }
 
     @Test
+    public void highlightingIsNotDebouncedUntilScrollingStops() throws Exception {
+        String editor = read("apkEditor/src/main/java/com/gmail/heagoo/apkeditor/ManifestInlineEditor.java");
+        int start = editor.indexOf("@Override protected void onScrollChanged");
+        int end = editor.indexOf("@Override protected void onAttachedToWindow", start);
+        assertTrue(start >= 0 && end > start);
+        String scrolling = editor.substring(start, end);
+        assertTrue(scrolling.contains("queueHighlight(16)"));
+        assertFalse(scrolling.contains("invalidateHighlight()"));
+        assertFalse(scrolling.contains("cancel(true)"));
+        assertTrue(editor.contains("refreshAfterHighlight"));
+        assertTrue(editor.contains("getLineForVertical(top) - 45"));
+    }
+
+    @Test
     public void bothManifestRowLayoutsCarryTheGutter() throws Exception {
         String[] layouts = {
                 "apkEditor/src/main/res/layout/item_manifestline.xml",
