@@ -39,7 +39,7 @@ public final class ManifestEditorPalette {
     public final int value;
     /** Comments (also rendered italic). */
     public final int comment;
-    /** Punctuation such as {@code =} and plain text. */
+    /** Neutral punctuation and plain text. */
     public final int text;
     public final boolean dark;
 
@@ -102,7 +102,7 @@ public final class ManifestEditorPalette {
     /**
      * Colour of a {@link ManifestSyntax} span.
      *
-     * @param first char at the span start, used to keep {@code =} neutral while
+     * @param first char at the span start, used to colour {@code =} like a value while
      *              angle brackets share the tag colour, as in MT Manager.
      */
     public int spanColor(int kind, char first) {
@@ -116,7 +116,7 @@ public final class ManifestEditorPalette {
             case ManifestSyntax.COMMENT:
                 return comment;
             case ManifestSyntax.SYMBOL:
-                return first == '=' ? text : tag;
+                return first == '=' ? value : tag;
             default:
                 return text;
         }

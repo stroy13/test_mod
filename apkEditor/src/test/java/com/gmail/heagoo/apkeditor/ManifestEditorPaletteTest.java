@@ -43,7 +43,7 @@ public class ManifestEditorPaletteTest {
         assertEquals(p.tag, p.spanColor(ManifestSyntax.SYMBOL, '<'));
         assertEquals(p.tag, p.spanColor(ManifestSyntax.SYMBOL, '>'));
         assertEquals(p.tag, p.spanColor(ManifestSyntax.SYMBOL, '/'));
-        assertEquals(p.text, p.spanColor(ManifestSyntax.SYMBOL, '='));
+        assertEquals(p.value, p.spanColor(ManifestSyntax.SYMBOL, '='));
         assertEquals(p.attribute, p.spanColor(ManifestSyntax.ATTRIBUTE, 'a'));
         assertEquals(p.value, p.spanColor(ManifestSyntax.VALUE, '"'));
         assertEquals(p.comment, p.spanColor(ManifestSyntax.COMMENT, '<'));

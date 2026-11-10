@@ -8,7 +8,16 @@ import android.text.Editable;
 import android.text.Layout;
 import android.text.TextWatcher;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.util.TypedValue;
+import android.view.MotionEvent;
+import android.view.VelocityTracker;
+import android.view.ViewConfiguration;
+import android.widget.OverScroller;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import androidx.appcompat.widget.AppCompatEditText;
 
 /** Editable, unmodified XML source with a line-number gutter. */
@@ -19,68 +28,278 @@ public final class ManifestInlineEditor extends AppCompatEditText {
     private ManifestEditorPalette palette;
     private final Runnable highlight = this::highlightNow;
     private final ManifestLineIndex lineIndex = new ManifestLineIndex();
-    // A span per token makes Android's Editable/layout increasingly expensive.
-    private static final int MAX_HIGHLIGHT_CHARS = 8000;
-    private static final int MAX_HIGHLIGHT_SPANS = 300;
+    private static final ExecutorService HIGHLIGHTER = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r, "manifest-highlighter");
+        thread.setDaemon(true);
+        return thread;
+    });
+    private Future<?> pendingHighlight;
+    private int generation;
+    private boolean highlightPosted, refreshAfterHighlight;
+    private int highlightedFirst = -1, highlightedLast = -1;
+    private boolean draggingScrollbar;
+    private boolean draggingContent;
+    private float downX, downY, lastY;
+    private long downTime;
+    private VelocityTracker velocity;
+    private final OverScroller scroller;
+    private final int touchSlop, minFling, maxFling;
+    private float dragOffset;
+    private final float density;
+    private static final class SyntaxColor extends ForegroundColorSpan {
+        SyntaxColor(int color) { super(color); }
+    }
+    private static final class CommentStyle extends StyleSpan {
+        CommentStyle() { super(Typeface.ITALIC); }
+    }
 
     public ManifestInlineEditor(Context context, ManifestEditorPalette colors) {
         super(context);
         this.palette = colors;
-        float density = getResources().getDisplayMetrics().density;
-        gutterWidth = (int) (52 * density + 0.5f);
-        setTypeface(Typeface.MONOSPACE);
+        density = getResources().getDisplayMetrics().density;
+        scroller = new OverScroller(context);
+        ViewConfiguration config = ViewConfiguration.get(context);
+        touchSlop = config.getScaledTouchSlop();
+        minFling = config.getScaledMinimumFlingVelocity();
+        maxFling = config.getScaledMaximumFlingVelocity();
+        gutterWidth = (int) (36 * density + 0.5f);
+        setTypeface(Typeface.DEFAULT);
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         setGravity(android.view.Gravity.TOP | android.view.Gravity.START);
         setSingleLine(false);
         setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
                 | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-        setTypeface(Typeface.MONOSPACE);
+        setTypeface(Typeface.DEFAULT);
+        setTransformationMethod(new ManifestIndentTransformation());
         setBackgroundColor(colors.surface);
         setTextColor(colors.text);
         setPadding(gutterWidth + (int) (8 * density), (int) (8 * density), (int) (8 * density), (int) (8 * density));
-        setVerticalScrollBarEnabled(true);
+        setVerticalScrollBarEnabled(false);
         setHorizontallyScrolling(false);
-        numberPaint.setTypeface(Typeface.MONOSPACE);
+        setBreakStrategy(Layout.BREAK_STRATEGY_SIMPLE);
+        setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NONE);
+        numberPaint.setTypeface(Typeface.DEFAULT);
         numberPaint.setTextSize(getTextSize());
         numberPaint.setTextAlign(Paint.Align.RIGHT);
         addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 lineIndex.replace(s, start, before, count);
-                removeCallbacks(highlight);
-                postDelayed(highlight, 700);
+                invalidateHighlight();
             }
             public void afterTextChanged(Editable editable) { }
         });
     }
 
+    private void invalidateHighlight() {
+        generation++;
+        highlightedFirst = highlightedLast = -1;
+        if (pendingHighlight != null) pendingHighlight.cancel(true);
+        pendingHighlight = null;
+        removeCallbacks(highlight);
+        highlightPosted = false;
+        refreshAfterHighlight = false;
+        queueHighlight(100);
+    }
+
+    private void queueHighlight(long delay) {
+        if (pendingHighlight != null) {
+            refreshAfterHighlight = true;
+        } else if (!highlightPosted) {
+            highlightPosted = true;
+            postDelayed(highlight, delay);
+        }
+    }
+
+    private boolean viewportCovered() {
+        Layout layout = getLayout();
+        if (layout == null || highlightedFirst < 0) return false;
+        int top = Math.max(0, getScrollY() - getTotalPaddingTop());
+        int first = layout.getLineStart(layout.getLineForVertical(top));
+        int last = layout.getLineEnd(layout.getLineForVertical(top + getHeight()));
+        return first >= highlightedFirst && last <= highlightedLast;
+    }
+
     private void highlightNow() {
+        highlightPosted = false;
         Editable editable = getText();
-        if (editable == null) return;
-        for (ForegroundColorSpan span : editable.getSpans(0, editable.length(), ForegroundColorSpan.class)) {
-            editable.removeSpan(span);
-        }
-        // Avoid allocating thousands of spans while typing very large manifests.
-        if (editable.length() > MAX_HIGHLIGHT_CHARS) return;
-        String source = editable.toString();
-        ManifestSyntax.State state = new ManifestSyntax.State();
-        int offset = 0;
-        java.util.ArrayList<int[]> pending = new java.util.ArrayList<>();
-        while (offset < source.length()) {
-            int end = source.indexOf('\n', offset);
-            if (end < 0) end = source.length();
-            String line = source.substring(offset, end);
-            for (ManifestSyntax.Span span : ManifestSyntax.tokenize(line, state)) {
-                if (span.start < span.end && span.end <= line.length()) {
-                    if (pending.size() == MAX_HIGHLIGHT_SPANS) return;
+        Layout layout = getLayout();
+        if (editable == null || layout == null || getHeight() == 0) return;
+        int top = Math.max(0, getScrollY() - getTotalPaddingTop());
+        int firstLine = Math.max(0, layout.getLineForVertical(top) - 45);
+        int lastLine = Math.min(layout.getLineCount() - 1,
+                layout.getLineForVertical(top + getHeight()) + 45);
+        final int first = layout.getLineStart(firstLine);
+        final int last = layout.getLineEnd(lastLine);
+        final String source = editable.toString();
+        final int current = generation;
+        pendingHighlight = HIGHLIGHTER.submit(() -> {
+            ArrayList<int[]> spans = new ArrayList<>();
+            ManifestSyntax.State state = new ManifestSyntax.State();
+            int offset = 0;
+            while (offset < source.length() && offset <= last) {
+                if (Thread.currentThread().isInterrupted()) return;
+                int end = source.indexOf('\n', offset);
+                if (end < 0) end = source.length();
+                String line = source.substring(offset, end);
+                for (ManifestSyntax.Span span : ManifestSyntax.tokenize(line, state)) {
+                    int start = offset + span.start, stop = offset + span.end;
+                    if (stop <= first || start >= last || span.start >= span.end) continue;
+                    if (spans.size() >= 4000) break;
                     int color = palette.spanColor(span.kind, line.charAt(span.start));
-                    pending.add(new int[]{offset + span.start, offset + span.end, color});
+                    if (span.kind == ManifestSyntax.ATTRIBUTE) {
+                        int colon = line.indexOf(':', span.start);
+                        if (colon > span.start && colon < span.end) {
+                            boolean declaration = line.startsWith("xmlns", span.start);
+                            spans.add(new int[]{start, offset + colon, declaration ? palette.attribute : palette.namespace});
+                            spans.add(new int[]{offset + colon, offset + colon + 1, palette.text});
+                            spans.add(new int[]{offset + colon + 1, stop, declaration ? palette.namespace : palette.attribute});
+                            continue;
+                        }
+                    }
+                    spans.add(new int[]{start, stop, color, span.kind});
                 }
+                offset = end + 1;
             }
-            offset = end + 1;
+            if (Thread.currentThread().isInterrupted()) return;
+            post(() -> {
+                if (generation != current || getText() != editable) return;
+                pendingHighlight = null;
+                for (SyntaxColor span : editable.getSpans(0, editable.length(), SyntaxColor.class)) editable.removeSpan(span);
+                for (CommentStyle span : editable.getSpans(0, editable.length(), CommentStyle.class)) editable.removeSpan(span);
+                for (int[] span : spans) {
+                    editable.setSpan(new SyntaxColor(span[2]), span[0], span[1], 33);
+                    if (span.length > 3 && span[3] == ManifestSyntax.COMMENT)
+                        editable.setSpan(new CommentStyle(), span[0], span[1], 33);
+                }
+                highlightedFirst = first;
+                // If the budget was exhausted, don't claim the rest was coloured.
+                highlightedLast = spans.size() >= 4000 && !spans.isEmpty()
+                        ? spans.get(spans.size() - 1)[1] : last;
+                boolean refresh = refreshAfterHighlight;
+                refreshAfterHighlight = false;
+                if (refresh && !viewportCovered()) queueHighlight(16);
+            });
+        });
+    }
+
+    @Override protected void onScrollChanged(int x, int y, int oldX, int oldY) {
+        super.onScrollChanged(x, y, oldX, oldY);
+        if (y != oldY && highlight != null && !viewportCovered()) queueHighlight(16);
+    }
+
+    @Override protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        highlightedFirst = highlightedLast = -1;
+        queueHighlight(0);
+    }
+
+    @Override protected void onDetachedFromWindow() {
+        generation++;
+        removeCallbacks(highlight);
+        highlightPosted = false;
+        if (pendingHighlight != null) pendingHighlight.cancel(true);
+        pendingHighlight = null;
+        scroller.abortAnimation();
+        endTouch();
+        super.onDetachedFromWindow();
+    }
+
+    private int scrollRange() {
+        Layout layout = getLayout();
+        return layout == null ? 0 : Math.max(0, layout.getHeight() + getTotalPaddingTop()
+                + getTotalPaddingBottom() - getHeight());
+    }
+    private float thumbHeight() {
+        int range = scrollRange();
+        return Math.min(getHeight(), Math.max(36 * density, (float) getHeight() * getHeight() / (getHeight() + range)));
+    }
+    private float thumbTop() {
+        int range = scrollRange();
+        return range == 0 ? 0 : (getHeight() - thumbHeight()) * getScrollY() / range;
+    }
+    @Override public boolean onTouchEvent(MotionEvent event) {
+        int action = event.getActionMasked();
+        if (action == MotionEvent.ACTION_DOWN) {
+            scroller.abortAnimation();
+            draggingContent = false;
+            downX = event.getX(); downY = lastY = event.getY(); downTime = event.getEventTime();
+            if (velocity != null) velocity.recycle();
+            velocity = VelocityTracker.obtain();
+            velocity.addMovement(event);
+            // Keep the editor's gesture even when a containing view can scroll.
+            if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
+            if (scrollRange() > 0 && downX >= getWidth() - 32 * density
+                    && downY >= thumbTop() - 16 * density
+                    && downY <= thumbTop() + thumbHeight() + 16 * density) {
+                draggingScrollbar = true;
+                dragOffset = downY - thumbTop();
+                return true;
+            }
+            return super.onTouchEvent(event);
         }
-        for (int[] span : pending) {
-            editable.setSpan(new ForegroundColorSpan(span[2]), span[0], span[1], 33);
+        if (velocity != null) velocity.addMovement(event);
+        if (draggingScrollbar) {
+            if (action == MotionEvent.ACTION_MOVE) {
+                float track = getHeight() - thumbHeight();
+                float fraction = track <= 0 ? 0 : Math.max(0, Math.min(1, (event.getY() - dragOffset) / track));
+                scrollTo(getScrollX(), Math.round(fraction * scrollRange()));
+            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                draggingScrollbar = false;
+                endTouch();
+            }
+            return true;
+        }
+        if (action == MotionEvent.ACTION_MOVE) {
+            float dy = event.getY() - downY;
+            if (!draggingContent && ManifestScrollGesture.startsScroll(event.getX() - downX, dy,
+                    touchSlop, event.getEventTime() - downTime, ViewConfiguration.getLongPressTimeout(), scrollRange())) {
+                // Cancel TextView's tap/selection gesture, then handle scrolling ourselves.
+                MotionEvent cancel = MotionEvent.obtain(event);
+                cancel.setAction(MotionEvent.ACTION_CANCEL);
+                super.onTouchEvent(cancel);
+                cancel.recycle();
+                draggingContent = true;
+                lastY = downY;
+            }
+            if (draggingContent) {
+                int y = ManifestScrollGesture.clamp(Math.round(getScrollY() + lastY - event.getY()), scrollRange());
+                scrollTo(getScrollX(), y);
+                lastY = event.getY();
+                return true;
+            }
+        }
+        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+            if (draggingContent) {
+                if (action == MotionEvent.ACTION_UP && velocity != null) {
+                    velocity.computeCurrentVelocity(1000, maxFling);
+                    int speed = Math.round(-velocity.getYVelocity());
+                    if (Math.abs(speed) >= minFling) {
+                        scroller.fling(getScrollX(), getScrollY(), 0, speed,
+                                getScrollX(), getScrollX(), 0, scrollRange());
+                        postInvalidateOnAnimation();
+                    }
+                }
+                draggingContent = false;
+                endTouch();
+                return true;
+            }
+            boolean result = super.onTouchEvent(event);
+            endTouch();
+            return result;
+        }
+        return super.onTouchEvent(event);
+    }
+
+    private void endTouch() {
+        if (velocity != null) { velocity.recycle(); velocity = null; }
+        if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(false);
+    }
+
+    @Override public void computeScroll() {
+        if (scroller.computeScrollOffset()) {
+            scrollTo(getScrollX(), Math.max(0, Math.min(scrollRange(), scroller.getCurrY())));
+            postInvalidateOnAnimation();
         }
     }
 
@@ -100,13 +319,26 @@ public final class ManifestInlineEditor extends AppCompatEditText {
             for (int line = first; line <= last && line < layout.getLineCount(); line++) {
                 int lineStart = layout.getLineStart(line);
                 if (lineStart == 0 || text.charAt(lineStart - 1) == '\n') {
-                    canvas.drawText(Integer.toString(physical), x + gutterWidth - 6,
+                    canvas.drawText(Integer.toString(physical), x + gutterWidth - 6 * density,
                             getTotalPaddingTop() + layout.getLineBaseline(line), numberPaint);
+                } else {
+                    // Visual marker only; no arrow or line break enters the XML.
+                    numberPaint.setColor(palette.indentGuide);
+                    canvas.drawText("↪", x + gutterWidth + 5 * density,
+                            getTotalPaddingTop() + layout.getLineBaseline(line), numberPaint);
+                    numberPaint.setColor(palette.gutterText);
                 }
                 int lineEnd = layout.getLineEnd(line);
                 if (lineEnd > lineStart && text.charAt(lineEnd - 1) == '\n') physical++;
             }
         }
         super.onDraw(canvas);
+        if (scrollRange() > 0) {
+            gutterPaint.setColor(palette.dark ? 0xAA9DA4AE : 0xAA707780);
+            float right = getScrollX() + getWidth() - 3 * density;
+            float top = getScrollY() + thumbTop();
+            canvas.drawRoundRect(right - 5 * density, top, right, top + thumbHeight(),
+                    3 * density, 3 * density, gutterPaint);
+        }
     }
 }
