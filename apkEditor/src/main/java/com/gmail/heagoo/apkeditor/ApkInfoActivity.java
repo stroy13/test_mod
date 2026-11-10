@@ -4143,6 +4143,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 this.restoreManifestDraft = false;
             }
             this.manifestLoading = true;
+            // Only whitespace between attributes is changed; the on-disk file is
+            // left untouched until the user actually edits or saves it.
+            if (!this.manifestDirty) text = ManifestTagFormatter.format(text);
             this.manifestEditor.setText(text);
             this.manifestEditor.setEnabled(true);
         } catch (Exception e) {
