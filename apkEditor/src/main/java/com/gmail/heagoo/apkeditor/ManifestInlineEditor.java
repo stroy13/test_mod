@@ -18,6 +18,10 @@ public final class ManifestInlineEditor extends AppCompatEditText {
     private final int gutterWidth;
     private ManifestEditorPalette palette;
     private final Runnable highlight = this::highlightNow;
+    private final ManifestLineIndex lineIndex = new ManifestLineIndex();
+    // A span per token makes Android's Editable/layout increasingly expensive.
+    private static final int MAX_HIGHLIGHT_CHARS = 8000;
+    private static final int MAX_HIGHLIGHT_SPANS = 300;
 
     public ManifestInlineEditor(Context context, ManifestEditorPalette colors) {
         super(context);
@@ -42,8 +46,9 @@ public final class ManifestInlineEditor extends AppCompatEditText {
         addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                lineIndex.replace(s, start, before, count);
                 removeCallbacks(highlight);
-                postDelayed(highlight, 350);
+                postDelayed(highlight, 700);
             }
             public void afterTextChanged(Editable editable) { }
         });
@@ -56,21 +61,26 @@ public final class ManifestInlineEditor extends AppCompatEditText {
             editable.removeSpan(span);
         }
         // Avoid allocating thousands of spans while typing very large manifests.
-        if (editable.length() > 200000) return;
+        if (editable.length() > MAX_HIGHLIGHT_CHARS) return;
         String source = editable.toString();
         ManifestSyntax.State state = new ManifestSyntax.State();
         int offset = 0;
+        java.util.ArrayList<int[]> pending = new java.util.ArrayList<>();
         while (offset < source.length()) {
             int end = source.indexOf('\n', offset);
             if (end < 0) end = source.length();
             String line = source.substring(offset, end);
             for (ManifestSyntax.Span span : ManifestSyntax.tokenize(line, state)) {
                 if (span.start < span.end && span.end <= line.length()) {
+                    if (pending.size() == MAX_HIGHLIGHT_SPANS) return;
                     int color = palette.spanColor(span.kind, line.charAt(span.start));
-                    editable.setSpan(new ForegroundColorSpan(color), offset + span.start, offset + span.end, 33);
+                    pending.add(new int[]{offset + span.start, offset + span.end, color});
                 }
             }
             offset = end + 1;
+        }
+        for (int[] span : pending) {
+            editable.setSpan(new ForegroundColorSpan(span[2]), span[0], span[1], 33);
         }
     }
 
@@ -86,9 +96,7 @@ public final class ManifestInlineEditor extends AppCompatEditText {
             int first = layout.getLineForVertical(Math.max(0, getScrollY() - getTotalPaddingTop()));
             int last = layout.getLineForVertical(getScrollY() + getHeight());
             CharSequence text = getText();
-            int physical = 1;
-            int start = layout.getLineStart(first);
-            for (int i = 0; i < start; i++) if (text.charAt(i) == '\n') physical++;
+            int physical = lineIndex.lineAt(layout.getLineStart(first));
             for (int line = first; line <= last && line < layout.getLineCount(); line++) {
                 int lineStart = layout.getLineStart(line);
                 if (lineStart == 0 || text.charAt(lineStart - 1) == '\n') {
