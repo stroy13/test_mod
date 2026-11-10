@@ -20,6 +20,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.MenuItem;
@@ -172,9 +174,15 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     private Drawable manifestIconGrey;
     private LinearLayout manifestLayout;
     private ListView manifestList;
+    private ManifestInlineEditor manifestEditor;
+    private String manifestBaseline;
+    private boolean manifestDirty;
+    private boolean manifestLoading;
+    private boolean restoreManifestDraft;
+    private final Runnable manifestAutosave = () -> saveInlineManifest(false);
+
     private RadioButton manifestRadio;
     private AutoCompleteAdapter mfKeywordAdapter;
-    private ManifestListAdapter mfListAdapter;
     private long modifiedTimeBeforeOpen;
     protected ResNavigationMgr navigationMgr;
     private ApkParseThread parseThread;
@@ -417,6 +425,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (savedInstanceState != null && (previousToken = savedInstanceState.getString("lab_early_token")) != null && previousToken.matches("[0-9a-f-]{36}")) {
             this.earlyEditToken = previousToken;
         }
+        if (savedInstanceState != null) this.restoreManifestDraft = savedInstanceState.getBoolean("lab_manifest_draft", false);
         if (savedInstanceState != null && savedInstanceState.getBoolean("lab_load_pending", false) && this.projectName == null) {
             restorePendingStringEdits(savedInstanceState);
             startApkDecode();
@@ -587,6 +596,14 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     public void onSaveInstanceState(Bundle savedInstanceState) {
+        if (this.manifestDirty && !saveInlineManifest(false)) {
+            try {
+                AtomicProjectFile.writeObject(manifestDraftFile(), new String[]{this.manifestEditor.getText().toString(), this.manifestBaseline});
+                savedInstanceState.putBoolean("lab_manifest_draft", true);
+            } catch (IOException e) {
+                Toast.makeText(this, R.string.lab_manifest_draft_failed, Toast.LENGTH_LONG).show();
+            }
+        }
         String workingPath = null;
         boolean pending = this.projectName == null && !this.resourceParsed;
         savedInstanceState.putBoolean("lab_load_pending", pending);
@@ -741,7 +758,20 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.saveBtn.setVisibility(0);
     }
 
+    @Override
+    protected void onPause() {
+        if (this.manifestDirty && !saveInlineManifest(false)) {
+            try {
+                AtomicProjectFile.writeObject(manifestDraftFile(), new String[]{this.manifestEditor.getText().toString(), this.manifestBaseline});
+            } catch (IOException e) {
+                Toast.makeText(this, R.string.lab_manifest_draft_failed, Toast.LENGTH_LONG).show();
+            }
+        }
+        super.onPause();
+    }
+
     public void onDestroy() {
+        if (this.manifestEditor != null) this.manifestEditor.removeCallbacks(this.manifestAutosave);
         this.screenDestroyed = true;
         if (this.analysisJob != null) {
             this.analysisJob.cancelled.set(true);
@@ -764,6 +794,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     public void onBackPressed() {
+        if (!saveInlineManifest(true)) return;
         boolean dealed = false;
         if (this.curSelectedRadio == 1) {
             if (this.resListAdapter == null) {
@@ -809,6 +840,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     private void requestProjectSave() {
+        if (!saveInlineManifest(true)) return;
         if (!canSaveProject()) {
             Toast.makeText(this, R.string.lab_project_wait, Toast.LENGTH_LONG).show();
             return;
@@ -1044,17 +1076,20 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             entryName = filePath.substring(this.decodeRootPath.length() + 1);
         }
         this.resListAdapter.fileModified(entryName, filePath);
+        if ("AndroidManifest.xml".equals(entryName) && new File(filePath).equals(new File(this.decodeRootPath, "AndroidManifest.xml"))) {
+            setManifestModified(true);
+        }
     }
 
     public void setManifestModified(boolean bInUiThread) {
         this.manifestModified = true;
         if (bInUiThread) {
-            this.mfListAdapter.reload();
+            loadInlineManifest();
         } else {
             runOnUiThread(new Runnable() {
                 @Override // java.lang.Runnable
                 public void run() {
-                    ApkInfoActivity.this.mfListAdapter.reload();
+                    ApkInfoActivity.this.loadInlineManifest();
                 }
             });
         }
@@ -1296,21 +1331,17 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 return;
             }
             this.mfKeywordAdapter.addInputHistory(keyword2);
-            ArrayList<Integer> lines = new ArrayList<>();
-            ArrayList<String> lineContents = new ArrayList<>();
-            searchManifest(keyword2, lines, lineContents);
-            if (lines.isEmpty()) {
-                Toast.makeText((Context) this, R.string.notfound_in_manifest, 0).show();
-                return;
+            if (this.manifestEditor == null) return;
+            String source = this.manifestEditor.getText().toString();
+            int start = Math.max(0, this.manifestEditor.getSelectionEnd());
+            int found = source.indexOf(keyword2, start);
+            if (found < 0 && start > 0) found = source.indexOf(keyword2);
+            if (found < 0) {
+                Toast.makeText(this, R.string.notfound_in_manifest, Toast.LENGTH_SHORT).show();
+            } else {
+                this.manifestEditor.requestFocus();
+                this.manifestEditor.setSelection(found, found + keyword2.length());
             }
-            Intent intent = new Intent((Context) this, (Class<?>) MfSearchRetActivity.class);
-            Bundle bundle = new Bundle();
-            String xmlPath = this.decodeRootPath + "/AndroidManifest.xml";
-            bundle.putString("xmlPath", xmlPath);
-            bundle.putIntegerArrayList("lineIndexs", lines);
-            bundle.putStringArrayList("lineContents", lineContents);
-            intent.putExtras(bundle);
-            startActivityForResult(intent, 2);
             return;
         }
         if (id == R.id.menu_search_res) {
@@ -1359,8 +1390,10 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             }
         }
         if (id == R.id.menu_webserver) {
+            if (!saveInlineManifest(true)) return;
             HttpServiceManager.instance().startWebService(this, this.decodeRootPath);
         } else if (id == R.id.menu_apply_patch) {
+            if (!saveInlineManifest(true)) return;
             new PatchDialog(this).show();
         } else if (id == R.id.translate) {
             startNewTranslation();
@@ -1470,6 +1503,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     private void showProjectTools() {
+        if (!saveInlineManifest(true)) return;
         if (!this.resourceParsed || this.decodeRootPath == null || !new File(this.decodeRootPath).isDirectory()) {
             Toast.makeText((Context) this, (CharSequence) "Дождитесь открытия проекта", 0).show();
         } else {
@@ -2467,6 +2501,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     protected void composeApkFile() {
+        if (!saveInlineManifest(true)) return;
         if (!MainActivity.upgradedFromOldVersion(this)) {
             AlertDialog.Builder alert = new AlertDialog.Builder(this);
             alert.setTitle(R.string.please_note);
@@ -2746,6 +2781,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     private void updateCenterView() {
+        findViewById(R.id.project_save_button).setVisibility(this.curSelectedRadio == 2 ? View.GONE : View.VISIBLE);
         this.manifestRadio.setCompoundDrawablesWithIntrinsicBounds((Drawable) null, this.manifestIconGrey, (Drawable) null, (Drawable) null);
         this.resRadio.setCompoundDrawablesWithIntrinsicBounds((Drawable) null, this.resIconGrey, (Drawable) null, (Drawable) null);
         this.stringRadio.setCompoundDrawablesWithIntrinsicBounds((Drawable) null, this.textIconGrey, (Drawable) null, (Drawable) null);
@@ -2792,6 +2828,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     protected void resRadioClicked() {
+        if (this.curSelectedRadio == 2 && !saveInlineManifest(true)) { this.manifestRadio.setChecked(true); return; }
         SharedPreferences sp;
         int showTimes;
         if (this.curSelectedRadio == 1) {
@@ -2808,6 +2845,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     protected void stringRadioClicked() {
+        if (this.curSelectedRadio == 2 && !saveInlineManifest(true)) { this.manifestRadio.setChecked(true); return; }
         if (this.curSelectedRadio != 0) {
             this.curSelectedRadio = 0;
             updateCenterView();
@@ -3510,12 +3548,12 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         this.resourceList.setAdapter((ListAdapter) this.resListAdapter);
         this.resourceList.setOnItemClickListener(this);
         this.resourceList.setOnItemLongClickListener(this);
-        this.mfListAdapter = new ManifestListAdapter(this, this.decodeRootPath + "/AndroidManifest.xml", this);
-        this.manifestList.setAdapter((ListAdapter) this.mfListAdapter);
-        this.manifestList.setBackgroundColor(this.mfListAdapter.editorSurface());
+        ManifestEditorPalette headerColors = ManifestEditorPalette.forDark(GlobalConfig.instance(this).isDarkTheme());
         View manifestHeader = findViewById(R.id.manifest_header);
         if (manifestHeader != null) {
-            ManifestEditorPalette headerColors = this.mfListAdapter.editorPalette();
+            android.view.ViewGroup.LayoutParams headerParams = manifestHeader.getLayoutParams();
+            headerParams.height = (int) (48 * getResources().getDisplayMetrics().density + 0.5f);
+            manifestHeader.setLayoutParams(headerParams);
             manifestHeader.setBackgroundColor(headerColors.gutter);
             TextView headerName = (TextView) findViewById(R.id.manifest_header_name);
             TextView headerType = (TextView) findViewById(R.id.manifest_header_type);
@@ -3526,8 +3564,34 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 headerType.setTextColor(headerColors.gutterText);
             }
         }
-        this.manifestList.setOnItemClickListener(this.mfListAdapter);
-        this.manifestList.setOnItemLongClickListener(this.mfListAdapter);
+        this.manifestList.setVisibility(View.GONE);
+        if (this.manifestEditor == null) {
+            this.manifestEditor = new ManifestInlineEditor(this, headerColors);
+            this.manifestEditor.setId(R.id.manifest_inline_editor);
+            int index = this.manifestLayout.indexOfChild(this.manifestList);
+            this.manifestLayout.addView(this.manifestEditor, index,
+                    new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
+            this.manifestEditor.addTextChangedListener(new TextWatcher() {
+                public void beforeTextChanged(CharSequence text, int start, int count, int after) { }
+                public void onTextChanged(CharSequence text, int start, int before, int count) {
+                    if (!manifestLoading) {
+                        manifestDirty = true;
+                        manifestEditor.removeCallbacks(manifestAutosave);
+                        manifestEditor.postDelayed(manifestAutosave, 1200);
+                    }
+                }
+                public void afterTextChanged(Editable text) { }
+            });
+            Button saveManifest = new Button(this);
+            saveManifest.setText(R.string.lab_save_manifest);
+            saveManifest.setContentDescription(getString(R.string.lab_save_manifest));
+            saveManifest.setOnClickListener(v -> {
+                if (saveInlineManifest(true)) Toast.makeText(this, R.string.lab_manifest_saved, Toast.LENGTH_SHORT).show();
+            });
+            ((LinearLayout) manifestHeader).addView(saveManifest, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
+        }
+        loadInlineManifest();
         if (this.navigationMgr != null && this.resCurrentDir != null) {
             this.navigationMgr.gotoDirectory(this.resCurrentDir);
         }
@@ -4057,6 +4121,58 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     @Override // com.gmail.heagoo.apkeditor.IManifestChangeCallback
     public String tryToDeleteSection(LineRecord lineRec) {
         return null;
+    }
+
+    private File manifestDraftFile() {
+        return new File(getFilesDir(), "manifest-draft-" + this.earlyEditToken);
+    }
+
+    private void loadInlineManifest() {
+        if (this.manifestEditor == null || this.decodeRootPath == null || this.manifestDirty) return;
+        try {
+            String text = ManifestDocumentFile.read(new File(this.decodeRootPath, "AndroidManifest.xml"));
+            this.manifestBaseline = text;
+            if (this.restoreManifestDraft) {
+                Object draft = IOUtils.readObjectFromFile(manifestDraftFile().getAbsolutePath());
+                if (draft instanceof String[] && ((String[]) draft).length == 2) {
+                    String[] values = (String[]) draft;
+                    text = values[0];
+                    this.manifestBaseline = values[1];
+                    this.manifestDirty = true;
+                }
+                this.restoreManifestDraft = false;
+            }
+            this.manifestLoading = true;
+            this.manifestEditor.setText(text);
+            this.manifestEditor.setEnabled(true);
+        } catch (Exception e) {
+            this.manifestEditor.setEnabled(false);
+            Toast.makeText(this, getString(R.string.lab_manifest_load_failed) + "\n" + e, Toast.LENGTH_LONG).show();
+        } finally {
+            this.manifestLoading = false;
+        }
+    }
+
+    /** Flush before operations that read the file; never overwrite external changes. */
+    private boolean saveInlineManifest(boolean showError) {
+        if (this.manifestEditor == null || !this.manifestDirty) return true;
+        this.manifestEditor.removeCallbacks(this.manifestAutosave);
+        try {
+            File file = new File(this.decodeRootPath, "AndroidManifest.xml");
+            String text = this.manifestEditor.getText().toString();
+            ManifestDocumentFile.save(file, this.manifestBaseline, text);
+            this.manifestBaseline = text;
+            this.manifestDirty = false;
+            this.manifestModified = true;
+            manifestDraftFile().delete();
+            return true;
+        } catch (Exception e) {
+            if (showError) new AlertDialog.Builder(this)
+                    .setMessage(getString(R.string.lab_manifest_save_failed) + "\n" + (e instanceof ManifestDocumentFile.Conflict ? getString(R.string.lab_manifest_external_change) : e.getMessage()))
+                    .setPositiveButton(android.R.string.ok, null).show();
+            else Toast.makeText(this, R.string.lab_manifest_save_failed, Toast.LENGTH_LONG).show();
+            return false;
+        }
     }
 
     @Override // com.gmail.heagoo.apkeditor.IManifestChangeCallback
