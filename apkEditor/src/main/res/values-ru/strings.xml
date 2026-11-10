@@ -616,4 +616,9 @@ APK Editor предназначен для пользователей Android, �
     <string name="lab_project_saved">Проект сохранён</string>
     <string name="lab_manifest_edit_line">Редактировать строку манифеста (XML)</string>
     <string name="lab_manifest_save_failed">Не удалось сохранить AndroidManifest.xml. Прежний файл сохранён.</string>
+    <string name="lab_save_manifest">Сохранить файл</string>
+    <string name="lab_manifest_saved">Манифест сохранён</string>
+    <string name="lab_manifest_load_failed">Не удалось открыть манифест.</string>
+    <string name="lab_manifest_external_change">Файл изменён вне редактора. Ваш текст остался в редакторе; скопируйте его перед повторным открытием файла.</string>
+    <string name="lab_manifest_draft_failed">Не удалось сохранить черновик манифеста.</string>
 </resources>

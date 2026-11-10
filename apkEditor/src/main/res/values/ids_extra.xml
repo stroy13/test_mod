@@ -3,4 +3,5 @@
     <item type="id" name="line_divider" />
     <item type="id" name="odex_back" />
     <item type="id" name="original_button" />
+    <item type="id" name="manifest_inline_editor" />
 </resources>

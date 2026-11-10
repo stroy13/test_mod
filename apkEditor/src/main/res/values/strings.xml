@@ -684,4 +684,9 @@ Note: this is the original historical text; this edition does support signing."<
     <string name="lab_project_saved">Project saved</string>
     <string name="lab_manifest_edit_line">Edit manifest line (XML)</string>
     <string name="lab_manifest_save_failed">Could not save AndroidManifest.xml. The previous file was kept.</string>
+    <string name="lab_save_manifest">Save file</string>
+    <string name="lab_manifest_saved">Manifest saved</string>
+    <string name="lab_manifest_load_failed">Could not open the manifest.</string>
+    <string name="lab_manifest_external_change">The file changed outside this editor. Your text is still in the editor; copy it before reopening the file.</string>
+    <string name="lab_manifest_draft_failed">Could not preserve the unsaved manifest draft.</string>
 </resources>

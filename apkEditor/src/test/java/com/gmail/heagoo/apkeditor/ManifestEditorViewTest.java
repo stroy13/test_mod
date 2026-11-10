@@ -63,8 +63,10 @@ public class ManifestEditorViewTest {
         assertTrue("code rows must not be separated by the theme divider",
                 src.contains("this.manifestList.setDivider(null);"));
         assertTrue(src.contains("this.manifestList.setDividerHeight(0);"));
-        assertTrue("list background must match the editor surface",
-                src.contains("this.manifestList.setBackgroundColor(this.mfListAdapter.editorSurface());"));
+        assertTrue("old list must be hidden when the editable document is shown",
+                src.contains("this.manifestList.setVisibility(View.GONE);"));
+        String editor = read("apkEditor/src/main/java/com/gmail/heagoo/apkeditor/ManifestInlineEditor.java");
+        assertTrue("editable document must use the editor surface", editor.contains("setBackgroundColor(colors.surface);"));
     }
 
     @Test
