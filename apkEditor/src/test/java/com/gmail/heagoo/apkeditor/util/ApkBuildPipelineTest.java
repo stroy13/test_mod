@@ -271,6 +271,7 @@ public class ApkBuildPipelineTest {
             put(out, "assets/prefix.bin", new byte[57], ZipEntry.DEFLATED);
             put(out, "resources.arsc", minimalArsc(), ZipEntry.DEFLATED);
             put(out, "AndroidManifest.xml", MANIFEST, ZipEntry.DEFLATED);
+            put(out, "classes.dex", minimalDex(), ZipEntry.DEFLATED);
         }
         ApkBuildPipeline.SigningOptions defaults = options();
         ApkBuildPipeline.SigningOptions unknownTarget = new ApkBuildPipeline.SigningOptions(
