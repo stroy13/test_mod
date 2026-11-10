@@ -44,6 +44,7 @@ import brut.androlib.res.data.ResType;
 import brut.androlib.res.data.ResTypeSpec;
 import brut.androlib.res.data.value.ResBagValue;
 import brut.androlib.res.data.value.ResBoolValue;
+import brut.androlib.res.data.value.ResReferenceValue;
 import brut.androlib.res.data.value.ResFileValue;
 import brut.androlib.res.data.value.ResIntBasedValue;
 import brut.androlib.res.data.value.ResScalarValue;
@@ -773,7 +774,17 @@ public class ARSCDecoder {
                 mType = mPkg.getOrCreateConfig(new ResConfigFlags());
             }
 
-            ResValue value = new ResBoolValue(false, 0, null);
+            // File-backed resource types accept references, not boolean literals.
+            // Keep placeholders for missing IDs, but make them compilable by AAPT2.
+            String typeName = mTypeSpec.getName();
+            boolean fileType = "anim".equals(typeName) || "animator".equals(typeName)
+                    || "drawable".equals(typeName) || "layout".equals(typeName)
+                    || "menu".equals(typeName) || "xml".equals(typeName)
+                    || "raw".equals(typeName) || "font".equals(typeName)
+                    || "mipmap".equals(typeName) || "transition".equals(typeName)
+                    || "interpolator".equals(typeName) || "navigation".equals(typeName);
+            ResValue value = fileType ? new ResReferenceValue(mPkg, 0, null)
+                    : new ResBoolValue(false, 0, null);
             ResResource res = new ResResource(mType, spec, value);
 
             mPkg.addResource(res);

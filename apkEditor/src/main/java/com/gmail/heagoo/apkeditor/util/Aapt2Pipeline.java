@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /* loaded from: /tmp/apkx/classes9.dex */
@@ -20,8 +23,22 @@ public final class Aapt2Pipeline {
         if (out.exists() && !out.delete()) {
             throw new IOException("Cannot remove old AAPT2 output");
         }
+        Path staged = null;
         try {
-            run(new String[]{aapt2, "compile", "--legacy", "--no-crunch", "--dir", resDir, "-o", flat.getAbsolutePath()});
+            Path original = new File(resDir).toPath().toAbsolutePath();
+            Map<Path, byte[]> repairs = Aapt2DummyResources.findRepairs(original);
+            String compileDir = resDir;
+            if (!repairs.isEmpty()) {
+                staged = Files.createTempDirectory(out.getAbsoluteFile().getParentFile().toPath(), "aapt2-res-");
+                Aapt2DummyResources.stage(original, staged, repairs);
+                compileDir = staged.toString();
+            }
+            try {
+                run(new String[]{aapt2, "compile", "--legacy", "--no-crunch", "--dir", compileDir, "-o", flat.getAbsolutePath()});
+            } catch (IOException e) {
+                if (staged == null || e.getMessage() == null) throw e;
+                throw new IOException(e.getMessage().replace(staged.toString(), original.toString()), e);
+            }
             run(new String[]{aapt2, "link", "--auto-add-overlay", "--no-version-vectors", "-I", framework, "--manifest", manifest, "-o", out.getAbsolutePath(), flat.getAbsolutePath()});
             if (!out.isFile() || out.length() == 0) {
                 throw new IOException("AAPT2 produced no output");
@@ -30,6 +47,7 @@ public final class Aapt2Pipeline {
                 flat.delete();
             }
         } finally {
+            if (staged != null) Aapt2DummyResources.deleteTree(staged);
             if (flat.exists()) {
                 flat.delete();
             }

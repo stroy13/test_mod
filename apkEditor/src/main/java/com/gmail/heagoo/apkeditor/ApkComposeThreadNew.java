@@ -145,6 +145,8 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
                 if (isStopped()) {
                     return;
                 }
+            } else {
+                com.gmail.heagoo.apkeditor.util.ApkBuildPipeline.normalizeUnsigned(new File(this.targetApkPath));
             }
             setNextStep(this.ctx.getString(R.string.cleanup));
             cleanup();

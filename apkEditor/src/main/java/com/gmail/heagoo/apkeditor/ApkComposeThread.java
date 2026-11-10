@@ -634,6 +634,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
             replaceLen += key2.getBytes().length + value2.getBytes().length + 2;
         }
         ZipEngine.modify(this.ctx, this.targetApkPath, this.tempApkPath, sb1.toString(), addLen, sb2.toString(), deleteLen, sb3.toString(), replaceLen);
+        com.gmail.heagoo.apkeditor.util.ApkBuildPipeline.normalizeUnsigned(new File(this.targetApkPath));
         return true;
     }
 
