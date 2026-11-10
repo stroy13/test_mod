@@ -70,6 +70,7 @@ public final class ManifestInlineEditor extends AppCompatEditText {
         setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
                 | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         setTypeface(Typeface.DEFAULT);
+        setTransformationMethod(new ManifestIndentTransformation());
         setBackgroundColor(colors.surface);
         setTextColor(colors.text);
         setPadding(gutterWidth + (int) (8 * density), (int) (8 * density), (int) (8 * density), (int) (8 * density));
