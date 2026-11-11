@@ -49,7 +49,7 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
     private ITaskCallback taskCallback;
     private Map<String, String> builtDexFiles = new HashMap();
     private List<String> modifiedSmaliFolders = new ArrayList();
-    private long lastUpdateAssembleTime = 0;
+    private final com.gmail.heagoo.apkeditor.util.ProgressThrottle assembleProgress = new com.gmail.heagoo.apkeditor.util.ProgressThrottle(500);
     private boolean stopFlag = false;
     private ComposeBuildTrace buildTrace;
 
@@ -331,6 +331,7 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
                 e.printStackTrace();
             }
         }
+        long collectStarted = System.nanoTime();
         Map<String, String> filesToAdd = new HashMap<>();
         File assetsDir = new File(this.decodedFilePath + "/assets");
         if (assetsDir.exists()) {
@@ -383,7 +384,15 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
             filesToAdd = filesToAdd;
             c = '\n';
         }
+        if (this.buildTrace != null && this.buildTrace.logger() != null) {
+            this.buildTrace.logger().log("Merge file collection and mapping: " + filesToAdd.size()
+                    + " files; " + (System.nanoTime() - collectStarted) / 1000000L + " ms");
+        }
+        long zipStarted = System.nanoTime();
         ZipEngine.modify(this.ctx, this.targetApkPath, this.resourceApkPath, sb.toString(), addLen, "", 0, sb2.toString(), replaceLen);
+        if (this.buildTrace != null && this.buildTrace.logger() != null) {
+            this.buildTrace.logger().log("Merge ZIP engine: " + (System.nanoTime() - zipStarted) / 1000000L + " ms");
+        }
     }
 
     private void collectDexFiles(Map<String, String> filesToAdd) {
@@ -554,8 +563,7 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
     }
 
     public void updateAssembledFiles(int assembledFiles, int totalFiles) {
-        long curTime = System.currentTimeMillis();
-        if (curTime > this.lastUpdateAssembleTime + 500) {
+        if (this.assembleProgress.shouldUpdate(System.nanoTime() / 1000000L, assembledFiles == totalFiles)) {
             String fmt = this.ctx.getString(R.string.assemble_dex_detail);
             this.stepInfo.stepDescription = String.format(fmt, Integer.valueOf(assembledFiles), Integer.valueOf(totalFiles));
             this.taskCallback.setTaskStepInfo(this.stepInfo);

@@ -65,7 +65,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
     private ITaskCallback taskCallback;
     private String tempApkPath;
     private Map<String, String> dexReplaces = new HashMap();
-    private long lastUpdateAssembleTime = 0;
+    private final com.gmail.heagoo.apkeditor.util.ProgressThrottle assembleProgress = new com.gmail.heagoo.apkeditor.util.ProgressThrottle(500);
     private boolean stopFlag = false;
     private ComposeBuildTrace buildTrace;
 
@@ -758,8 +758,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
     }
 
     public void updateAssembledFiles(int assembledFiles, int totalFiles) {
-        long curTime = System.currentTimeMillis();
-        if (curTime > this.lastUpdateAssembleTime + 500) {
+        if (this.assembleProgress.shouldUpdate(System.nanoTime() / 1000000L, assembledFiles == totalFiles)) {
             String fmt = this.ctx.getString(R.string.assemble_dex_detail);
             this.stepInfo.stepDescription = String.format(fmt, Integer.valueOf(assembledFiles), Integer.valueOf(totalFiles));
             this.taskCallback.setTaskStepInfo(this.stepInfo);
