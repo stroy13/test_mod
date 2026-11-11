@@ -8,7 +8,8 @@ import android.text.Editable;
 import android.text.Layout;
 import android.text.TextWatcher;
 import android.text.style.ForegroundColorSpan;
-import android.text.style.StyleSpan;
+import android.text.style.CharacterStyle;
+import android.text.TextPaint;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -39,6 +40,7 @@ public final class ManifestInlineEditor extends AppCompatEditText {
     private int highlightedFirst = -1, highlightedLast = -1;
     private boolean draggingScrollbar;
     private boolean draggingContent;
+    private boolean browsingWithoutCursor;
     private float downX, downY, lastY;
     private long downTime;
     private VelocityTracker velocity;
@@ -49,8 +51,10 @@ public final class ManifestInlineEditor extends AppCompatEditText {
     private static final class SyntaxColor extends ForegroundColorSpan {
         SyntaxColor(int color) { super(color); }
     }
-    private static final class CommentStyle extends StyleSpan {
-        CommentStyle() { super(Typeface.ITALIC); }
+    // Appearance-only span: metric-affecting StyleSpan makes TextView relayout
+    // while highlighting and can snap the viewport back to the cursor.
+    private static final class CommentStyle extends CharacterStyle {
+        @Override public void updateDrawState(TextPaint paint) { paint.setTextSkewX(-0.25f); }
     }
 
     public ManifestInlineEditor(Context context, ManifestEditorPalette colors) {
@@ -84,6 +88,7 @@ public final class ManifestInlineEditor extends AppCompatEditText {
         addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                browsingWithoutCursor = false;
                 lineIndex.replace(s, start, before, count);
                 invalidateHighlight();
             }
@@ -233,6 +238,7 @@ public final class ManifestInlineEditor extends AppCompatEditText {
                     && downY >= thumbTop() - 16 * density
                     && downY <= thumbTop() + thumbHeight() + 16 * density) {
                 draggingScrollbar = true;
+                browsingWithoutCursor = true;
                 dragOffset = downY - thumbTop();
                 return true;
             }
@@ -260,6 +266,7 @@ public final class ManifestInlineEditor extends AppCompatEditText {
                 super.onTouchEvent(cancel);
                 cancel.recycle();
                 draggingContent = true;
+                browsingWithoutCursor = true;
                 lastY = downY;
             }
             if (draggingContent) {
@@ -284,6 +291,7 @@ public final class ManifestInlineEditor extends AppCompatEditText {
                 endTouch();
                 return true;
             }
+            if (action == MotionEvent.ACTION_UP) browsingWithoutCursor = false;
             boolean result = super.onTouchEvent(event);
             endTouch();
             return result;
@@ -294,6 +302,17 @@ public final class ManifestInlineEditor extends AppCompatEditText {
     private void endTouch() {
         if (velocity != null) { velocity.recycle(); velocity = null; }
         if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(false);
+    }
+
+    @Override protected void onSelectionChanged(int start, int end) {
+        browsingWithoutCursor = false;
+        super.onSelectionChanged(start, end);
+    }
+
+    @Override public boolean bringPointIntoView(int offset) {
+        // Highlight/layout refresh must not pull a manually scrolled viewport back
+        // to an old cursor. Tapping or editing restores normal cursor following.
+        return !browsingWithoutCursor && super.bringPointIntoView(offset);
     }
 
     @Override public void computeScroll() {
