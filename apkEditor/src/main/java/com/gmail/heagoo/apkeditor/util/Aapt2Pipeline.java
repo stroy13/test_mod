@@ -15,6 +15,11 @@ public final class Aapt2Pipeline {
     }
 
     public static void build(String aapt2, String framework, String resDir, String manifest, String output) throws IOException, InterruptedException {
+        build(aapt2, framework, resDir, manifest, output, null);
+    }
+
+    public static void build(String aapt2, String framework, String resDir, String manifest, String output,
+                             ApkBuildPipeline.Logger logger) throws IOException, InterruptedException {
         File out = new File(output);
         File flat = new File(output + ".aapt2-flats.zip");
         if (flat.exists() && !flat.delete()) {
@@ -26,6 +31,7 @@ public final class Aapt2Pipeline {
         Path staged = null;
         try {
             Path original = new File(resDir).toPath().toAbsolutePath();
+            long repairStart = System.nanoTime();
             Map<Path, byte[]> repairs = Aapt2DummyResources.findRepairs(original);
             String compileDir = resDir;
             if (!repairs.isEmpty()) {
@@ -33,13 +39,14 @@ public final class Aapt2Pipeline {
                 Aapt2DummyResources.stage(original, staged, repairs);
                 compileDir = staged.toString();
             }
+            if (logger != null) logger.log("AAPT2 resource scan and staging: " + elapsed(repairStart) + " ms; repaired files=" + repairs.size());
             try {
-                run(new String[]{aapt2, "compile", "--legacy", "--no-crunch", "--dir", compileDir, "-o", flat.getAbsolutePath()});
+                runTimed(new String[]{aapt2, "compile", "--legacy", "--no-crunch", "--dir", compileDir, "-o", flat.getAbsolutePath()}, logger);
             } catch (IOException e) {
                 if (staged == null || e.getMessage() == null) throw e;
                 throw new IOException(e.getMessage().replace(staged.toString(), original.toString()), e);
             }
-            run(new String[]{aapt2, "link", "--auto-add-overlay", "--no-version-vectors", "-I", framework, "--manifest", manifest, "-o", out.getAbsolutePath(), flat.getAbsolutePath()});
+            runTimed(new String[]{aapt2, "link", "--auto-add-overlay", "--no-version-vectors", "-I", framework, "--manifest", manifest, "-o", out.getAbsolutePath(), flat.getAbsolutePath()}, logger);
             if (!out.isFile() || out.length() == 0) {
                 throw new IOException("AAPT2 produced no output");
             }
@@ -51,6 +58,19 @@ public final class Aapt2Pipeline {
             if (flat.exists()) {
                 flat.delete();
             }
+        }
+    }
+
+    private static long elapsed(long started) {
+        return (System.nanoTime() - started) / 1000000L;
+    }
+
+    private static void runTimed(String[] args, ApkBuildPipeline.Logger logger) throws IOException, InterruptedException {
+        long started = System.nanoTime();
+        try {
+            run(args);
+        } finally {
+            if (logger != null) logger.log("AAPT2 " + args[1] + ": " + elapsed(started) + " ms");
         }
     }
 

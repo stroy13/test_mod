@@ -84,7 +84,11 @@ public class Aapt2DummyResourcesTest {
         assertNotEquals("fixture should reproduce the original AAPT2 error", 0, broken.waitFor());
         assertTrue(new String(errors, StandardCharsets.UTF_8).contains("Expected a reference"));
         File apk = root.resolve("out.apk").toFile();
-        Aapt2Pipeline.build(aapt.toString(), framework.toString(), res.toString(), manifest.toString(), apk.getAbsolutePath());
+        java.util.List<String> timings = new java.util.ArrayList<>();
+        Aapt2Pipeline.build(aapt.toString(), framework.toString(), res.toString(), manifest.toString(), apk.getAbsolutePath(), timings::add);
+        assertTrue(timings.toString(), timings.stream().anyMatch(s -> s.startsWith("AAPT2 resource scan and staging:")));
+        assertTrue(timings.toString(), timings.stream().anyMatch(s -> s.startsWith("AAPT2 compile:")));
+        assertTrue(timings.toString(), timings.stream().anyMatch(s -> s.startsWith("AAPT2 link:")));
         assertTrue(apk.isFile() && apk.length() > 0);
         assertEquals(attrs, new String(Files.readAllBytes(attrsFile), StandardCharsets.UTF_8));
         assertEquals(arrays, new String(Files.readAllBytes(arraysFile), StandardCharsets.UTF_8));
