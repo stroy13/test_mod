@@ -32,7 +32,7 @@ public final class Aapt2Pipeline {
         try {
             Path original = new File(resDir).toPath().toAbsolutePath();
             long repairStart = System.nanoTime();
-            Map<Path, byte[]> repairs = Aapt2DummyResources.findRepairs(original);
+            Map<Path, byte[]> repairs = Aapt2DummyResources.findRepairs(original, logger);
             String compileDir = resDir;
             if (!repairs.isEmpty()) {
                 staged = Files.createTempDirectory(out.getAbsoluteFile().getParentFile().toPath(), "aapt2-res-");

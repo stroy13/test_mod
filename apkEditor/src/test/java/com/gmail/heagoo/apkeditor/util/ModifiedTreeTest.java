@@ -30,7 +30,7 @@ public class ModifiedTreeTest {
         FakeFile slow = new FakeFile("slow", 1, true, null);
         FakeFile changed = new FakeFile("changed", 100, false, null);
         FakeFile root = new FakeFile("root", 1, true, new File[]{slow, changed});
-        assertTrue(ModifiedTree.newerThan(root, 10));
+        assertEquals(changed, ModifiedTree.firstNewer(root, 10));
         assertFalse("unneeded directory should not be listed", slow.listed);
     }
     @Test public void unreadableDirectoryDoesNotSilentlySkipChanges() throws Exception {

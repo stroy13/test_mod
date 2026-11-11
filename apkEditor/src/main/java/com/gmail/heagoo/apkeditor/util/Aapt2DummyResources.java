@@ -26,8 +26,14 @@ final class Aapt2DummyResources {
     private Aapt2DummyResources() { }
 
     static String normalize(String xml) {
+        // Most resources contain no legacy dummy items at all. Avoid parsing
+        // every tag in huge strings.xml/public.xml when no repair is possible.
+        if (xml.indexOf("dummy_ae_") < 0 || xml.indexOf("false") < 0) return xml;
         // A DTD can contain arbitrary markup: don't attempt text-level repairs.
         if (xml.contains("<!DOCTYPE") || xml.contains("<!ENTITY")) return xml;
+        // Android's regex implementation may copy the input when creating a
+        // Matcher. Create it once, not once per resource element.
+        Matcher item = ENTRY.matcher(xml);
         StringBuilder result = null;
         int copied = 0, pos = 0, depth = 0;
         boolean resources = false;
@@ -41,8 +47,7 @@ final class Aapt2DummyResources {
                 pos = end + endToken.length();
                 continue;
             }
-            if (depth == 1 && resources) {
-                Matcher item = ENTRY.matcher(xml);
+            if (depth == 1 && resources && xml.startsWith("<item", start)) {
                 item.region(start, xml.length());
                 if (item.lookingAt() && DummyResourceTypes.needsNullReference(item.group(1))) {
                     if (result == null) result = new StringBuilder(xml.length());
@@ -83,6 +88,12 @@ final class Aapt2DummyResources {
 
     /** Return changed relative files; do not alter the project. */
     static Map<Path, byte[]> findRepairs(Path res) throws IOException {
+        return findRepairs(res, null);
+    }
+
+    static Map<Path, byte[]> findRepairs(Path res, ApkBuildPipeline.Logger logger) throws IOException {
+        int fileCount = 0, candidateCount = 0;
+        long bytesRead = 0, readNanos = 0, parseNanos = 0;
         Map<Path, byte[]> changes = new HashMap<>();
         File[] dirs = res.toFile().listFiles();
         if (dirs == null) throw new IOException("Cannot list resources: " + res);
@@ -93,15 +104,37 @@ final class Aapt2DummyResources {
             if (files == null) throw new IOException("Cannot list resources: " + dir);
             for (File file : files) {
                 if (!file.isFile() || !file.getName().endsWith(".xml") || file.length() > MAX_VALUES_BYTES) continue;
+                fileCount++;
+                long started = System.nanoTime();
                 byte[] original = Files.readAllBytes(file.toPath());
+                readNanos += System.nanoTime() - started;
+                bytesRead += original.length;
+                if (!containsDummyName(original)) continue;
+                candidateCount++;
+                started = System.nanoTime();
                 String xml = new String(original, StandardCharsets.UTF_8);
                 String repaired = normalize(xml);
+                parseNanos += System.nanoTime() - started;
                 if (!xml.equals(repaired)) {
                     changes.put(res.relativize(file.toPath()), repaired.getBytes(StandardCharsets.UTF_8));
                 }
             }
         }
+        if (logger != null) logger.log("AAPT2 values scan: files=" + fileCount + "; bytes=" + bytesRead
+                + "; candidates=" + candidateCount + "; read=" + (readNanos / 1000000L)
+                + " ms; parse=" + (parseNanos / 1000000L) + " ms");
         return changes;
+    }
+
+    private static boolean containsDummyName(byte[] bytes) {
+        final byte[] needle = {'d', 'u', 'm', 'm', 'y', '_', 'a', 'e', '_'};
+        outer: for (int i = 0; i <= bytes.length - needle.length; i++) {
+            for (int j = 0; j < needle.length; j++) {
+                if (bytes[i + j] != needle[j]) continue outer;
+            }
+            return true;
+        }
+        return false;
     }
 
     static void stage(Path source, Path target, Map<Path, byte[]> repairs) throws IOException {

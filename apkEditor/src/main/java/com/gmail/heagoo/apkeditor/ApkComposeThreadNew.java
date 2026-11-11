@@ -244,8 +244,14 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
                     long dexTime1 = getLastModifyTime(new File(this.decodedFilePath + "/" + dexName));
                     long dexTime2 = getLastModifyTime(new File(this.decodedFilePath + "/build/" + dexName));
                     long dexTime = dexTime2 > dexTime1 ? dexTime2 : dexTime1;
-                    boolean changed = ModifiedTree.newerThan(f, dexTime);
-                    if (!changed) {
+                    File changed = ModifiedTree.firstNewer(f, dexTime);
+                    if (this.buildTrace != null && this.buildTrace.logger() != null) {
+                        this.buildTrace.logger().log("DEX change check: " + dirName
+                                + "; original timestamp=" + dexTime1 + "; built timestamp=" + dexTime2
+                                + (changed == null ? "; unchanged" : "; newer=" + changed.getPath()
+                                + "; timestamp=" + changed.lastModified()));
+                    }
+                    if (changed == null) {
                         decodeDir = decodeDir2;
                     } else {
                         decodeDir = decodeDir2;

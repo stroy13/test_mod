@@ -2533,10 +2533,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         String errMsg;
         this.resFileModified = false;
         Set<String> modifiedDex = new HashSet<>();
-        long resModifyTime = FileUtil.recursiveModifiedTime(new File(this.decodeRootPath + "/res"));
-        Log.d("DEBUG", "resModifyTime=" + resModifyTime);
-        long manifestModifyTime = FileUtil.recursiveModifiedTime(new File(this.decodeRootPath + "/AndroidManifest.xml"));
-        Log.d("DEBUG", "manifestTime=" + manifestModifyTime);
         Map<String, String> added = this.resListAdapter.getAddedFiles();
         Map<String, String> replaced = this.resListAdapter.getReplacedFiles();
         Set<String> deleted = this.resListAdapter.getDeletedFiles();

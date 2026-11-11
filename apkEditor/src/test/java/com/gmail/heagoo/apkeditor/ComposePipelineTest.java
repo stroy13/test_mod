@@ -76,6 +76,15 @@ public class ComposePipelineTest {
     }
 
     @Test
+    public void buildButtonDoesNotWalkAllResourcesOnUiThreadForDebugOnly() throws Exception {
+        String src = read("ApkInfoActivity.java");
+        int start = src.indexOf("    protected void build(final boolean bSign)");
+        int end = src.indexOf("    void m49lambda$build$31", start);
+        assertTrue(start >= 0 && end > start);
+        assertFalse(src.substring(start, end).contains("recursiveModifiedTime"));
+    }
+
+    @Test
     public void resourceStageActuallyBuildsResources() throws Exception {
         for (String name : new String[]{"ApkComposeThreadNew.java", "ApkComposeThread.java"}) {
             String run = runBody(read(name));
