@@ -1,9 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout android:orientation="vertical" android:background="@drawable/lab_dialog_surface" android:layout_width="fill_parent" android:layout_height="fill_parent" android:clipToOutline="true"
-  xmlns:android="http://schemas.android.com/apk/res/android">
-    <TextView android:textSize="15.0sp" android:textColor="?labText" android:gravity="center_vertical" android:id="@id/decode_all_files" android:background="?labCardBackground" android:paddingLeft="12.0dip" android:layout_width="fill_parent" android:layout_height="46.0dip" android:text="@string/decode_all_files" android:singleLine="true" />
-    <View android:background="?labBorder" android:layout_width="fill_parent" android:layout_height="1.0px" />
-    <TextView android:textSize="15.0sp" android:textColor="?labText" android:gravity="center_vertical" android:id="@id/decode_partial_files" android:background="?labCardBackground" android:paddingLeft="12.0dip" android:layout_width="fill_parent" android:layout_height="46.0dip" android:text="@string/decode_partial_files" android:singleLine="true" />
-    <View android:background="?labBorder" android:layout_width="fill_parent" android:layout_height="1.0px" />
-    <TextView android:textSize="15.0sp" android:textColor="?labText" android:gravity="center_vertical" android:id="@id/cancel" android:background="?labCardBackground" android:paddingLeft="12.0dip" android:layout_width="fill_parent" android:layout_height="46.0dip" android:text="@android:string/cancel" android:singleLine="true" />
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/lab_dialog_surface"
+    android:clipToOutline="true">
+
+    <TextView
+        android:id="@+id/decode_all_files"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:singleLine="true"
+        android:text="@string/decode_all_files"
+        android:textColor="?labText"
+        android:textSize="15sp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?labBorder" />
+
+    <TextView
+        android:id="@+id/decode_partial_files"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:singleLine="true"
+        android:text="@string/decode_partial_files"
+        android:textColor="?labText"
+        android:textSize="15sp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?labBorder" />
+
+    <TextView
+        android:id="@+id/cancel"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:singleLine="true"
+        android:text="@android:string/cancel"
+        android:textColor="?labText"
+        android:textSize="15sp" />
 </LinearLayout>
