@@ -57,6 +57,7 @@ public class DexEncoder {
             final DexBuilder dexBuilder = new DexBuilder(Opcodes.forApi(apiLevel));
 
             ExecutorService executor = Executors.newFixedThreadPool(options.jobs);
+            try {
             List<Future<Boolean>> tasks = Lists.newArrayList();
 
             for (final File file : filesToProcessSet) {
@@ -80,7 +81,16 @@ public class DexEncoder {
                 }
             }
 
-            executor.shutdown();
+            } finally {
+                executor.shutdownNow();
+                boolean interrupted = Thread.interrupted();
+                try {
+                    while (!executor.awaitTermination(1, java.util.concurrent.TimeUnit.DAYS)) { }
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                }
+                if (interrupted) Thread.currentThread().interrupt();
+            }
 
             if (errors) {
                 throw new Exception("Encountered errors while compiling smali files.");

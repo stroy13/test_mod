@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="smali_decoder_title">DEX to smali version</string>
+    <string name="smali_decoder_summary">Select the disassembler for future DEX conversions.</string>
+    <string name="smali_encoder_title">Smali to DEX version</string>
+    <string name="smali_encoder_summary">The 3.0.10 assembler is experimental. Verify the resulting APK.</string>
+    <string-array name="smali_tool_names">
+        <item>smali / baksmali 2.4.0</item>
+        <item>Android smali / baksmali 3.0.10 (experimental)</item>
+    </string-array>
+    <string-array name="smali_tool_values"><item>legacy</item><item>modern</item></string-array>
+</resources>

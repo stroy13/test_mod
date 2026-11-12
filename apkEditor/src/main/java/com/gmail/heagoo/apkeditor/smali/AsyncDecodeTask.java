@@ -21,7 +21,6 @@ import java.util.zip.ZipFile;
 
 /** Extracts the APK's DEX files and reports actual disassembly progress to the UI. */
 public class AsyncDecodeTask extends AsyncTask<Void, Integer, Boolean> {
-    private static final String DECODER_CLASS = "com.gmail.heagoo.apkeditor.plus.DexDecoder";
 
     private final Context context;
     private final IDecodeTaskCallback callback;
@@ -119,7 +118,7 @@ public class AsyncDecodeTask extends AsyncTask<Void, Integer, Boolean> {
     }
 
     private void decodeDexFiles() throws Exception {
-        Class<?> decoderClass = Class.forName(DECODER_CLASS);
+        Class<?> decoderClass = Class.forName(SmaliToolChoice.decoderClass(context));
         Method progressMethod = decoderClass.getMethod("setProgressListener", BiConsumer.class);
         Method decodeMethod = decoderClass.getMethod("dex2smali", String.class);
         Method warningMethod = decoderClass.getMethod("getWarning");

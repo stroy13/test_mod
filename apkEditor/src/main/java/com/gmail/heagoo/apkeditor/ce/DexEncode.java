@@ -34,11 +34,11 @@ public class DexEncode implements IApkMaking, Serializable,
         String rootDirectory = fileDir.getAbsolutePath();
         String smaliFilePath = rootDirectory + "/decoded/smali";
 
-        assembleSmali(smaliFilePath, rootDirectory + "/.dex");
+        assembleSmali(ctx, smaliFilePath, rootDirectory + "/.dex");
     }
 
     // Assemble smali to DEX
-    private void assembleSmali(String smaliFilePath, String dexFilePath)
+    private void assembleSmali(Context ctx, String smaliFilePath, String dexFilePath)
             throws Exception {
 
         this.allReplaces.put("classes.dex", dexFilePath);
@@ -46,7 +46,7 @@ public class DexEncode implements IApkMaking, Serializable,
         // Invoke DexEncoder.smali2Dex
         try {
             Class<?> obj_class = Class
-                    .forName("com.gmail.heagoo.apkeditor.plus.DexEncoder");
+                    .forName(com.gmail.heagoo.apkeditor.smali.SmaliToolChoice.encoderClass(ctx));
             Method method = obj_class.getMethod("smali2Dex", new Class<?>[]{
                     String.class, String.class, ISmaliAssembleCallback.class});
             method.invoke(null,
