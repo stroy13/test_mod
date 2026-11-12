@@ -15,7 +15,7 @@ struct Api {
     FUNC(llama_model_load_from_file) FUNC(llama_model_free) FUNC(llama_init_from_model) FUNC(llama_free)
     FUNC(llama_model_get_vocab) FUNC(llama_model_chat_template) FUNC(llama_chat_apply_template)
     FUNC(llama_get_memory) FUNC(llama_memory_clear) FUNC(llama_tokenize) FUNC(llama_batch_get_one)
-    FUNC(llama_decode) FUNC(llama_sampler_init_greedy) FUNC(llama_sampler_free)
+    FUNC(llama_decode) FUNC(llama_set_n_threads) FUNC(llama_sampler_init_greedy) FUNC(llama_sampler_free)
     FUNC(llama_sampler_sample) FUNC(llama_sampler_accept) FUNC(llama_vocab_is_eog) FUNC(llama_token_to_piece)
 #undef FUNC
     bool load() {
@@ -26,7 +26,7 @@ struct Api {
         LOAD(llama_model_load_from_file) LOAD(llama_model_free) LOAD(llama_init_from_model) LOAD(llama_free)
         LOAD(llama_model_get_vocab) LOAD(llama_model_chat_template) LOAD(llama_chat_apply_template)
         LOAD(llama_get_memory) LOAD(llama_memory_clear) LOAD(llama_tokenize) LOAD(llama_batch_get_one)
-        LOAD(llama_decode) LOAD(llama_sampler_init_greedy) LOAD(llama_sampler_free)
+        LOAD(llama_decode) LOAD(llama_set_n_threads) LOAD(llama_sampler_init_greedy) LOAD(llama_sampler_free)
         LOAD(llama_sampler_sample) LOAD(llama_sampler_accept) LOAD(llama_vocab_is_eog) LOAD(llama_token_to_piece)
 #undef LOAD
         return true;
@@ -38,6 +38,10 @@ struct Session {
     llama_model *model = nullptr;
     llama_context *ctx = nullptr;
     std::atomic<bool> cancelled{false};
+    int max_threads = 1;
+    int trials = 0;
+    int best_threads = 1;
+    long long sums[3] = {0, 0, 0};
     ~Session() {
         if (ctx) api.llama_free_fn(ctx);
         if (model) api.llama_model_free_fn(model);
@@ -64,6 +68,8 @@ Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_open(JNIEnv *env, jc
     if (!s->api.load()) { delete s; fail(env, "llama native symbols unavailable (engine version mismatch)"); return 0; }
     static std::once_flag backend_init;
     std::call_once(backend_init, [&] { s->api.llama_backend_init_fn(); });
+    s->max_threads = threads;
+    s->best_threads = threads;
     llama_model_params mp = s->api.llama_model_default_params_fn();
     static ggml_backend_dev_t no_devices[] = { nullptr };
     mp.devices = no_devices; mp.n_gpu_layers = 0;
@@ -151,8 +157,30 @@ Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_complete(JNIEnv *env
         output.append(piece, len);
         ++generated;
         if (!report(env, observer, callback, 5, generated, n, 0)) break;
+        // Compare two decode calls at each supported thread count on actual tokens.
+        // Prefill keeps the configured batch thread count; no token is regenerated.
+        const int candidates[] = {1, 2, s->max_threads};
+        int candidateCount = s->max_threads >= 4 ? 3 : s->max_threads >= 2 ? 2 : 1;
+        bool trial = s->trials < candidateCount * 2;
+        int index = trial ? s->trials / 2 : 0;
+        int chosen = trial ? candidates[index] : s->best_threads;
+        a.llama_set_n_threads_fn(s->ctx, chosen, s->max_threads);
+        auto started = std::chrono::steady_clock::now();
         rc = a.llama_decode_fn(s->ctx, a.llama_batch_get_one_fn(&token, 1));
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started).count();
         if (rc != 0) break;
+        if (trial) {
+            s->sums[index] += ms;
+            ++s->trials;
+            if (!report(env, observer, callback, 7, chosen, generated, (int) ms)) break;
+            if (s->trials == candidateCount * 2) {
+                int best = 0;
+                for (int i = 1; i < candidateCount; ++i)
+                    if (s->sums[i] < s->sums[best]) best = i;
+                s->best_threads = candidates[best];
+                if (!report(env, observer, callback, 8, s->best_threads, generated, (int)(s->sums[best] / 2))) break;
+            }
+        }
     }
     a.llama_sampler_free_fn(sampler);
     if (env->ExceptionCheck()) return nullptr;

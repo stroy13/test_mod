@@ -22,6 +22,7 @@ public final class TranslationTrace {
     private long prefillStart, prefillMs = -1, generationStart, lastTokenAt;
     private long lastDecodeStart, lastDecodeMs = -1, maxDecodeMs = -1, totalDecodeMs;
     private int decodedTokens;
+    private int selectedThreads;
     public synchronized void engineInfo(String info) {
         // System capabilities only; cap and filter the native library's text.
         if (info != null && info.length() <= 2048 && info.matches("[A-Za-z0-9_ .:=|+/-]+")) engineInfo = info;
@@ -55,6 +56,15 @@ public final class TranslationTrace {
     }
     /** Called by JNI at phase boundaries and on every generated token. */
     public synchronized void nativeProgress(int phase, int count, int prompt, int detail) {
+        if (phase == 7) {
+            add("thread_trial threads=" + count + " token=" + prompt + " decode_ms=" + detail);
+            return;
+        }
+        if (phase == 8) {
+            selectedThreads = count;
+            add("thread_selected threads=" + count + " token=" + prompt + " avg_decode_ms=" + detail);
+            return;
+        }
         Stage[] stages = {Stage.NATIVE_COMPLETE, Stage.NATIVE_TEMPLATE, Stage.NATIVE_TOKENIZE,
                 Stage.NATIVE_PREFILL, Stage.NATIVE_SAMPLE, Stage.NATIVE_DECODE, Stage.NATIVE_RETURNED};
         if (phase < 1 || phase >= stages.length) return;
@@ -116,6 +126,7 @@ public final class TranslationTrace {
                 .append(" decoded_tokens=").append(decodedTokens).append(" decode_avg_ms=")
                 .append(decodedTokens == 0 ? -1 : totalDecodeMs / decodedTokens)
                 .append(" decode_last_ms=").append(lastDecodeMs).append(" decode_max_ms=").append(maxDecodeMs).append('\n');
+        out.append("selected_generation_threads=").append(selectedThreads == 0 ? "testing" : selectedThreads).append('\n');
         out.append("engine_features=").append(engineInfo).append('\n');
         for (String event : events) out.append(event).append('\n');
         return out.toString();

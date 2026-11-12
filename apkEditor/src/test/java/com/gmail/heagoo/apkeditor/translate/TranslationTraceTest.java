@@ -22,7 +22,7 @@ public class TranslationTraceTest {
         assertTrue(report.contains("target=other"));
         assertFalse(report.contains("string=1/100"));
         assertTrue(report.contains("string=60/100"));
-        assertTrue(report.split("\n").length <= 46);
+        assertTrue(report.split("\n").length <= 47);
     }
     @Test public void tracksNativeStagesAndTokenCount() {
         TranslationTrace t = new TranslationTrace(1, 4, 100, true, "-en");
@@ -33,6 +33,10 @@ public class TranslationTraceTest {
         t.nativeProgress(4, 0, 55, 0);
         t.nativeProgress(5, 1, 55, 0);
         t.nativeProgress(4, 1, 55, 0);
+        t.nativeProgress(7, 2, 1, 140);
+        t.nativeProgress(8, 2, 6, 140);
+        assertTrue(t.report().contains("thread_trial threads=2 token=1 decode_ms=140"));
+        assertTrue(t.report().contains("selected_generation_threads=2"));
         t.nativeProgress(5, 17, 55, 0);
         assertTrue(t.report().contains("stage=NATIVE_DECODE"));
         assertTrue(t.report().contains("decoded_tokens=1"));
