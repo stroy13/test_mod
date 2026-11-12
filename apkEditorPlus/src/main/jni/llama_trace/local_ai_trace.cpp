@@ -11,7 +11,7 @@
 struct Api {
     void *lib = nullptr;
 #define FUNC(name) decltype(&name) name##_fn = nullptr;
-    FUNC(llama_backend_init) FUNC(llama_model_default_params) FUNC(llama_context_default_params)
+    FUNC(llama_backend_init) FUNC(llama_print_system_info) FUNC(llama_model_default_params) FUNC(llama_context_default_params)
     FUNC(llama_model_load_from_file) FUNC(llama_model_free) FUNC(llama_init_from_model) FUNC(llama_free)
     FUNC(llama_model_get_vocab) FUNC(llama_model_chat_template) FUNC(llama_chat_apply_template)
     FUNC(llama_get_memory) FUNC(llama_memory_clear) FUNC(llama_tokenize) FUNC(llama_batch_get_one)
@@ -22,7 +22,7 @@ struct Api {
         lib = dlopen("libllama.so", RTLD_NOW | RTLD_LOCAL);
         if (!lib) return false;
 #define LOAD(name) name##_fn = reinterpret_cast<decltype(name##_fn)>(dlsym(lib, #name)); if (!name##_fn) return false;
-        LOAD(llama_backend_init) LOAD(llama_model_default_params) LOAD(llama_context_default_params)
+        LOAD(llama_backend_init) LOAD(llama_print_system_info) LOAD(llama_model_default_params) LOAD(llama_context_default_params)
         LOAD(llama_model_load_from_file) LOAD(llama_model_free) LOAD(llama_init_from_model) LOAD(llama_free)
         LOAD(llama_model_get_vocab) LOAD(llama_model_chat_template) LOAD(llama_chat_apply_template)
         LOAD(llama_get_memory) LOAD(llama_memory_clear) LOAD(llama_tokenize) LOAD(llama_batch_get_one)
@@ -78,6 +78,13 @@ Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_open(JNIEnv *env, jc
     s->ctx = s->api.llama_init_from_model_fn(s->model, cp);
     if (!s->ctx) { delete s; fail(env, "Model context creation failed"); return 0; }
     return reinterpret_cast<jlong>(s);
+}
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_systemInfo(JNIEnv *env, jclass, jlong handle) {
+    Session *s = reinterpret_cast<Session *>(handle);
+    if (!s) return nullptr;
+    const char *info = s->api.llama_print_system_info_fn();
+    return env->NewStringUTF(info ? info : "unavailable");
 }
 extern "C" JNIEXPORT void JNICALL
 Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_cancel(JNIEnv *, jclass, jlong handle) {

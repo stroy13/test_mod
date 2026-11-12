@@ -18,6 +18,14 @@ public final class TranslationTrace {
     private int promptTokens;
     private int templateStatus;
     private int nativeDetail;
+    private String engineInfo = "unavailable";
+    private long prefillStart, prefillMs = -1, generationStart, lastTokenAt;
+    private long lastDecodeStart, lastDecodeMs = -1, maxDecodeMs = -1, totalDecodeMs;
+    private int decodedTokens;
+    public synchronized void engineInfo(String info) {
+        // System capabilities only; cap and filter the native library's text.
+        if (info != null && info.length() <= 2048 && info.matches("[A-Za-z0-9_ .:=|+/-]+")) engineInfo = info;
+    }
     private final int total;
     private final int threads;
     private final long modelBytes;
@@ -41,6 +49,8 @@ public final class TranslationTrace {
         stage = Stage.PREPARE_STRING;
         stageTime = System.nanoTime();
         generated = 0; promptTokens = 0; templateStatus = 0; nativeDetail = 0;
+        prefillStart = generationStart = lastTokenAt = lastDecodeStart = totalDecodeMs = 0;
+        prefillMs = lastDecodeMs = maxDecodeMs = -1; decodedTokens = 0;
         add("string=" + (completed + 1) + "/" + total + " chars=" + chars + " token_limit=" + maxTokens);
     }
     /** Called by JNI at phase boundaries and on every generated token. */
@@ -48,8 +58,21 @@ public final class TranslationTrace {
         Stage[] stages = {Stage.NATIVE_COMPLETE, Stage.NATIVE_TEMPLATE, Stage.NATIVE_TOKENIZE,
                 Stage.NATIVE_PREFILL, Stage.NATIVE_SAMPLE, Stage.NATIVE_DECODE, Stage.NATIVE_RETURNED};
         if (phase < 1 || phase >= stages.length) return;
+        long now = System.nanoTime();
+        if (phase == 3) prefillStart = now;
+        if (phase == 4 && count == 0 && prefillStart != 0 && prefillMs < 0) {
+            prefillMs = TimeUnit.NANOSECONDS.toMillis(now - prefillStart);
+            generationStart = now;
+        }
+        if (phase == 4 && count > 0 && lastDecodeStart != 0) {
+            lastDecodeMs = TimeUnit.NANOSECONDS.toMillis(now - lastDecodeStart);
+            totalDecodeMs += lastDecodeMs; decodedTokens++;
+            maxDecodeMs = Math.max(maxDecodeMs, lastDecodeMs);
+            lastDecodeStart = 0;
+        }
+        if (phase == 5) { lastTokenAt = now; lastDecodeStart = now; }
         stage = stages[phase];
-        stageTime = System.nanoTime();
+        stageTime = now;
         generated = count;
         if (prompt > 0) promptTokens = prompt;
         if (phase == 2) templateStatus = detail;
@@ -87,6 +110,13 @@ public final class TranslationTrace {
                 .append(" total_elapsed_ms=").append(TimeUnit.NANOSECONDS.toMillis(now - start)).append('\n');
         out.append("prompt_tokens=").append(promptTokens).append(" generated_tokens=").append(generated)
                 .append(" template_status=").append(templateStatus).append(" native_detail=").append(nativeDetail).append('\n');
+        out.append("prefill_ms=").append(prefillMs).append(" generation_elapsed_ms=")
+                .append(generationStart == 0 ? -1 : TimeUnit.NANOSECONDS.toMillis(now - generationStart))
+                .append(" last_token_age_ms=").append(lastTokenAt == 0 ? -1 : TimeUnit.NANOSECONDS.toMillis(now - lastTokenAt))
+                .append(" decoded_tokens=").append(decodedTokens).append(" decode_avg_ms=")
+                .append(decodedTokens == 0 ? -1 : totalDecodeMs / decodedTokens)
+                .append(" decode_last_ms=").append(lastDecodeMs).append(" decode_max_ms=").append(maxDecodeMs).append('\n');
+        out.append("engine_features=").append(engineInfo).append('\n');
         for (String event : events) out.append(event).append('\n');
         return out.toString();
     }

@@ -25,10 +25,16 @@ public final class TranslationDiagnostics {
         String version;
         try { version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName; }
         catch (Exception e) { version = "unknown"; }
+        String thermal = "unavailable";
+        if (Build.VERSION.SDK_INT >= 29) {
+            android.os.PowerManager power = (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            if (power != null) thermal = Integer.toString(power.getCurrentThermalStatus());
+        }
         return trace.report() + "app_version=" + version + " engine=instrumented-llama-android-0.1.1 backend=cpu context=2048\n"
                 + "device=" + Build.MANUFACTURER + " " + Build.MODEL + " android=" + Build.VERSION.RELEASE
                 + " sdk=" + Build.VERSION.SDK_INT + " supported_64bit=" + Arrays.toString(Build.SUPPORTED_64_BIT_ABIS)
                 + " process_64bit=" + android.os.Process.is64Bit() + " processors=" + Runtime.getRuntime().availableProcessors() + "\n"
+                + "thermal_status=" + thermal + " (0=none, 1=light, 2=moderate, 3=severe, 4+=critical)\n"
                 + "process_cpu_ms=" + (android.os.Process.getElapsedCpuTime() - initialCpuMs)
                 + " native_heap_bytes=" + Debug.getNativeHeapAllocatedSize() + "\n"
                 + "Native stages show token counts, but cannot inspect inside an individual decode call.\n";

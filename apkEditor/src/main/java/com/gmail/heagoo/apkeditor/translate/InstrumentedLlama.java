@@ -13,6 +13,7 @@ final class InstrumentedLlama {
     interface Observer { void onNativeProgress(int phase, int generated, int promptTokens, int detail); }
     static native long open(String path, int threads) throws IOException;
     static native byte[] complete(long handle, byte[] user, byte[] system, int maxTokens, Observer observer) throws IOException;
+    static native String systemInfo(long handle);
     static native void cancel(long handle);
     static native void close(long handle);
     private InstrumentedLlama() {}

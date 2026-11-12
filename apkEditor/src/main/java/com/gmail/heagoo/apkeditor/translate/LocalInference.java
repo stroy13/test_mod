@@ -38,6 +38,7 @@ public final class LocalInference implements AutoCloseable {
                 handle = opened;
                 if (cancelled.get()) InstrumentedLlama.cancel(handle);
             }
+            trace.engineInfo(InstrumentedLlama.systemInfo(opened));
             trace.stage(TranslationTrace.Stage.MODEL_READY);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
