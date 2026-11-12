@@ -50,6 +50,7 @@ dependencies {
     implementation project(':imageViewLib')
 
     implementation 'com.google.guava:guava:31.1-jre'
+    implementation 'dev.ffmpegkit-maintained:llama-android:0.1.1'
 
     implementation 'androidx.viewpager:viewpager:1.0.0'
     implementation 'androidx.interpolator:interpolator:1.0.0'
