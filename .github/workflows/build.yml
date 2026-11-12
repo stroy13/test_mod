@@ -32,7 +32,7 @@ jobs:
           echo "sdkmanager=$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses > /tmp/licenses.log 2>&1
           "$SDKMANAGER" --list_installed > /tmp/installed.log 2>&1
-          "$SDKMANAGER" "platform-tools" "platforms;android-37.0" "build-tools;37.0.0" "ndk;30.0.16248370" > /tmp/sdk.log 2>&1
+          "$SDKMANAGER" "platform-tools" "platforms;android-37.0" "build-tools;37.0.0" "ndk;30.0.16248370" "cmake;3.22.1" > /tmp/sdk.log 2>&1
           code=$?
           if [ $code -ne 0 ]; then
             msg=$(tail -n 30 /tmp/sdk.log | sed ':a;N;$!ba;s/\n/%0A/g')

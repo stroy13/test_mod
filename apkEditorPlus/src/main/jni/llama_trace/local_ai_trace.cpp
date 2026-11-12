@@ -1,4 +1,8 @@
 #include <jni.h>
+#if defined(__aarch64__)
+#include <sys/auxv.h>
+#include <asm/hwcap.h>
+#endif
 #include <dlfcn.h>
 #include <atomic>
 #include <chrono>
@@ -19,8 +23,8 @@ struct Api {
     FUNC(llama_decode) FUNC(llama_set_n_threads) FUNC(llama_sampler_init_greedy) FUNC(llama_sampler_free)
     FUNC(llama_sampler_sample) FUNC(llama_sampler_accept) FUNC(llama_vocab_is_eog) FUNC(llama_token_to_piece)
 #undef FUNC
-    bool load() {
-        lib = dlopen("libllama.so", RTLD_NOW | RTLD_LOCAL);
+    bool load(bool fast) {
+        lib = dlopen(fast ? "liblocal_llama_fast.so" : "libllama.so", RTLD_NOW | RTLD_LOCAL);
         if (!lib) return false;
 #define LOAD(name) name##_fn = reinterpret_cast<decltype(name##_fn)>(dlsym(lib, #name)); if (!name##_fn) return false;
         LOAD(llama_backend_init) LOAD(llama_print_system_info) LOAD(llama_model_default_params) LOAD(llama_context_default_params)
@@ -64,10 +68,19 @@ static bool report(JNIEnv *env, jobject observer, jmethodID method, int phase, i
     env->CallVoidMethod(observer, method, phase, generated, prompt, detail);
     return !env->ExceptionCheck();
 }
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_supportsFastCpu(JNIEnv *, jclass) {
+#if defined(__aarch64__)
+    const unsigned long hw = getauxval(AT_HWCAP);
+    return (hw & HWCAP_ASIMDDP) && (hw & HWCAP_FPHP) && (hw & HWCAP_ASIMDHP) ? JNI_TRUE : JNI_FALSE;
+#else
+    return JNI_FALSE;
+#endif
+}
 extern "C" JNIEXPORT jlong JNICALL
-Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_open(JNIEnv *env, jclass, jstring path, jint threads) {
+Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_open(JNIEnv *env, jclass, jstring path, jint threads, jboolean fast) {
     Session *s = new Session();
-    if (!s->api.load()) { delete s; fail(env, "llama native symbols unavailable (engine version mismatch)"); return 0; }
+    if (!s->api.load(fast == JNI_TRUE)) { delete s; fail(env, "llama native symbols unavailable (engine version mismatch)"); return 0; }
     static std::once_flag backend_init;
     std::call_once(backend_init, [&] { s->api.llama_backend_init_fn(); });
     s->max_threads = threads;

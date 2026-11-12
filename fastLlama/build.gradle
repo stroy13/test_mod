@@ -1,0 +1,53 @@
+plugins { id 'com.android.library' }
+
+android {
+    namespace 'com.gmail.heagoo.fastllama'
+    compileSdk 37
+    ndkVersion '30.0.16248370'
+    defaultConfig {
+        minSdk 26
+        ndk { abiFilters 'arm64-v8a' }
+        externalNativeBuild { cmake { arguments '-DANDROID_STL=c++_static'; targets 'local_llama_fast' } }
+    }
+    externalNativeBuild { cmake { path 'src/main/cpp/CMakeLists.txt'; version '3.22.1' } }
+}
+
+// The exact source revision and archive checksum are pinned. Build outputs are
+// generated under build/ and are not checked into the repository.
+def revision = '2da668617612d2df773f966e3b0ee22dc2beef7b'
+def expectedHash = '927d1ab5daa353ec18d415355fd491f9def014f2157d7b1527553f60effd6671'
+def sourceDir = layout.buildDirectory.dir('llama-source')
+def prepareLlama = tasks.register('prepareLlamaSource') {
+    outputs.dir(sourceDir)
+    doLast {
+        def archive = layout.buildDirectory.file('llama-source.tar.gz').get().asFile
+        archive.parentFile.mkdirs()
+        def temporary = new File(archive.parentFile, 'llama-source.tar.gz.part')
+        try {
+            new URL("https://codeload.github.com/ggml-org/llama.cpp/tar.gz/${revision}").openConnection().with { conn ->
+                conn.connectTimeout = 30000; conn.readTimeout = 180000
+                conn.inputStream.withCloseable { input -> temporary.withOutputStream { output -> output << input } }
+            }
+            def digest = java.security.MessageDigest.getInstance('SHA-256')
+            temporary.withInputStream { input ->
+                byte[] buf = new byte[65536]; int n
+                while ((n = input.read(buf)) != -1) digest.update(buf, 0, n)
+            }
+            def actual = digest.digest().encodeHex().toString()
+            if (actual != expectedHash) throw new GradleException('llama.cpp source archive checksum mismatch')
+            ant.move(file: temporary, tofile: archive, overwrite: true)
+            def out = sourceDir.get().asFile
+            delete(out)
+            copy {
+                from tarTree(resources.gzip(archive))
+                into out
+                eachFile { f -> f.path = f.path.split('/', 2).length == 2 ? f.path.split('/', 2)[1] : '' }
+                includeEmptyDirs = false
+            }
+            if (!new File(out, 'CMakeLists.txt').isFile()) throw new GradleException('llama source extraction failed')
+        } finally { temporary.delete() }
+    }
+}
+tasks.configureEach { task ->
+    if (task.name.startsWith('configureCMake') || task.name.startsWith('buildCMake')) task.dependsOn(prepareLlama)
+}

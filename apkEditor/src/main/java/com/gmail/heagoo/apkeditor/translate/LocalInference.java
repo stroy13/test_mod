@@ -32,12 +32,13 @@ public final class LocalInference implements AutoCloseable {
             if (cancelled.get()) throw new IOException("Translation cancelled");
             trace.stage(TranslationTrace.Stage.LOAD_MODEL);
             InstrumentedLlama.load();
-            long opened = InstrumentedLlama.open(model.getAbsolutePath(), threadCount());
+            long opened = InstrumentedLlama.open(model.getAbsolutePath(), threadCount(), InstrumentedLlama.isFast());
             if (opened == 0) throw new IOException("Model could not be loaded");
             synchronized (handleLock) {
                 handle = opened;
                 if (cancelled.get()) InstrumentedLlama.cancel(handle);
             }
+            trace.backend(InstrumentedLlama.isFast());
             trace.engineInfo(InstrumentedLlama.systemInfo(opened));
             trace.stage(TranslationTrace.Stage.MODEL_READY);
         } catch (InterruptedException e) {

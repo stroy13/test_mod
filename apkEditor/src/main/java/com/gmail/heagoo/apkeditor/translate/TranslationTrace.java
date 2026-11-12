@@ -19,6 +19,8 @@ public final class TranslationTrace {
     private int templateStatus;
     private int nativeDetail;
     private String engineInfo = "unavailable";
+    private String backend = "unavailable";
+    public synchronized void backend(boolean fast) { backend = fast ? "armv8.2-dotprod" : "baseline"; }
     private long prefillStart, prefillMs = -1, generationStart, lastTokenAt;
     private long lastDecodeStart, lastDecodeMs = -1, maxDecodeMs = -1, totalDecodeMs;
     private int decodedTokens;
@@ -139,6 +141,7 @@ public final class TranslationTrace {
                 .append(decodedTokens == 0 ? -1 : totalDecodeMs / decodedTokens)
                 .append(" decode_last_ms=").append(lastDecodeMs).append(" decode_max_ms=").append(maxDecodeMs).append('\n');
         out.append("selected_generation_threads=").append(selectedThreads == 0 ? "testing" : selectedThreads).append('\n');
+        out.append("engine_backend=").append(backend).append('\n');
         out.append("engine_features=").append(engineInfo).append('\n');
         for (String event : events) out.append(event).append('\n');
         return out.toString();

@@ -22,7 +22,7 @@ public class TranslationTraceTest {
         assertTrue(report.contains("target=other"));
         assertFalse(report.contains("string=1/100"));
         assertTrue(report.contains("string=60/100"));
-        assertTrue(report.split("\n").length <= 48);
+        assertTrue(report.split("\n").length <= 49);
     }
     @Test public void tracksNativeStagesAndTokenCount() {
         TranslationTrace t = new TranslationTrace(1, 4, 100, true, "-en");
