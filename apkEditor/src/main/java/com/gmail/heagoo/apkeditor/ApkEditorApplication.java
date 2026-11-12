@@ -10,6 +10,8 @@ public class ApkEditorApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        ToolDefaults.initialize(android.preference.PreferenceManager.getDefaultSharedPreferences(this),
+                Build.VERSION.SDK_INT);
         registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity a, Bundle b) {

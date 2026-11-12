@@ -16,6 +16,7 @@ import com.gmail.heagoo.apkeditor.util.Aapt2Pipeline;
 import com.gmail.heagoo.apkeditor.util.Aapt2ResourceTypes;
 import com.gmail.heagoo.apkeditor.util.BundledFrameworkFiles;
 import com.gmail.heagoo.apkeditor.util.SignHelper;
+import com.gmail.heagoo.apkeditor.util.ComposeBuildTrace;
 import com.gmail.heagoo.apkeditor.util.ToolFramework;
 import com.gmail.heagoo.apkeditor.util.ZipEngine;
 import com.gmail.heagoo.common.CommandRunner;
@@ -64,8 +65,9 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
     private ITaskCallback taskCallback;
     private String tempApkPath;
     private Map<String, String> dexReplaces = new HashMap();
-    private long lastUpdateAssembleTime = 0;
+    private final com.gmail.heagoo.apkeditor.util.ProgressThrottle assembleProgress = new com.gmail.heagoo.apkeditor.util.ProgressThrottle(500);
     private boolean stopFlag = false;
+    private ComposeBuildTrace buildTrace;
 
     public ApkComposeThread(Context ctx, String decodedFilePath, String srcApkPath, String apkPath) {
         this.ctx = ctx;
@@ -286,7 +288,9 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
 
     @Override // java.lang.Thread, java.lang.Runnable
     public void run() {
+        this.buildTrace = new ComposeBuildTrace(new File(this.targetApkPath), "standard");
         try {
+            this.buildTrace.begin("plan build");
             boolean rebuildResNeeded = isResourceModified();
             this.stepInfo.stepTotal = this.bSignApk ? 2 : 1;
             if (rebuildResNeeded) {
@@ -300,6 +304,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
                 if (isStopped()) {
                     return;
                 }
+                this.buildTrace.begin("prepare and compile resources");
                 setNextStep(this.ctx.getString(R.string.compose));
                 if (!prepare() || !composeResource()) {
                     return;
@@ -316,6 +321,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
                     }
                     String smaliPath = this.decodedFilePath + "/" + smaliFolder;
                     String dexName = getDexNameBySmaliFolder(smaliFolder);
+                    this.buildTrace.begin("assemble " + dexName);
                     setNextStep(this.ctx.getString(R.string.assemble_dex_file) + ": " + dexName);
                     try {
                         assembleSmali(smaliPath, dexName);
@@ -335,15 +341,18 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
                 if (isStopped()) {
                     return;
                 }
+                this.buildTrace.begin("merge APK");
                 setNextStep(this.ctx.getString(R.string.merge));
                 mergeApk();
                 removeResChanges();
             } else {
+                this.buildTrace.begin("prepare original entries");
                 translate2OriginEntry();
             }
             if (isStopped()) {
                 return;
             }
+            this.buildTrace.begin(this.bSignApk ? "sign and verify" : "merge unsigned APK");
             if (this.bSignApk) {
                 setNextStep(this.ctx.getString(R.string.sign));
                 if (!signApk()) {
@@ -356,6 +365,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
             if (isStopped()) {
                 return;
             }
+            this.buildTrace.begin("cleanup");
             setNextStep(this.ctx.getString(R.string.cleanup));
             cleanup();
             this.succeed = true;
@@ -364,6 +374,8 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
             this.succeed = false;
             this.errMessage = describe(t);
         } finally {
+            this.buildTrace.result(this.succeed, this.stopFlag, this.errMessage);
+            this.buildTrace.close();
             finishTask();
         }
     }
@@ -593,7 +605,8 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
     private boolean signApk() {
         this.replacedFiles.putAll(this.dexReplaces);
         try {
-            SignHelper.sign(this.ctx, this.tempApkPath, this.targetApkPath, this.replacedFiles, this.addedFiles, this.deletedFiles);
+            SignHelper.sign(this.ctx, this.tempApkPath, this.targetApkPath, this.replacedFiles, this.addedFiles, this.deletedFiles,
+                    null, null, this.buildTrace == null ? null : this.buildTrace.logger());
             return true;
         } catch (Exception e) {
             String strHeader = this.ctx.getResources().getString(R.string.sign_error);
@@ -659,7 +672,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
                         throw new IOException(newest ? "AAPT2 37 requires Android 11 or newer" : "AAPT2 requires Android 9 or newer; select the original AAPT on Android 8.");
                     }
                     String aapt2 = new File(this.ctx.getApplicationInfo().nativeLibraryDir, newest ? "libaapt2_37.so" : "libaapt2_exec.so").getAbsolutePath();
-                    Aapt2Pipeline.build(aapt2, selectedFramework, this.decodedFilePath + "/res", this.decodedFilePath + "/AndroidManifest.xml", this.tempApkPath);
+                    Aapt2Pipeline.build(aapt2, selectedFramework, this.decodedFilePath + "/res", this.decodedFilePath + "/AndroidManifest.xml", this.tempApkPath, this.buildTrace == null ? null : this.buildTrace.logger());
                     return true;
                 } catch (Exception e) {
                     // A renamed type that only ever held values has no directory
@@ -745,8 +758,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
     }
 
     public void updateAssembledFiles(int assembledFiles, int totalFiles) {
-        long curTime = System.currentTimeMillis();
-        if (curTime > this.lastUpdateAssembleTime + 500) {
+        if (this.assembleProgress.shouldUpdate(System.nanoTime() / 1000000L, assembledFiles == totalFiles)) {
             String fmt = this.ctx.getString(R.string.assemble_dex_detail);
             this.stepInfo.stepDescription = String.format(fmt, Integer.valueOf(assembledFiles), Integer.valueOf(totalFiles));
             this.taskCallback.setTaskStepInfo(this.stepInfo);

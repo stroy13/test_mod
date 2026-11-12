@@ -62,6 +62,29 @@ public class ComposePipelineTest {
     }
 
     @Test
+    public void composeTraceCoversSigningAndAllExitPaths() throws Exception {
+        for (String name : new String[]{"ApkComposeThreadNew.java", "ApkComposeThread.java"}) {
+            String source = read(name);
+            String run = runBody(source);
+            assertTrue(run.contains("new ComposeBuildTrace("));
+            assertTrue(run.contains("this.buildTrace.begin(\"prepare and compile resources\")"));
+            assertTrue(run.contains("this.buildTrace.begin(\"assemble \""));
+            assertTrue(run.contains("this.buildTrace.result("));
+            assertTrue(run.contains("this.buildTrace.close();"));
+            assertTrue(source.contains("this.buildTrace.logger()"));
+        }
+    }
+
+    @Test
+    public void buildButtonDoesNotWalkAllResourcesOnUiThreadForDebugOnly() throws Exception {
+        String src = read("ApkInfoActivity.java");
+        int start = src.indexOf("    protected void build(final boolean bSign)");
+        int end = src.indexOf("    void m49lambda$build$31", start);
+        assertTrue(start >= 0 && end > start);
+        assertFalse(src.substring(start, end).contains("recursiveModifiedTime"));
+    }
+
+    @Test
     public void resourceStageActuallyBuildsResources() throws Exception {
         for (String name : new String[]{"ApkComposeThreadNew.java", "ApkComposeThread.java"}) {
             String run = runBody(read(name));

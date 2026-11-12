@@ -1,54 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/lab_dialog_surface"
+    android:padding="8dp">
 
     <TextView
         android:id="@+id/decode_all_files"
-        android:layout_width="fill_parent"
-        android:layout_height="50dip"
-        android:background="@drawable/textview_bg"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:background="?labCardBackground"
+        android:layout_marginTop="3dp"
+        android:layout_marginBottom="3dp"
         android:gravity="center_vertical"
-        android:paddingLeft="8dip"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
         android:singleLine="true"
         android:text="@string/decode_all_files"
-        android:textColor="@color/lab_text_selector"
-        android:textSize="20sp" />
-
-    <View
-        android:layout_width="fill_parent"
-        android:layout_height="1px"
-        android:background="?labBorder" />
+        android:textColor="?labText"
+        android:textSize="15sp" />
 
     <TextView
         android:id="@+id/decode_partial_files"
-        android:layout_width="fill_parent"
-        android:layout_height="50dip"
-        android:background="@drawable/textview_bg"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:background="?labCardBackground"
+        android:layout_marginTop="3dp"
+        android:layout_marginBottom="3dp"
         android:gravity="center_vertical"
-        android:paddingLeft="8dip"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
         android:singleLine="true"
         android:text="@string/decode_partial_files"
-        android:textColor="@color/lab_text_selector"
-        android:textSize="20sp" />
-
-    <View
-        android:layout_width="fill_parent"
-        android:layout_height="1px"
-        android:background="?labBorder" />
+        android:textColor="?labText"
+        android:textSize="15sp" />
 
     <TextView
         android:id="@+id/cancel"
-        android:layout_width="fill_parent"
-        android:layout_height="50dip"
-        android:background="@drawable/textview_bg"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:background="?labCardBackground"
+        android:layout_marginTop="3dp"
+        android:layout_marginBottom="3dp"
         android:gravity="center_vertical"
-        android:paddingLeft="8dip"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
         android:singleLine="true"
         android:text="@android:string/cancel"
-        android:textColor="@color/lab_text_selector"
-        android:textSize="20sp" />
-
-
+        android:textColor="?labText"
+        android:textSize="15sp" />
 </LinearLayout>

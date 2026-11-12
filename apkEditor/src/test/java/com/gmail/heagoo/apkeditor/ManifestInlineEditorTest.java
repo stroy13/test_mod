@@ -35,6 +35,19 @@ public class ManifestInlineEditorTest {
         assertEquals("external", ManifestDocumentFile.read(manifest));
     }
 
+    @Test public void fullFileListAndLongPressUseExistingActions() throws Exception {
+        Path root = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
+        while (root != null && !Files.exists(root.resolve("settings.gradle"))) root = root.getParent();
+        assertNotNull(root);
+        String src = new String(Files.readAllBytes(root.resolve("apkEditor/src/main/java/com/gmail/heagoo/apkeditor/ApkInfoActivity.java")), StandardCharsets.UTF_8);
+        assertTrue(src.contains("this.isFullDecoding && !bInZip && \"AndroidManifest.xml\".equals(entryName)"));
+        assertTrue(src.contains("this.resListAdapter.getReplacedFilePath(entryName) == null"));
+        assertTrue(src.contains("v.performClick();"));
+        String widget = new String(Files.readAllBytes(root.resolve("apkEditor/src/main/java/com/gmail/heagoo/apkeditor/ManifestInlineEditor.java")), StandardCharsets.UTF_8);
+        assertTrue(widget.contains("browsingWithoutCursor && super.bringPointIntoView(offset)"));
+        assertTrue(widget.contains("extends CharacterStyle"));
+    }
+
     @Test public void editorIsInlineAndProjectButtonHiddenOnManifestTab() throws Exception {
         Path root = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
         while (root != null && !Files.exists(root.resolve("settings.gradle"))) root = root.getParent();

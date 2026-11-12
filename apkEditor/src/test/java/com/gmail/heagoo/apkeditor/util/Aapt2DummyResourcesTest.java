@@ -37,6 +37,34 @@ public class Aapt2DummyResourcesTest {
         assertEquals(mixed.replace(">false</item>", ">@null</item>"),
                 new String(Files.readAllBytes(stage.resolve("values/attrs.xml")), StandardCharsets.UTF_8));
     }
+    @Test public void largeMixedFilesPreserveRealResourcesAndRepairLateDummy() throws Exception {
+        StringBuilder xml = new StringBuilder("<resources>\n<!-- dummy_ae_ is not an entry -->\n");
+        for (int i = 0; i < 90000; i++) {
+            xml.append("<string name=\"s").append(i).append("\">false &amp; value</string>\n");
+        }
+        xml.append("<item type=\"array\" name=\"dummy_ae_a\">false</item>\n</resources>");
+        String source = xml.toString();
+        assertEquals(source.replace("name=\"dummy_ae_a\">false", "name=\"dummy_ae_a\">@null"),
+                Aapt2DummyResources.normalize(source));
+        Path res = folder.newFolder("large-res").toPath();
+        Path values = Files.createDirectory(res.resolve("values"));
+        Files.write(values.resolve("large.xml"), source.getBytes(StandardCharsets.UTF_8));
+        Files.write(values.resolve("plain.xml"), "<resources><bool name=\"b\">false</bool></resources>".getBytes(StandardCharsets.UTF_8));
+        Map<Path, byte[]> repairs = Aapt2DummyResources.findRepairs(res);
+        assertEquals(1, repairs.size());
+        assertArrayEquals(Aapt2DummyResources.normalize(source).getBytes(StandardCharsets.UTF_8),
+                repairs.get(res.getFileSystem().getPath("values/large.xml")));
+    }
+    @Test public void noDummyOrNoFalseLeavesLargeDocumentUntouched() {
+        StringBuilder xml = new StringBuilder("<resources>");
+        for (int i = 0; i < 40000; i++) xml.append("<string name=\"s\">value</string>");
+        xml.append("</resources>");
+        String plain = xml.toString();
+        assertSame(plain, Aapt2DummyResources.normalize(plain));
+        String alreadyFixed = "<resources><item type=\"attr\" name=\"dummy_ae_2\">@null</item></resources>";
+        assertSame(alreadyFixed, Aapt2DummyResources.normalize(alreadyFixed));
+    }
+
     @Test public void ignoresCommentsCdataNestedItemsAndUserEntries() {
         String dummy = "<item type=\"attr\" name=\"dummy_ae_0\">false</item>";
         String xml = "<resources><!-- " + dummy + " --><string name=\"s\"><![CDATA[" + dummy
@@ -84,7 +112,12 @@ public class Aapt2DummyResourcesTest {
         assertNotEquals("fixture should reproduce the original AAPT2 error", 0, broken.waitFor());
         assertTrue(new String(errors, StandardCharsets.UTF_8).contains("Expected a reference"));
         File apk = root.resolve("out.apk").toFile();
-        Aapt2Pipeline.build(aapt.toString(), framework.toString(), res.toString(), manifest.toString(), apk.getAbsolutePath());
+        java.util.List<String> timings = new java.util.ArrayList<>();
+        Aapt2Pipeline.build(aapt.toString(), framework.toString(), res.toString(), manifest.toString(), apk.getAbsolutePath(), timings::add);
+        assertTrue(timings.toString(), timings.stream().anyMatch(s -> s.startsWith("AAPT2 values scan:") && s.contains("candidates=")));
+        assertTrue(timings.toString(), timings.stream().anyMatch(s -> s.startsWith("AAPT2 resource scan and staging:")));
+        assertTrue(timings.toString(), timings.stream().anyMatch(s -> s.startsWith("AAPT2 compile:")));
+        assertTrue(timings.toString(), timings.stream().anyMatch(s -> s.startsWith("AAPT2 link:")));
         assertTrue(apk.isFile() && apk.length() > 0);
         assertEquals(attrs, new String(Files.readAllBytes(attrsFile), StandardCharsets.UTF_8));
         assertEquals(arrays, new String(Files.readAllBytes(arraysFile), StandardCharsets.UTF_8));

@@ -2533,10 +2533,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         String errMsg;
         this.resFileModified = false;
         Set<String> modifiedDex = new HashSet<>();
-        long resModifyTime = FileUtil.recursiveModifiedTime(new File(this.decodeRootPath + "/res"));
-        Log.d("DEBUG", "resModifyTime=" + resModifyTime);
-        long manifestModifyTime = FileUtil.recursiveModifiedTime(new File(this.decodeRootPath + "/AndroidManifest.xml"));
-        Log.d("DEBUG", "manifestTime=" + manifestModifyTime);
         Map<String, String> added = this.resListAdapter.getAddedFiles();
         Map<String, String> replaced = this.resListAdapter.getReplacedFiles();
         Set<String> deleted = this.resListAdapter.getDeletedFiles();
@@ -3712,6 +3708,15 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         } else {
             entryName = directory.substring(this.decodeRootPath.length() + 1) + "/" + fileName;
         }
+        // The decoded root manifest uses the same inline editor as the manifest tab.
+        // Do not redirect replaced or zipped entries, which may have a different source.
+        if (this.isFullDecoding && !bInZip && "AndroidManifest.xml".equals(entryName)
+                && this.resListAdapter.getReplacedFilePath(entryName) == null
+                && this.manifestEditor != null) {
+            this.manifestRadio.setChecked(true);
+            manifestRadioClicked();
+            return;
+        }
         String syntaxFileName = getEditableSyntax(fileName);
         if (syntaxFileName != null) {
             openEditableFile(directory, fileName, bInZip, entryName, syntaxFileName);
@@ -4271,7 +4276,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     public boolean onLongClick(View v) {
         int id = v.getId();
         if (id == R.id.imageview_dex2smali) {
-            this.dexDecodeLayout.setVisibility(8);
+            v.performClick();
             return true;
         }
         return false;
