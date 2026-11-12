@@ -3121,6 +3121,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     private boolean useLocalTranslation;
+    private String localTranslationSource;
     private java.util.concurrent.atomic.AtomicBoolean localTranslationCancellation;
     private final java.util.concurrent.atomic.AtomicReference<com.gmail.heagoo.apkeditor.translate.LocalInference> localEngine = new java.util.concurrent.atomic.AtomicReference<>();
 
@@ -3171,12 +3172,31 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             return;
         }
         LanguageSelectDialog dlg = new LanguageSelectDialog(this, PossibleLanguages.languages, PossibleLanguages.codes);
-        dlg.setTitle(R.string.select_target_lang);
+        if (useLocalTranslation) {
+            if (curConfig == null || allStringValues == null || !allStringValues.containsKey(curConfig)) {
+                Toast.makeText(this, R.string.ai_no_source, Toast.LENGTH_LONG).show();
+                return;
+            }
+            localTranslationSource = curConfig;
+            dlg.setTranslationSource(localSourceName(localTranslationSource));
+        } else {
+            dlg.setTitle(R.string.select_target_lang);
+        }
         dlg.show();
     }
 
+    private String localSourceName(String qualifier) {
+        if (qualifier == null || qualifier.isEmpty()) return getString(R.string.ai_default_source);
+        String name = brut.util.LanguageMapping.getLanguage(qualifier);
+        return name == null || name.isEmpty() ? qualifier : name;
+    }
+
     private void translateLocally(String qualifier) {
-        new AlertDialog.Builder(this).setTitle(R.string.ai_translate_title)
+        String targetName = qualifier;
+        for (int i = 0; i < PossibleLanguages.codes.length; i++) {
+            if (PossibleLanguages.codes[i].equals(qualifier)) { targetName = PossibleLanguages.languages[i]; break; }
+        }
+        new AlertDialog.Builder(this).setTitle(getString(R.string.ai_mode_title, localSourceName(localTranslationSource), targetName))
                 .setItems(new String[]{getString(R.string.ai_sample_option), getString(R.string.ai_full_option)},
                         (dialog, which) -> runLocalTranslation(qualifier, which == 0))
                 .setNegativeButton(android.R.string.cancel, null).show();
@@ -3187,7 +3207,10 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             new AlertDialog.Builder(this).setMessage(R.string.ai_existing_language).setPositiveButton(android.R.string.ok, null).show();
             return;
         }
-        ArrayList<StringItem> source = allStringValues.get("");
+        // Include edits made in the current editor, and translate the language
+        // the user selected rather than silently using the default resources.
+        if (stringListAdapter != null) PendingStringEdits.merge(allStringValues, stringListAdapter.getChangedValues());
+        List<StringItem> source = com.gmail.heagoo.apkeditor.translate.TranslationSource.selected(allStringValues, localTranslationSource);
         File model = com.gmail.heagoo.apkeditor.translate.LocalModelManager.selected(this);
         if (source == null || source.isEmpty() || model == null) {
             Toast.makeText(this, R.string.ai_no_source, Toast.LENGTH_LONG).show(); return;

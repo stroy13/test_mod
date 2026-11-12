@@ -20,8 +20,12 @@
     <string name="ai_translate_title">Translate with local AI</string>
     <string name="ai_local">Local AI</string>
     <string name="ai_choose_first">Import and select a GGUF model in Settings first.</string>
-    <string name="ai_existing_language">For safety local AI currently only creates a new language; this language already exists.</string>
-    <string name="ai_no_source">No default strings or model found.</string>
+    <string name="ai_existing_language">This language already exists. To protect existing translations, a full translation can only be saved as a new language. Choose another destination language.</string>
+    <string name="ai_no_source">No strings found for the selected source language, or no model selected.</string>
+    <string name="ai_default_source">Default language (base strings)</string>
+    <string name="ai_target_picker_title">Source language: %1$s\nChoose the language to translate INTO</string>
+    <string name="ai_target_language">Translate into</string>
+    <string name="ai_mode_title">Translate: %1$s → %2$s</string>
     <string name="ai_loading">Loading model…</string>
     <string name="ai_progress">Translating %1$d of %2$d</string>
     <string name="ai_preview">Review translation</string>
@@ -30,7 +34,7 @@
     <string name="ai_saved">Language saved. Review the translation before building.</string>
     <string name="ai_selected">Selected: %1$s</string>
     <string name="ai_sample_option">Test 3 strings without saving</string>
-    <string name="ai_full_option">Translate all strings into a new language</string>
+    <string name="ai_full_option">Translate all selected source strings into a new language</string>
     <string name="ai_sample_title">Test translation</string>
     <string name="ai_sample_note">Nothing has been saved. Check the translation and speed before running the full translation.</string>
     <string name="ai_loading_elapsed">Loading model… %1$d s</string>
