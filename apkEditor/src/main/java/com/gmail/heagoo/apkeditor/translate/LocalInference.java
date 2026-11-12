@@ -12,17 +12,23 @@ public final class LocalInference implements AutoCloseable {
     private static final java.util.concurrent.Semaphore ENGINE = new java.util.concurrent.Semaphore(1);
     private long handle;
     private boolean acquired;
+    private final TranslationTrace trace;
 
-    public LocalInference(File model) throws IOException {
+    public static int threadCount() { return Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors())); }
+
+    public LocalInference(File model, TranslationTrace trace) throws IOException {
+        this.trace = trace;
         if (!Arrays.asList(Build.SUPPORTED_64_BIT_ABIS).contains("arm64-v8a") || !android.os.Process.is64Bit())
             throw new IOException("Local AI requires an arm64 process");
         if (model == null || !model.isFile()) throw new IOException("Model file not found");
         try {
+            trace.stage(TranslationTrace.Stage.WAIT_ENGINE);
             ENGINE.acquire();
             acquired = true;
-            handle = LlamaJNI.INSTANCE.nativeLoadModel(model.getAbsolutePath(), 2048,
-                    Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors())), 0);
+            trace.stage(TranslationTrace.Stage.LOAD_MODEL);
+            handle = LlamaJNI.INSTANCE.nativeLoadModel(model.getAbsolutePath(), 2048, threadCount(), 0);
             if (handle == 0) throw new IOException("Model could not be loaded");
+            trace.stage(TranslationTrace.Stage.MODEL_READY);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Local AI was interrupted", e);
@@ -41,8 +47,12 @@ public final class LocalInference implements AutoCloseable {
                 + ". Output only the translation. Preserve all placeholders, escapes and tags exactly.\n"
                 + value + "\n/no_think";
         int max = TranslationBudget.maxTokens(value);
+        trace.stringStart(value.length(), max);
+        trace.stage(TranslationTrace.Stage.NATIVE_COMPLETE);
         JSONObject result = new JSONObject(LlamaJNI.INSTANCE.nativeComplete(handle, prompt,
                 "You are a precise and natural software localization translator.", max, 0.0f, 0.9f, 40, 0));
+        trace.nativeResult(result.optInt("tokensGenerated", -1), result.optLong("promptEvalTimeMs", -1), result.optLong("generateTimeMs", -1));
+        trace.stage(TranslationTrace.Stage.VALIDATE);
         if (result.has("error")) throw new IOException(result.optString("error"));
         String text = result.optString("text", "").trim();
         if (result.optInt("tokensGenerated", max) >= max || text.isEmpty()) throw new IOException("Translation incomplete");
@@ -53,6 +63,7 @@ public final class LocalInference implements AutoCloseable {
 
     @Override public void close() {
         try {
+            trace.stage(TranslationTrace.Stage.RELEASE_MODEL);
             if (handle != 0) { LlamaJNI.INSTANCE.nativeReleaseModel(handle); handle = 0; }
         } finally {
             if (acquired) { acquired = false; ENGINE.release(); }

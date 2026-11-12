@@ -3203,6 +3203,10 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             if (PossibleLanguages.codes[i].equals(qualifier)) { language = PossibleLanguages.languages[i]; break; }
         }
         final String targetLanguage = language;
+        com.gmail.heagoo.apkeditor.translate.TranslationTrace trace = new com.gmail.heagoo.apkeditor.translate.TranslationTrace(
+                snapshot.size(), com.gmail.heagoo.apkeditor.translate.LocalInference.threadCount(), model.length(), sample, qualifier);
+        com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics diagnostics = new com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics(this, trace);
+        diagnostics.save();
         android.app.ProgressDialog progress = new android.app.ProgressDialog(this);
         progress.setTitle(R.string.ai_translate_title);
         progress.setMessage(getString(R.string.ai_loading));
@@ -3214,6 +3218,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         long started = android.os.SystemClock.elapsedRealtime();
         android.os.Handler timer = new android.os.Handler(android.os.Looper.getMainLooper());
         Runnable update = new Runnable() {
+            int ticks;
             @Override public void run() {
                 if (isFinishing() || isDestroyed() || !progress.isShowing()) return;
                 if (cancelled.get()) progress.setMessage(getString(R.string.ai_translate_cancelling));
@@ -3221,33 +3226,48 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                         (android.os.SystemClock.elapsedRealtime() - started) / 1000));
                 else progress.setMessage(getString(R.string.ai_progress_elapsed, completed.get(), snapshot.size(),
                         currentName.get(), (android.os.SystemClock.elapsedRealtime() - started) / 1000));
+                if (++ticks % 5 == 0) diagnostics.save();
                 timer.postDelayed(this, 1000);
             }
         };
+        progress.setButton(DialogInterface.BUTTON_NEUTRAL, getString(R.string.ai_copy_log), (d, w) -> {});
         progress.setButton(DialogInterface.BUTTON_NEGATIVE, getString(android.R.string.cancel), (d, w) -> {});
-        progress.setOnShowListener(d -> progress.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener(v -> {
-            cancelled.set(true);
-            v.setEnabled(false);
-            progress.setMessage(getString(R.string.ai_translate_cancelling));
-        }));
+        progress.setOnShowListener(d -> {
+            progress.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener(v -> diagnostics.copy(this));
+            progress.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener(v -> {
+                cancelled.set(true);
+                trace.cancelRequested();
+                diagnostics.save();
+                v.setEnabled(false);
+                progress.setMessage(getString(R.string.ai_translate_cancelling));
+            });
+        });
         progress.show();
         timer.post(update);
         new Thread(() -> {
             ArrayList<StringItem> result = new ArrayList<>();
             String failure = null;
-            try (com.gmail.heagoo.apkeditor.translate.LocalInference engine = new com.gmail.heagoo.apkeditor.translate.LocalInference(model)) {
+            try (com.gmail.heagoo.apkeditor.translate.LocalInference engine = new com.gmail.heagoo.apkeditor.translate.LocalInference(model, trace)) {
                 for (StringItem item : snapshot) {
                     if (cancelled.get()) break;
                     currentName.set(item.name);
                     if (item.value == null) throw new java.io.IOException("Empty resource: " + item.name);
                     if (item.styledValue != null || item.value.isEmpty() || item.value.startsWith("@") || item.value.startsWith("?")) {
+                        trace.stringStart(item.value.length(), 0);
                         result.add(item);
                     } else {
                         result.add(new StringItem(item.name, engine.translate(item.value, targetLanguage)));
                     }
                     completed.incrementAndGet();
+                    trace.stringDone();
                 }
-            } catch (Exception | LinkageError e) { failure = e.getMessage() == null ? e.toString() : e.getMessage(); }
+            } catch (Exception | LinkageError e) {
+                trace.failure(e instanceof java.io.IOException, e instanceof LinkageError);
+                failure = e.getMessage() == null ? e.toString() : e.getMessage();
+            } finally {
+                if (failure == null) trace.stage(com.gmail.heagoo.apkeditor.translate.TranslationTrace.Stage.FINISHED);
+                diagnostics.save();
+            }
             String error = failure;
             runOnUiThread(() -> {
                 timer.removeCallbacks(update);
@@ -3255,12 +3275,15 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 if (isFinishing() || isDestroyed()) return;
                 progress.dismiss();
                 if (cancelled.get()) return;
-                if (error != null) { new AlertDialog.Builder(this).setTitle(R.string.ai_translate_title).setMessage(error).setPositiveButton(android.R.string.ok, null).show(); return; }
+                if (error != null) { new AlertDialog.Builder(this).setTitle(R.string.ai_translate_title).setMessage(error)
+                        .setNeutralButton(R.string.ai_copy_log, (d, w) -> diagnostics.copy(this))
+                        .setPositiveButton(android.R.string.ok, null).show(); return; }
                 StringBuilder preview = new StringBuilder();
                 for (int i = 0; i < Math.min(10, result.size()); i++) preview.append(result.get(i).name).append(": ").append(result.get(i).value).append("\n\n");
                 if (sample) {
                     new AlertDialog.Builder(this).setTitle(R.string.ai_sample_title)
                             .setMessage(getString(R.string.ai_sample_note) + "\n\n" + preview)
+                            .setNeutralButton(R.string.ai_copy_log, (d, w) -> diagnostics.copy(this))
                             .setPositiveButton(android.R.string.ok, null).show();
                     return;
                 }

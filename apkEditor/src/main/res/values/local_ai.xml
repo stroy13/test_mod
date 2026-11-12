@@ -36,4 +36,9 @@
     <string name="ai_loading_elapsed">Loading model… %1$d s</string>
     <string name="ai_progress_elapsed">Completed %1$d of %2$d\nCurrent: %3$s\nElapsed: %4$d s</string>
     <string name="ai_translate_cancelling">Cancelling… The current model operation must finish first.</string>
+    <string name="ai_copy_log">Copy diagnostics</string>
+    <string name="ai_copy_last_log">Copy last translation diagnostics</string>
+    <string name="ai_log_empty">There is no translation diagnostic yet.</string>
+    <string name="ai_log_copied">Diagnostics copied. It includes device details and timings, but no resource text or file paths.</string>
+    <string name="ai_log_copy_failed">Could not access the clipboard.</string>
 </resources>

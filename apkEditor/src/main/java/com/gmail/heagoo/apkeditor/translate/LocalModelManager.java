@@ -53,13 +53,14 @@ public final class LocalModelManager {
         String label = selected == null ? a.getString(R.string.ai_none) : label(a, selected);
         new AlertDialog.Builder(a).setTitle(a.getString(R.string.ai_models) + "\n" + a.getString(R.string.ai_selected, label))
                 .setItems(new String[]{a.getString(R.string.ai_choose), a.getString(R.string.ai_import),
-                        a.getString(R.string.ai_download), a.getString(R.string.ai_delete)}, (dialog, which) -> {
+                        a.getString(R.string.ai_download), a.getString(R.string.ai_delete), a.getString(R.string.ai_copy_last_log)}, (dialog, which) -> {
                     if (which == 0) choose(a, false);
                     else if (which == 1) {
                         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE);
                         a.startActivityForResult(intent, PICK_MODEL);
                     } else if (which == 2) catalog(a);
-                    else choose(a, true);
+                    else if (which == 3) choose(a, true);
+                    else TranslationDiagnostics.copyLast(a);
                 }).setNegativeButton(android.R.string.cancel, null).show();
     }
     private static String label(Activity a, File f) {

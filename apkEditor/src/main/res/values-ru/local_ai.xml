@@ -36,4 +36,9 @@
     <string name="ai_loading_elapsed">Загрузка модели… %1$d сек.</string>
     <string name="ai_progress_elapsed">Готово %1$d из %2$d\nТекущая строка: %3$s\nПрошло: %4$d сек.</string>
     <string name="ai_translate_cancelling">Отмена… Дождитесь завершения текущей операции модели.</string>
+    <string name="ai_copy_log">Скопировать лог</string>
+    <string name="ai_copy_last_log">Скопировать последний лог перевода</string>
+    <string name="ai_log_empty">Лога перевода пока нет.</string>
+    <string name="ai_log_copied">Лог скопирован. Он содержит сведения об устройстве и времени работы, но не тексты ресурсов и пути к файлам.</string>
+    <string name="ai_log_copy_failed">Не удалось открыть буфер обмена.</string>
 </resources>
