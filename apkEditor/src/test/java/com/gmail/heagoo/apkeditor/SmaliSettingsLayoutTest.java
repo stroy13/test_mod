@@ -17,7 +17,8 @@ public class SmaliSettingsLayoutTest {
             int decoder = xml.indexOf("android:key=\"SmaliDecoderVersion\"");
             int encoder = xml.indexOf("android:key=\"SmaliEncoderVersion\"");
             assertTrue(decoder >= 0 && encoder > decoder);
-            assertFalse(xml.substring(decoder, encoder).contains("<com.gmail.heagoo.apkeditor."));
+            String between = xml.substring(xml.indexOf("/>", decoder) + 2, xml.lastIndexOf("<", encoder)).trim();
+            assertTrue(between.isEmpty());
             assertFalse(xml.substring(decoder, encoder).contains("</PreferenceCategory>"));
         }
     }
