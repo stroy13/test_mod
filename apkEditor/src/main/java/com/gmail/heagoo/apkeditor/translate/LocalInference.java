@@ -70,10 +70,7 @@ public final class LocalInference implements AutoCloseable {
             text = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(result)).toString().trim();
         } catch (CharacterCodingException e) { throw new IOException("Invalid UTF-8 from model", e); }
-        if (text.isEmpty()) throw new IOException("Translation is empty");
-        if (text.contains("<think>") || text.contains("</think>")) throw new IOException("Model returned reasoning instead of translation");
-        if (!TranslationTokens.preserved(value, text)) throw new IOException("Translation changed a resource placeholder");
-        return text;
+        return TranslationOutput.clean(value, text);
     }
     @Override public void close() {
         try {

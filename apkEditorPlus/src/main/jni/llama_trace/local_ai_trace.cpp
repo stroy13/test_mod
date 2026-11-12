@@ -138,6 +138,8 @@ Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_complete(JNIEnv *env
     if (s->cancelled.load()) { fail(env, "Translation cancelled"); return nullptr; }
     a.llama_memory_clear_fn(a.llama_get_memory_fn(s->ctx), true);
     if (!report(env, observer, callback, 3, 0, n, 0)) return nullptr;
+    // Reuse the selected generation thread count for later prefill batches too.
+    a.llama_set_n_threads_fn(s->ctx, s->best_threads, s->best_threads);
     int rc = a.llama_decode_fn(s->ctx, a.llama_batch_get_one_fn(tokens.data(), n));
     if (rc != 0) { report(env, observer, callback, 6, 0, n, rc); fail(env, s->cancelled.load() ? "Translation cancelled" : "Prompt decode failed"); return nullptr; }
     llama_sampler *sampler = a.llama_sampler_init_greedy_fn();
