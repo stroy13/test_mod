@@ -40,12 +40,13 @@ public final class LocalInference implements AutoCloseable {
         String prompt = "Translate the following application UI text into " + language
                 + ". Output only the translation. Preserve all placeholders, escapes and tags exactly.\n"
                 + value + "\n/no_think";
-        int max = 512;
+        int max = TranslationBudget.maxTokens(value);
         JSONObject result = new JSONObject(LlamaJNI.INSTANCE.nativeComplete(handle, prompt,
                 "You are a precise and natural software localization translator.", max, 0.0f, 0.9f, 40, 0));
         if (result.has("error")) throw new IOException(result.optString("error"));
         String text = result.optString("text", "").trim();
         if (result.optInt("tokensGenerated", max) >= max || text.isEmpty()) throw new IOException("Translation incomplete");
+        if (text.contains("<think>") || text.contains("</think>")) throw new IOException("Model returned reasoning instead of translation");
         if (!TranslationTokens.preserved(value, text)) throw new IOException("Translation changed a resource placeholder");
         return text;
     }

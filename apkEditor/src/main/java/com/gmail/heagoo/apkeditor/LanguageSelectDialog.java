@@ -64,8 +64,8 @@ public class LanguageSelectDialog extends Dialog implements View.OnClickListener
             LanguageMapping.getLanguages(this.codes, this.languages);
         }
         Spinner spinner = (Spinner) findViewById(R.id.language_spinner);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>((Context) this.activityRef.get(), android.R.layout.simple_spinner_item, this.languages);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>((Context) this.activityRef.get(), R.layout.language_spinner_item, this.languages);
+        adapter.setDropDownViewResource(R.layout.language_spinner_dropdown_item);
         spinner.setAdapter((SpinnerAdapter) adapter);
         Locale locale = Locale.getDefault();
         String code = "-" + locale.getLanguage();

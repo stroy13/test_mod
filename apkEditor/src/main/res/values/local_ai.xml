@@ -29,4 +29,11 @@
     <string name="ai_save">Save new language</string>
     <string name="ai_saved">Language saved. Review the translation before building.</string>
     <string name="ai_selected">Selected: %1$s</string>
+    <string name="ai_sample_option">Test 3 strings without saving</string>
+    <string name="ai_full_option">Translate all strings into a new language</string>
+    <string name="ai_sample_title">Test translation</string>
+    <string name="ai_sample_note">Nothing has been saved. Check the translation and speed before running the full translation.</string>
+    <string name="ai_loading_elapsed">Loading model… %1$d s</string>
+    <string name="ai_progress_elapsed">Completed %1$d of %2$d\nCurrent: %3$s\nElapsed: %4$d s</string>
+    <string name="ai_translate_cancelling">Cancelling… The current model operation must finish first.</string>
 </resources>

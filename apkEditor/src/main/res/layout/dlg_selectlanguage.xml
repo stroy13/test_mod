@@ -42,7 +42,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_toRightOf="@id/language_tv"
-            android:background="@drawable/selector_slim_spinner" />
+            android:background="@drawable/language_spinner_background" android:popupBackground="?labSurface" android:spinnerMode="dropdown" />
 
         <EditText
             android:id="@+id/language_code"
