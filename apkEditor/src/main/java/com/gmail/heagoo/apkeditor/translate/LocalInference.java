@@ -9,18 +9,26 @@ import java.util.Arrays;
 
 /** A single-use CPU inference session. All calls must run off the UI thread. */
 public final class LocalInference implements AutoCloseable {
+    private static final java.util.concurrent.Semaphore ENGINE = new java.util.concurrent.Semaphore(1);
     private long handle;
+    private boolean acquired;
 
     public LocalInference(File model) throws IOException {
         if (!Arrays.asList(Build.SUPPORTED_64_BIT_ABIS).contains("arm64-v8a") || !android.os.Process.is64Bit())
             throw new IOException("Local AI requires an arm64 process");
         if (model == null || !model.isFile()) throw new IOException("Model file not found");
         try {
+            ENGINE.acquire();
+            acquired = true;
             handle = LlamaJNI.INSTANCE.nativeLoadModel(model.getAbsolutePath(), 2048,
                     Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors())), 0);
             if (handle == 0) throw new IOException("Model could not be loaded");
-        } catch (LinkageError e) {
-            throw new IOException("Local AI engine could not be loaded", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Local AI was interrupted", e);
+        } catch (LinkageError | RuntimeException | IOException e) {
+            if (acquired) { acquired = false; ENGINE.release(); }
+            throw new IOException("Local AI engine could not load the model", e);
         }
     }
 
@@ -43,6 +51,10 @@ public final class LocalInference implements AutoCloseable {
     }
 
     @Override public void close() {
-        if (handle != 0) { LlamaJNI.INSTANCE.nativeReleaseModel(handle); handle = 0; }
+        try {
+            if (handle != 0) { LlamaJNI.INSTANCE.nativeReleaseModel(handle); handle = 0; }
+        } finally {
+            if (acquired) { acquired = false; ENGINE.release(); }
+        }
     }
 }

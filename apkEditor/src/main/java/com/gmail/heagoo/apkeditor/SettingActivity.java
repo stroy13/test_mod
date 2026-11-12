@@ -159,6 +159,10 @@ public class SettingActivity extends ThemedPreferenceActivity implements Prefere
         }
         addPreferencesFromResource(R.xml.settings);
         initData();
+        findPreference("LocalAiModels").setOnPreferenceClickListener(pref -> {
+            com.gmail.heagoo.apkeditor.translate.LocalModelManager.show(this);
+            return true;
+        });
         findPreference("ToolManager").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public final boolean onPreferenceClick(Preference preference) {
@@ -170,6 +174,15 @@ public class SettingActivity extends ThemedPreferenceActivity implements Prefere
     boolean m291lambda$onCreate$0$comgmailheagooapkeditorSettingActivity(Preference pref) {
         startActivity(new Intent(this, (Class<?>) ToolManagerActivity.class));
         return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == com.gmail.heagoo.apkeditor.translate.LocalModelManager.PICK_MODEL
+                && resultCode == RESULT_OK && data != null) {
+            com.gmail.heagoo.apkeditor.translate.LocalModelManager.importUri(this, data.getData());
+        }
     }
 
     @Override
