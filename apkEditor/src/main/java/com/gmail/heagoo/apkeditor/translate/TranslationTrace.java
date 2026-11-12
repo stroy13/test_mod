@@ -7,13 +7,17 @@ import java.util.concurrent.TimeUnit;
 /** Thread-safe diagnostic metadata only. Never record text, resource names or file paths. */
 public final class TranslationTrace {
     public enum Stage { START, WAIT_ENGINE, LOAD_MODEL, MODEL_READY, PREPARE_STRING,
-        NATIVE_COMPLETE, NATIVE_RETURNED, VALIDATE, STRING_DONE, CANCEL_REQUESTED,
+        NATIVE_COMPLETE, NATIVE_TEMPLATE, NATIVE_TOKENIZE, NATIVE_PREFILL, NATIVE_SAMPLE, NATIVE_DECODE, NATIVE_RETURNED, VALIDATE, STRING_DONE, CANCEL_REQUESTED,
         RELEASE_MODEL, FINISHED, ERROR }
     private final long start = System.nanoTime();
     private final Deque<String> events = new ArrayDeque<>();
     private Stage stage = Stage.START;
     private long stageTime = start;
     private int completed;
+    private int generated;
+    private int promptTokens;
+    private int templateStatus;
+    private int nativeDetail;
     private final int total;
     private final int threads;
     private final long modelBytes;
@@ -36,7 +40,25 @@ public final class TranslationTrace {
     public synchronized void stringStart(int chars, int maxTokens) {
         stage = Stage.PREPARE_STRING;
         stageTime = System.nanoTime();
+        generated = 0; promptTokens = 0; templateStatus = 0; nativeDetail = 0;
         add("string=" + (completed + 1) + "/" + total + " chars=" + chars + " token_limit=" + maxTokens);
+    }
+    /** Called by JNI at phase boundaries and on every generated token. */
+    public synchronized void nativeProgress(int phase, int count, int prompt, int detail) {
+        Stage[] stages = {Stage.NATIVE_COMPLETE, Stage.NATIVE_TEMPLATE, Stage.NATIVE_TOKENIZE,
+                Stage.NATIVE_PREFILL, Stage.NATIVE_SAMPLE, Stage.NATIVE_DECODE, Stage.NATIVE_RETURNED};
+        if (phase < 1 || phase >= stages.length) return;
+        stage = stages[phase];
+        stageTime = System.nanoTime();
+        generated = count;
+        if (prompt > 0) promptTokens = prompt;
+        if (phase == 2) templateStatus = detail;
+        if (phase == 6) nativeDetail = detail;
+        if (phase <= 3 || phase == 6 || (phase == 5 && count % 16 == 0))
+            add("native phase=" + stage + " generated=" + generated + " prompt_tokens=" + promptTokens + " detail=" + detail);
+    }
+    public synchronized String nativeStatus() {
+        return stage.name() + " (" + generated + " tokens)";
     }
     public synchronized void nativeResult(int tokens, long promptMs, long generateMs) {
         stage = Stage.NATIVE_RETURNED;
@@ -63,6 +85,8 @@ public final class TranslationTrace {
                 .append(" stage=").append(stage).append(" stage_elapsed_ms=")
                 .append(TimeUnit.NANOSECONDS.toMillis(now - stageTime))
                 .append(" total_elapsed_ms=").append(TimeUnit.NANOSECONDS.toMillis(now - start)).append('\n');
+        out.append("prompt_tokens=").append(promptTokens).append(" generated_tokens=").append(generated)
+                .append(" template_status=").append(templateStatus).append(" native_detail=").append(nativeDetail).append('\n');
         for (String event : events) out.append(event).append('\n');
         return out.toString();
     }

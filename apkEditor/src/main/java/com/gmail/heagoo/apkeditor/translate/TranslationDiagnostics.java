@@ -25,13 +25,13 @@ public final class TranslationDiagnostics {
         String version;
         try { version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName; }
         catch (Exception e) { version = "unknown"; }
-        return trace.report() + "app_version=" + version + " engine=llama-android-0.1.1 backend=cpu context=2048\n"
+        return trace.report() + "app_version=" + version + " engine=instrumented-llama-android-0.1.1 backend=cpu context=2048\n"
                 + "device=" + Build.MANUFACTURER + " " + Build.MODEL + " android=" + Build.VERSION.RELEASE
                 + " sdk=" + Build.VERSION.SDK_INT + " supported_64bit=" + Arrays.toString(Build.SUPPORTED_64_BIT_ABIS)
                 + " process_64bit=" + android.os.Process.is64Bit() + " processors=" + Runtime.getRuntime().availableProcessors() + "\n"
                 + "process_cpu_ms=" + (android.os.Process.getElapsedCpuTime() - initialCpuMs)
                 + " native_heap_bytes=" + Debug.getNativeHeapAllocatedSize() + "\n"
-                + "Native inference is a single blocking call; token-level activity is not available in this engine.\n";
+                + "Native stages show token counts, but cannot inspect inside an individual decode call.\n";
     }
     public void save() { PreferenceManager.getDefaultSharedPreferences(context).edit().putString(KEY, report()).apply(); }
     public void copy(Context ui) { String report = report(); save(); copyText(ui, report); }

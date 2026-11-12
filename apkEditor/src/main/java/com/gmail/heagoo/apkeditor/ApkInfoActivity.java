@@ -774,6 +774,8 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (this.manifestEditor != null) this.manifestEditor.removeCallbacks(this.manifestAutosave);
         this.screenDestroyed = true;
         if (localTranslationCancellation != null) localTranslationCancellation.set(true);
+        com.gmail.heagoo.apkeditor.translate.LocalInference engineToCancel = localEngine.get();
+        if (engineToCancel != null) engineToCancel.requestCancel();
         if (this.analysisJob != null) {
             this.analysisJob.cancelled.set(true);
             if (this.analysisJob.worker != null) {
@@ -3120,6 +3122,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
 
     private boolean useLocalTranslation;
     private java.util.concurrent.atomic.AtomicBoolean localTranslationCancellation;
+    private final java.util.concurrent.atomic.AtomicReference<com.gmail.heagoo.apkeditor.translate.LocalInference> localEngine = new java.util.concurrent.atomic.AtomicReference<>();
 
     private void initTranslateBtn() {
         ImageView iv = (ImageView) findViewById(R.id.translate);
@@ -3225,7 +3228,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 else if (currentName.get().isEmpty()) progress.setMessage(getString(R.string.ai_loading_elapsed,
                         (android.os.SystemClock.elapsedRealtime() - started) / 1000));
                 else progress.setMessage(getString(R.string.ai_progress_elapsed, completed.get(), snapshot.size(),
-                        currentName.get(), (android.os.SystemClock.elapsedRealtime() - started) / 1000));
+                        currentName.get(), (android.os.SystemClock.elapsedRealtime() - started) / 1000) + "\n" + trace.nativeStatus());
                 if (++ticks % 5 == 0) diagnostics.save();
                 timer.postDelayed(this, 1000);
             }
@@ -3236,6 +3239,8 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             progress.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener(v -> diagnostics.copy(this));
             progress.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener(v -> {
                 cancelled.set(true);
+                com.gmail.heagoo.apkeditor.translate.LocalInference active = localEngine.get();
+                if (active != null) active.requestCancel();
                 trace.cancelRequested();
                 diagnostics.save();
                 v.setEnabled(false);
@@ -3247,7 +3252,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         new Thread(() -> {
             ArrayList<StringItem> result = new ArrayList<>();
             String failure = null;
-            try (com.gmail.heagoo.apkeditor.translate.LocalInference engine = new com.gmail.heagoo.apkeditor.translate.LocalInference(model, trace)) {
+            try (com.gmail.heagoo.apkeditor.translate.LocalInference engine = new com.gmail.heagoo.apkeditor.translate.LocalInference(model, trace, cancelled)) {
+                localEngine.set(engine);
+                if (cancelled.get()) engine.requestCancel();
                 for (StringItem item : snapshot) {
                     if (cancelled.get()) break;
                     currentName.set(item.name);
@@ -3265,6 +3272,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 trace.failure(e instanceof java.io.IOException, e instanceof LinkageError);
                 failure = e.getMessage() == null ? e.toString() : e.getMessage();
             } finally {
+                localEngine.set(null);
                 if (failure == null) trace.stage(com.gmail.heagoo.apkeditor.translate.TranslationTrace.Stage.FINISHED);
                 diagnostics.save();
             }

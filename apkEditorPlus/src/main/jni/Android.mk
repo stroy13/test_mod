@@ -141,3 +141,12 @@ LOCAL_CFLAGS := -DRELEASE -DCHECK_FILESIZE -DCHECK_SIGNATURE -DHAVE_CONFIG_H -I.
 LOCAL_LDLIBS := -llog -lz
 
 include $(BUILD_SHARED_LIBRARY)
+
+# Instrumented llama.cpp bridge. The llama implementation comes from the pinned
+# llama-android AAR and is resolved at runtime; only the public C ABI is used.
+include $(CLEAR_VARS)
+LOCAL_MODULE := local_ai_trace
+LOCAL_SRC_FILES := llama_trace/local_ai_trace.cpp
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/llama_trace/include
+LOCAL_LDLIBS := -llog -ldl
+include $(BUILD_SHARED_LIBRARY)

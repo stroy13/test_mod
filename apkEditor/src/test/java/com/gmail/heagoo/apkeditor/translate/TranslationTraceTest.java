@@ -22,7 +22,17 @@ public class TranslationTraceTest {
         assertTrue(report.contains("target=other"));
         assertFalse(report.contains("string=1/100"));
         assertTrue(report.contains("string=60/100"));
-        assertTrue(report.split("\n").length <= 43);
+        assertTrue(report.split("\n").length <= 44);
+    }
+    @Test public void tracksNativeStagesAndTokenCount() {
+        TranslationTrace t = new TranslationTrace(1, 4, 100, true, "-en");
+        t.stringStart(110, 142);
+        t.nativeProgress(2, 0, 0, 1);
+        t.nativeProgress(3, 0, 55, 0);
+        assertTrue(t.report().contains("stage=NATIVE_PREFILL"));
+        t.nativeProgress(5, 17, 55, 0);
+        assertTrue(t.report().contains("stage=NATIVE_DECODE"));
+        assertTrue(t.report().contains("prompt_tokens=55 generated_tokens=17 template_status=1"));
     }
     @Test public void recordsTokenMetrics() {
         TranslationTrace t = new TranslationTrace(1, 1, 1, true, "-ru");
