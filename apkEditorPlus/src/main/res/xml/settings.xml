@@ -13,6 +13,7 @@
     <PreferenceCategory android:title="@string/apk_decoding" android:key="DecodeCategory">
         <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/decode_mode_key" android:title="@string/decode_mode" android:key="DecodeMode" android:entryValues="@array/decode_mode_value" />
         <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/smali_tool_names" android:title="@string/smali_decoder_title" android:summary="@string/smali_decoder_summary" android:key="SmaliDecoderVersion" android:defaultValue="modern" android:entryValues="@array/smali_tool_values" />
+        <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/smali_tool_names" android:title="@string/smali_encoder_title" android:summary="@string/smali_encoder_summary" android:key="SmaliEncoderVersion" android:defaultValue="legacy" android:entryValues="@array/smali_tool_values" />
         <com.gmail.heagoo.apkeditor.DecodeDirectoryPreference android:title="@string/decode_dir" android:key="DecodeDirectory" android:summary="@string/decode_dir_summary_may_change" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/apk_building" android:key="ApkBuilding">
@@ -24,7 +25,6 @@
         <com.gmail.heagoo.apkeditor.KeyListPreference android:entries="@array/signer_key" android:title="@string/sign_apk_with" android:key="SignApkWith" android:summary="@string/sign_apk_with_summary" android:entryValues="@array/signer_value_dont_translate" />
         <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/sign_schemes_names" android:title="@string/sign_schemes_title" android:key="SignSchemes" android:summary="@string/sign_schemes_summary" android:defaultValue="v123" android:entryValues="@array/sign_schemes_values" />
         <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/output_apkname_key" android:title="@string/output_apk_name" android:key="OutputApkName" android:summary="@string/output_apk_name_summary" android:entryValues="@array/output_apkname_value" />
-        <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/smali_tool_names" android:title="@string/smali_encoder_title" android:summary="@string/smali_encoder_summary" android:key="SmaliEncoderVersion" android:defaultValue="legacy" android:entryValues="@array/smali_tool_values" />
         <CheckBoxPreference android:title="@string/smali_editing" android:key="SmaliEditingEnabled" android:summary="@string/smali_edit_summary" />
         <CheckBoxPreference android:title="@string/rebuild_confirmation" android:key="RebuildConfirmation" android:summary="@string/rebuild_confirm_d_summary" />
     </PreferenceCategory>
