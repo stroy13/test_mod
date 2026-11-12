@@ -1,7 +1,7 @@
 <resources>
     <string name="ai_models">Local AI models (experimental)</string>
     <string name="ai_models_summary">Select, import or delete a GGUF model for offline translation.</string>
-    <string name="ai_models_description">Selected: %1$s\n\nModels are downloaded separately. Import makes a private copy and needs additional free space. A GGUF header alone does not guarantee compatibility. Translation is experimental.</string>
+    <string name="ai_models_description">Selected: %1$s\n\nDownloads are stored in the app. Importing a file makes a private copy and needs additional free space. A GGUF header alone does not guarantee compatibility. Translation is experimental.</string>
     <string name="ai_none">No model selected</string>
     <string name="ai_choose">Choose an imported model</string>
     <string name="ai_import">Import GGUF from device</string>
@@ -9,7 +9,13 @@
     <string name="ai_delete">Delete an imported model</string>
     <string name="ai_delete_confirm">Delete %1$s?</string>
     <string name="ai_delete_failed">Could not delete model</string>
-    <string name="ai_browser_download">The browser will download the model from Hugging Face. Afterwards, return here and import the downloaded GGUF file. Check the model license on its source page.</string>
+    <string name="ai_download_confirm">Download %1$s directly into app storage? Internet and free space are required. The download is verified using SHA-256. Review the model license on Hugging Face.</string>
+    <string name="ai_preparing">Preparing…</string>
+    <string name="ai_cancelling">Cancelling…</string>
+    <string name="ai_cancelled">Transfer cancelled.</string>
+    <string name="ai_transfer_error">Could not transfer model</string>
+    <string name="ai_progress_bytes">Transferred %1$d MiB</string>
+    <string name="ai_progress_bytes_total">Transferred %1$d / %2$d MiB</string>
     <string name="ai_importing">Importing model; please wait…</string>
     <string name="ai_translate_title">Translate with local AI</string>
     <string name="ai_local">Local AI</string>
@@ -22,4 +28,5 @@
     <string name="ai_preview_note">%1$d strings. First 10 shown; styled strings and references remain unchanged. Review all strings after saving.</string>
     <string name="ai_save">Save new language</string>
     <string name="ai_saved">Language saved. Review the translation before building.</string>
+    <string name="ai_selected">Selected: %1$s</string>
 </resources>

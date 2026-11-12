@@ -1,7 +1,7 @@
 <resources>
     <string name="ai_models">Локальные ИИ-модели (экспериментально)</string>
     <string name="ai_models_summary">Выбор, импорт и удаление GGUF-моделей для офлайн-перевода.</string>
-    <string name="ai_models_description">Выбрана: %1$s\n\nМодели скачиваются отдельно. При импорте создаётся копия во внутреннем хранилище, поэтому потребуется дополнительное место. Наличие заголовка GGUF не гарантирует совместимость. Перевод экспериментальный.</string>
+    <string name="ai_models_description">Выбрана: %1$s\n\nМодели скачиваются во внутреннее хранилище приложения. При импорте файла создаётся копия, поэтому потребуется дополнительное место. Наличие заголовка GGUF не гарантирует совместимость. Перевод экспериментальный.</string>
     <string name="ai_none">Модель не выбрана</string>
     <string name="ai_choose">Выбрать импортированную модель</string>
     <string name="ai_import">Импортировать GGUF с устройства</string>
@@ -9,7 +9,13 @@
     <string name="ai_delete">Удалить импортированную модель</string>
     <string name="ai_delete_confirm">Удалить %1$s?</string>
     <string name="ai_delete_failed">Не удалось удалить модель</string>
-    <string name="ai_browser_download">Браузер скачает модель с Hugging Face. Затем вернитесь сюда и импортируйте скачанный GGUF-файл. Ознакомьтесь с лицензией модели на её странице.</string>
+    <string name="ai_download_confirm">Скачать %1$s непосредственно в хранилище приложения? Нужны интернет и свободное место. Целостность проверяется по SHA-256. Ознакомьтесь с лицензией модели на Hugging Face.</string>
+    <string name="ai_preparing">Подготовка…</string>
+    <string name="ai_cancelling">Отмена…</string>
+    <string name="ai_cancelled">Передача отменена.</string>
+    <string name="ai_transfer_error">Не удалось передать модель</string>
+    <string name="ai_progress_bytes">Передано %1$d МиБ</string>
+    <string name="ai_progress_bytes_total">Передано %1$d / %2$d МиБ</string>
     <string name="ai_importing">Импорт модели, подождите…</string>
     <string name="ai_translate_title">Перевод локальным ИИ</string>
     <string name="ai_local">Локальный ИИ</string>
@@ -22,4 +28,5 @@
     <string name="ai_preview_note">Строк: %1$d. Показаны первые 10; форматированные строки и ссылки не изменяются. После сохранения проверьте все строки.</string>
     <string name="ai_save">Сохранить новый язык</string>
     <string name="ai_saved">Язык сохранён. Проверьте перевод перед сборкой.</string>
+    <string name="ai_selected">Выбрана: %1$s</string>
 </resources>

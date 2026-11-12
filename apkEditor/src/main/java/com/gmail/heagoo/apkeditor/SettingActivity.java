@@ -186,6 +186,12 @@ public class SettingActivity extends ThemedPreferenceActivity implements Prefere
     }
 
     @Override
+    protected void onDestroy() {
+        com.gmail.heagoo.apkeditor.translate.LocalModelManager.cancelFor(this);
+        super.onDestroy();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
     }
