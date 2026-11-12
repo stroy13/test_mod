@@ -22,13 +22,15 @@ public class TranslationTraceTest {
         assertTrue(report.contains("target=other"));
         assertFalse(report.contains("string=1/100"));
         assertTrue(report.contains("string=60/100"));
-        assertTrue(report.split("\n").length <= 47);
+        assertTrue(report.split("\n").length <= 48);
     }
     @Test public void tracksNativeStagesAndTokenCount() {
         TranslationTrace t = new TranslationTrace(1, 4, 100, true, "-en");
         t.stringStart(110, 142);
         t.nativeProgress(2, 0, 0, 1);
+        t.nativeProgress(9, 32, 55, 0);
         t.nativeProgress(3, 0, 55, 0);
+        assertTrue(t.report().contains("reused_prompt_tokens=32"));
         assertTrue(t.report().contains("stage=NATIVE_PREFILL"));
         t.nativeProgress(4, 0, 55, 0);
         t.nativeProgress(5, 1, 55, 0);

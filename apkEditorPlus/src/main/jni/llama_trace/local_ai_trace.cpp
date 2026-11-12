@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include "llama.h"
+#include "prefix_cache.h"
 
 // All public C signatures come from the llama.cpp revision used by llama-android 0.1.1.
 struct Api {
@@ -14,7 +15,7 @@ struct Api {
     FUNC(llama_backend_init) FUNC(llama_print_system_info) FUNC(llama_model_default_params) FUNC(llama_context_default_params)
     FUNC(llama_model_load_from_file) FUNC(llama_model_free) FUNC(llama_init_from_model) FUNC(llama_free)
     FUNC(llama_model_get_vocab) FUNC(llama_model_chat_template) FUNC(llama_chat_apply_template)
-    FUNC(llama_get_memory) FUNC(llama_memory_clear) FUNC(llama_tokenize) FUNC(llama_batch_get_one)
+    FUNC(llama_get_memory) FUNC(llama_memory_clear) FUNC(llama_memory_seq_rm) FUNC(llama_tokenize) FUNC(llama_batch_get_one)
     FUNC(llama_decode) FUNC(llama_set_n_threads) FUNC(llama_sampler_init_greedy) FUNC(llama_sampler_free)
     FUNC(llama_sampler_sample) FUNC(llama_sampler_accept) FUNC(llama_vocab_is_eog) FUNC(llama_token_to_piece)
 #undef FUNC
@@ -25,7 +26,7 @@ struct Api {
         LOAD(llama_backend_init) LOAD(llama_print_system_info) LOAD(llama_model_default_params) LOAD(llama_context_default_params)
         LOAD(llama_model_load_from_file) LOAD(llama_model_free) LOAD(llama_init_from_model) LOAD(llama_free)
         LOAD(llama_model_get_vocab) LOAD(llama_model_chat_template) LOAD(llama_chat_apply_template)
-        LOAD(llama_get_memory) LOAD(llama_memory_clear) LOAD(llama_tokenize) LOAD(llama_batch_get_one)
+        LOAD(llama_get_memory) LOAD(llama_memory_clear) LOAD(llama_memory_seq_rm) LOAD(llama_tokenize) LOAD(llama_batch_get_one)
         LOAD(llama_decode) LOAD(llama_set_n_threads) LOAD(llama_sampler_init_greedy) LOAD(llama_sampler_free)
         LOAD(llama_sampler_sample) LOAD(llama_sampler_accept) LOAD(llama_vocab_is_eog) LOAD(llama_token_to_piece)
 #undef LOAD
@@ -42,6 +43,7 @@ struct Session {
     int trials = 0;
     int best_threads = 1;
     long long sums[3] = {0, 0, 0};
+    std::vector<llama_token> cached_prompt;
     ~Session() {
         if (ctx) api.llama_free_fn(ctx);
         if (model) api.llama_model_free_fn(model);
@@ -69,7 +71,7 @@ Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_open(JNIEnv *env, jc
     static std::once_flag backend_init;
     std::call_once(backend_init, [&] { s->api.llama_backend_init_fn(); });
     s->max_threads = threads;
-    s->best_threads = threads;
+    s->best_threads = threads > 1 ? 2 : 1;
     llama_model_params mp = s->api.llama_model_default_params_fn();
     static ggml_backend_dev_t no_devices[] = { nullptr };
     mp.devices = no_devices; mp.n_gpu_layers = 0;
@@ -136,12 +138,21 @@ Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_complete(JNIEnv *env
     if (n <= 0) { fail(env, "Tokenization failed"); return nullptr; }
     tokens.resize(n);
     if (s->cancelled.load()) { fail(env, "Translation cancelled"); return nullptr; }
-    a.llama_memory_clear_fn(a.llama_get_memory_fn(s->ctx), true);
+    auto memory = a.llama_get_memory_fn(s->ctx);
+    size_t reused = reusable_prefix(s->cached_prompt, tokens);
+    // Some model architectures cannot remove a partial sequence. Fall back to a
+    // fresh prefill instead of reusing an unverifiable state.
+    if (!reused || !a.llama_memory_seq_rm_fn(memory, 0, (llama_pos) reused, -1)) {
+        a.llama_memory_clear_fn(memory, false);
+        reused = 0;
+    }
+    s->cached_prompt.clear(); // Never reuse an interrupted or failed prefill.
+    if (!report(env, observer, callback, 9, (int) reused, n, 0)) return nullptr;
     if (!report(env, observer, callback, 3, 0, n, 0)) return nullptr;
-    // Reuse the selected generation thread count for later prefill batches too.
     a.llama_set_n_threads_fn(s->ctx, s->best_threads, s->best_threads);
-    int rc = a.llama_decode_fn(s->ctx, a.llama_batch_get_one_fn(tokens.data(), n));
+    int rc = a.llama_decode_fn(s->ctx, a.llama_batch_get_one_fn(tokens.data() + reused, n - (int) reused));
     if (rc != 0) { report(env, observer, callback, 6, 0, n, rc); fail(env, s->cancelled.load() ? "Translation cancelled" : "Prompt decode failed"); return nullptr; }
+    s->cached_prompt = tokens;
     llama_sampler *sampler = a.llama_sampler_init_greedy_fn();
     if (!sampler) { fail(env, "Sampler creation failed"); return nullptr; }
     std::string output;

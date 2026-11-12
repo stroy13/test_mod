@@ -23,6 +23,7 @@ public final class TranslationTrace {
     private long lastDecodeStart, lastDecodeMs = -1, maxDecodeMs = -1, totalDecodeMs;
     private int decodedTokens;
     private int selectedThreads;
+    private int reusedPromptTokens;
     public synchronized void engineInfo(String info) {
         // System capabilities only; cap and filter the native library's text.
         if (info != null && info.length() <= 2048 && info.matches("[A-Za-z0-9_ .:=|+/-]+")) engineInfo = info;
@@ -49,13 +50,18 @@ public final class TranslationTrace {
     public synchronized void stringStart(int chars, int maxTokens) {
         stage = Stage.PREPARE_STRING;
         stageTime = System.nanoTime();
-        generated = 0; promptTokens = 0; templateStatus = 0; nativeDetail = 0;
+        generated = 0; promptTokens = 0; templateStatus = 0; nativeDetail = 0; reusedPromptTokens = 0;
         prefillStart = generationStart = lastTokenAt = lastDecodeStart = totalDecodeMs = 0;
         prefillMs = lastDecodeMs = maxDecodeMs = -1; decodedTokens = 0;
         add("string=" + (completed + 1) + "/" + total + " chars=" + chars + " token_limit=" + maxTokens);
     }
     /** Called by JNI at phase boundaries and on every generated token. */
     public synchronized void nativeProgress(int phase, int count, int prompt, int detail) {
+        if (phase == 9) {
+            reusedPromptTokens = count;
+            add("prompt_cache reused_tokens=" + count + " total_tokens=" + prompt);
+            return;
+        }
         if (phase == 7) {
             add("thread_trial threads=" + count + " token=" + prompt + " decode_ms=" + detail);
             return;
@@ -120,6 +126,7 @@ public final class TranslationTrace {
                 .append(" total_elapsed_ms=").append(TimeUnit.NANOSECONDS.toMillis(now - start)).append('\n');
         out.append("prompt_tokens=").append(promptTokens).append(" generated_tokens=").append(generated)
                 .append(" template_status=").append(templateStatus).append(" native_detail=").append(nativeDetail).append('\n');
+        out.append("reused_prompt_tokens=").append(reusedPromptTokens).append('\n');
         out.append("prefill_ms=").append(prefillMs).append(" generation_elapsed_ms=")
                 .append(generationStart == 0 ? -1 : TimeUnit.NANOSECONDS.toMillis(now - generationStart))
                 .append(" last_token_age_ms=").append(lastTokenAt == 0 ? -1 : TimeUnit.NANOSECONDS.toMillis(now - lastTokenAt))
