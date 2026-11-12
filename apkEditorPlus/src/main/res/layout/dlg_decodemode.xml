@@ -4,13 +4,15 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/lab_dialog_surface"
-    android:clipToOutline="true">
+    android:padding="8dp">
 
     <TextView
         android:id="@+id/decode_all_files"
         android:layout_width="match_parent"
         android:layout_height="46dp"
-        android:background="?android:attr/selectableItemBackground"
+        android:background="?labCardBackground"
+        android:layout_marginTop="3dp"
+        android:layout_marginBottom="3dp"
         android:gravity="center_vertical"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
@@ -19,16 +21,13 @@
         android:textColor="?labText"
         android:textSize="15sp" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="?labBorder" />
-
     <TextView
         android:id="@+id/decode_partial_files"
         android:layout_width="match_parent"
         android:layout_height="46dp"
-        android:background="?android:attr/selectableItemBackground"
+        android:background="?labCardBackground"
+        android:layout_marginTop="3dp"
+        android:layout_marginBottom="3dp"
         android:gravity="center_vertical"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
@@ -37,16 +36,13 @@
         android:textColor="?labText"
         android:textSize="15sp" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="?labBorder" />
-
     <TextView
         android:id="@+id/cancel"
         android:layout_width="match_parent"
         android:layout_height="46dp"
-        android:background="?android:attr/selectableItemBackground"
+        android:background="?labCardBackground"
+        android:layout_marginTop="3dp"
+        android:layout_marginBottom="3dp"
         android:gravity="center_vertical"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
