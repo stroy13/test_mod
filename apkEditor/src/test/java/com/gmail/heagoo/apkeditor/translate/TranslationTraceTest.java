@@ -36,6 +36,8 @@ public class TranslationTraceTest {
         t.nativeProgress(5, 1, 55, 0);
         t.nativeProgress(4, 1, 55, 0);
         t.nativeProgress(7, 2, 1, 140);
+        t.nativeProgress(10, 4, 5, 3100);
+        assertTrue(t.report().contains("thread_trial_skipped threads=4 after_slow_ms=3100"));
         t.nativeProgress(8, 2, 6, 140);
         assertTrue(t.report().contains("thread_trial threads=2 token=1 decode_ms=140"));
         assertTrue(t.report().contains("selected_generation_threads=2"));

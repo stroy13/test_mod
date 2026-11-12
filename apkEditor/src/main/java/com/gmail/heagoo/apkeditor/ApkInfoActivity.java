@@ -3251,6 +3251,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         timer.post(update);
         new Thread(() -> {
             ArrayList<StringItem> result = new ArrayList<>();
+            // Identical source text for the same target language has the same
+            // placeholders and needs to be translated only once per session.
+            java.util.Map<String, String> translationCache = new java.util.HashMap<>();
             String failure = null;
             try (com.gmail.heagoo.apkeditor.translate.LocalInference engine = new com.gmail.heagoo.apkeditor.translate.LocalInference(model, trace, cancelled)) {
                 localEngine.set(engine);
@@ -3263,7 +3266,15 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                         trace.stringStart(item.value.length(), 0);
                         result.add(item);
                     } else {
-                        result.add(new StringItem(item.name, engine.translate(item.value, targetLanguage)));
+                        String translated = translationCache.get(item.value);
+                        if (translated == null) {
+                            translated = engine.translate(item.value, targetLanguage);
+                            translationCache.put(item.value, translated);
+                        } else {
+                            trace.stringStart(item.value.length(), 0);
+                            trace.translationCacheHit();
+                        }
+                        result.add(new StringItem(item.name, translated));
                     }
                     completed.incrementAndGet();
                     trace.stringDone();

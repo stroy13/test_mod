@@ -186,6 +186,20 @@ Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_complete(JNIEnv *env
             s->sums[index] += ms;
             ++s->trials;
             if (!report(env, observer, callback, 7, chosen, generated, (int) ms)) break;
+            // If the first four-thread decode is vastly slower than the two
+            // completed measurements on fewer threads, skip its second trial.
+            // This avoids an expensive known-bad configuration without assuming
+            // that four threads are always slow on other devices.
+            if (index > 0 && (s->trials % 2) == 1 && ms >= 500) {
+                long long bestPrevious = s->sums[0] / 2;
+                for (int i = 1; i < index; ++i)
+                    if (s->sums[i] / 2 < bestPrevious) bestPrevious = s->sums[i] / 2;
+                if (ms > bestPrevious * 4) {
+                    s->sums[index] += ms;
+                    ++s->trials;
+                    if (!report(env, observer, callback, 10, chosen, generated, (int) ms)) break;
+                }
+            }
             if (s->trials == candidateCount * 2) {
                 int best = 0;
                 for (int i = 1; i < candidateCount; ++i)

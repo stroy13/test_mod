@@ -57,6 +57,10 @@ public final class TranslationTrace {
     }
     /** Called by JNI at phase boundaries and on every generated token. */
     public synchronized void nativeProgress(int phase, int count, int prompt, int detail) {
+        if (phase == 10) {
+            add("thread_trial_skipped threads=" + count + " after_slow_ms=" + detail);
+            return;
+        }
         if (phase == 9) {
             reusedPromptTokens = count;
             add("prompt_cache reused_tokens=" + count + " total_tokens=" + prompt);
@@ -110,6 +114,7 @@ public final class TranslationTrace {
         add("stage=ERROR kind=" + (linkage ? "linkage" : io ? "io" : "other"));
     }
     public synchronized void cancelRequested() { add("cancel_requested (waiting for current operation)"); }
+    public synchronized void translationCacheHit() { add("translation_cache_hit"); }
     public synchronized void stringDone() { completed++; stage(Stage.STRING_DONE); }
     private void add(String text) {
         if (events.size() == 40) events.removeFirst();
