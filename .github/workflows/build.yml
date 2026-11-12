@@ -87,6 +87,22 @@ jobs:
           fi
           tail -n 15 /tmp/build.log
 
+      - name: Проверка оптимизированного CPU-движка в APK
+        run: |
+          set -eu
+          APK=apkEditorPlus/build/outputs/apk/debug/apkEditorPlus-debug.apk
+          unzip -p "$APK" lib/arm64-v8a/liblocal_llama_fast.so > /tmp/liblocal_llama_fast.so
+          test -s /tmp/liblocal_llama_fast.so
+          NDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME}}/ndk/30.0.16248370"
+          READELF=$(find "$NDK" -name llvm-readelf | head -1)
+          OBJDUMP=$(find "$NDK" -name llvm-objdump | head -1)
+          "$READELF" --dyn-syms /tmp/liblocal_llama_fast.so > /tmp/fast-symbols.txt
+          grep -q 'llama_model_default_params' /tmp/fast-symbols.txt
+          grep -q 'llama_decode' /tmp/fast-symbols.txt
+          "$OBJDUMP" -d /tmp/liblocal_llama_fast.so > /tmp/fast-disassembly.txt
+          grep -Eq '[[:space:]](sdot|udot)[[:space:]]' /tmp/fast-disassembly.txt
+          echo 'Optimized backend packaged, API exported, dot-product instructions found.'
+
       - name: Отчёт об ошибке
         if: failure()
         env:
