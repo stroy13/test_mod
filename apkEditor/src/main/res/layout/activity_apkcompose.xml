@@ -203,7 +203,7 @@
     <LinearLayout android:id="@+id/build_log_panel" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
         android:orientation="vertical" android:background="?labSurface" android:paddingLeft="16dp" android:paddingRight="16dp">
         <Button android:id="@+id/build_log_toggle" android:layout_width="match_parent"
-            android:layout_height="48dp" android:text="@string/build_log_collapse" />
+            android:layout_height="48dp" android:layout_marginBottom="6dp" android:text="@string/build_log_collapse" />
         <ListView android:id="@+id/build_log_list" android:layout_width="match_parent"
             android:layout_height="0dp" android:layout_weight="1" android:background="?labCardBackground"
             android:divider="@android:color/transparent" android:dividerHeight="0dp" />
