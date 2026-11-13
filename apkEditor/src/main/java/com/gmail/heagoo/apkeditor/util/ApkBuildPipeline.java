@@ -493,7 +493,7 @@ public final class ApkBuildPipeline {
         int nameLength = entry.getName().getBytes("UTF-8").length;
         long dataStart = counting.written + 30 + nameLength;
         int padding = (int) ((alignment - (dataStart % alignment)) % alignment);
-        if (padding != 0) {
+        {
             if (padding < 6) {
                 padding += alignment;
             }
