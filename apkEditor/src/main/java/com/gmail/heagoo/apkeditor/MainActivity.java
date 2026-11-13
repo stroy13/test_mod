@@ -48,6 +48,9 @@ import java.util.Locale;
 public class MainActivity extends ThemedAppCompatActivity implements AdapterView.OnItemClickListener, ProcessingDialog.ProcessingInterface {
     private static int g_vcRet;
     private int WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 1;
+    private static final int NOTIFICATION_REQUEST_CODE = 410;
+    private static final String STATE_NOTIFICATION_PENDING = "notification_permission_pending";
+    private boolean notificationPermissionPending;
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private ActionBarDrawerToggle mDrawerToggle;
@@ -91,7 +94,19 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
             it(getApplicationContext(), getPackageName(), getFilesDir().getPath(), apkPath);
         } catch (Exception e) {
         }
-        initFileWithPermissionCheck();
+        NotificationAccess.createBuildChannel(this);
+        notificationPermissionPending = savedInstanceState != null
+                && savedInstanceState.getBoolean(STATE_NOTIFICATION_PENDING, false);
+        if (!notificationPermissionPending) {
+            notificationPermissionPending = NotificationAccess.requestOnFirstLaunch(this, NOTIFICATION_REQUEST_CODE);
+            if (!notificationPermissionPending) initFileWithPermissionCheck();
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean(STATE_NOTIFICATION_PENDING, notificationPermissionPending);
+        super.onSaveInstanceState(outState);
     }
 
     private void setupLanguage() {
@@ -507,7 +522,12 @@ public class MainActivity extends ThemedAppCompatActivity implements AdapterView
 
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (grantResults.length > 0 && grantResults[0] == 0) {
+        if (requestCode == NOTIFICATION_REQUEST_CODE) {
+            notificationPermissionPending = false;
+            // Continue normally even if notification permission was declined.
+            if (!isFinishing()) initFileWithPermissionCheck();
+        } else if (requestCode == WRITE_EXTERNAL_STORAGE_REQUEST_CODE
+                && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             initFile();
         }
     }

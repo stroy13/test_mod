@@ -38,10 +38,8 @@ import java.util.zip.ZipOutputStream;
  * <p>The previous JAR signer swallowed every exception and could leave a truncated
  * {@code gen_signed.apk} that the UI reported as success. This pipeline writes only
  * temporary files, signs with apksig (v1/v2/v3), verifies the result and publishes it
- * with an atomic rename. Original compression methods are preserved (native libraries
- * are NOT forcibly uncompressed, which previously multiplied APK size). Only
- * resources.arsc is always forced to STORED, and STORED native libraries /
- * resources.arsc are aligned for modern Android loaders.
+ * with an atomic rename. Libraries are stored and aligned when the effective manifest
+ * requires direct loading, or when its policy is unknown; otherwise compression is preserved.
  */
 public final class ApkBuildPipeline {
 
@@ -68,11 +66,19 @@ public final class ApkBuildPipeline {
         public final boolean v3;
         public final boolean v4;
         public final int compressionLevel;
+        /** -1 unknown, 0 direct load, 1 extract. Unknown is treated conservatively. */
+        public final int extractNativeLibs;
 
         public SigningOptions(PrivateKey privateKey, X509Certificate certificate,
                               int minSdkVersion, int targetSdkVersion,
                               boolean v1, boolean v2, boolean v3, boolean v4,
                               int compressionLevel) {
+            this(privateKey, certificate, minSdkVersion, targetSdkVersion, v1, v2, v3, v4, compressionLevel, -1);
+        }
+        public SigningOptions(PrivateKey privateKey, X509Certificate certificate,
+                              int minSdkVersion, int targetSdkVersion,
+                              boolean v1, boolean v2, boolean v3, boolean v4,
+                              int compressionLevel, int extractNativeLibs) {
             this.privateKey = privateKey;
             this.certificate = certificate;
             this.minSdkVersion = Math.max(1, minSdkVersion);
@@ -82,6 +88,7 @@ public final class ApkBuildPipeline {
             this.v3 = v3;
             this.v4 = v4;
             this.compressionLevel = Math.max(0, Math.min(9, compressionLevel));
+            this.extractNativeLibs = extractNativeLibs == 0 || extractNativeLibs == 1 ? extractNativeLibs : -1;
         }
     }
 
@@ -159,7 +166,8 @@ public final class ApkBuildPipeline {
                 + ", targetSdk=" + options.targetSdkVersion
                 + ", v1=" + options.v1 + ", v2=" + options.v2
                 + ", v3=" + options.v3 + ", v4=" + options.v4
-                + ", compressionLevel=" + options.compressionLevel);
+                + ", compressionLevel=" + options.compressionLevel
+                + ", effectiveExtractNativeLibs=" + options.extractNativeLibs);
         if (options.certificate != null) {
             log(out, "Certificate subject: " + options.certificate.getSubjectX500Principal());
         }
@@ -192,6 +200,8 @@ public final class ApkBuildPipeline {
             report.onStage("verify", -1);
             log(out, "Stage: verify");
             verify(signed, options, out);
+            NativeLibraryZipVerifier.verify(signed, options.extractNativeLibs != 1);
+            log(out, "Native library ZIP policy verified: direct=" + (options.extractNativeLibs != 1));
             checkCancelled(cancel);
             report.onStage("publish", -1);
             log(out, "Stage: publish");
@@ -337,7 +347,7 @@ public final class ApkBuildPipeline {
                             ? new BufferedInputStream(new FileInputStream(replacementFile), BUFFER_SIZE)
                             : zip.getInputStream(entry)) {
                         writeEntry(out, counting, name, input, size, entry, replacementFile, buffer,
-                                options.targetSdkVersion);
+                                options.targetSdkVersion, options.extractNativeLibs != 1);
                     }
                     doneBytes += Math.max(0, size);
                     index++;
@@ -350,7 +360,7 @@ public final class ApkBuildPipeline {
                     log(logSink, "add " + entry.getKey() + ": size=" + file.length());
                     try (InputStream input = new BufferedInputStream(new FileInputStream(file), BUFFER_SIZE)) {
                         writeEntry(out, counting, entry.getKey(), input, file.length(), null, file, buffer,
-                                options.targetSdkVersion);
+                                options.targetSdkVersion, options.extractNativeLibs != 1);
                     }
                     doneBytes += file.length();
                     index++;
@@ -372,12 +382,12 @@ public final class ApkBuildPipeline {
     private static void writeEntry(ZipOutputStream out, CountingOutputStream counting,
                                    String name, InputStream input, long size,
                                    ZipEntry sourceEntry, File replacementFile,
-                                   byte[] buffer, int targetSdkVersion) throws IOException {
-        // Preserve the source compression method. Forcing every .so to STORED inflated
-        // game APKs several times over. Always store resources.arsc: the manifest target SDK
-        // may be absent, misread, or changed by a replacement.
+                                   byte[] buffer, int targetSdkVersion, boolean directNative) throws IOException {
+        // Preserve compression only when extraction is explicitly enabled. In all
+        // other cases the installer may require direct, uncompressed native libraries.
         boolean stored = (sourceEntry != null && sourceEntry.getMethod() == ZipEntry.STORED)
-                || mustStore(name, targetSdkVersion);
+                || mustStore(name, targetSdkVersion)
+                || (directNative && NativeLibraryZipVerifier.isNativeLibrary(name));
         ZipEntry entry = new ZipEntry(name);
         if (stored) {
             entry.setMethod(ZipEntry.STORED);
@@ -483,8 +493,8 @@ public final class ApkBuildPipeline {
         int nameLength = entry.getName().getBytes("UTF-8").length;
         long dataStart = counting.written + 30 + nameLength;
         int padding = (int) ((alignment - (dataStart % alignment)) % alignment);
-        if (padding != 0) {
-            if (padding < 4) {
+        {
+            while (padding < 6) {
                 padding += alignment;
             }
             byte[] extra = new byte[padding];
@@ -493,6 +503,10 @@ public final class ApkBuildPipeline {
             int size = padding - 4;
             extra[2] = (byte) (size & 0xff);
             extra[3] = (byte) ((size >> 8) & 0xff);
+            // apksig reads the alignment multiple from the d935 field payload
+            // when signature entries shift the local headers.
+            extra[4] = (byte) (alignment & 0xff);
+            extra[5] = (byte) ((alignment >> 8) & 0xff);
             entry.setExtra(extra);
         }
     }

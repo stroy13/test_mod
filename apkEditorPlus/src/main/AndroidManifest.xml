@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
@@ -13,7 +14,7 @@
     <permission android:name="ru.apkeditor.plus.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature"/>
     <uses-permission android:name="ru.apkeditor.plus.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES"/>
-    <application android:allowBackup="false" android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:debuggable="true" android:icon="@drawable/editorpro" android:label="@string/about_apk_editor_title" android:largeHeap="true" android:name="com.gmail.heagoo.apkeditor.ApkEditorApplication" android:roundIcon="@drawable/editorpro" android:theme="@style/AppTheme">
+    <application android:requestLegacyExternalStorage="true" android:allowBackup="false" android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:debuggable="true" android:icon="@drawable/editorpro" android:label="@string/about_apk_editor_title" android:largeHeap="true" android:name="com.gmail.heagoo.apkeditor.ApkEditorApplication" android:roundIcon="@drawable/editorpro" android:theme="@style/AppTheme">
         <meta-data android:name="com.gmail.heagoo.publish_channel" android:value="gplay"/>
         <meta-data android:name="heagoo.sdcard_folder" android:value="Apk Editor Plus"/>
         <meta-data android:name="android.max_aspect" android:value="2.1"/>

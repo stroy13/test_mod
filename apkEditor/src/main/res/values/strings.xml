@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="notification_build_channel">Build progress</string>
+    <string name="notification_settings_title">Notifications</string>
+    <string name="notification_settings_summary">Open system notification settings</string>
+    <string name="notification_settings_unavailable">Could not open notification settings</string>
 
     <!--
     <color name="lightblue">#ff5997c4</color>

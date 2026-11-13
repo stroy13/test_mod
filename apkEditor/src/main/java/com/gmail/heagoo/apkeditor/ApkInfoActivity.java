@@ -773,6 +773,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     public void onDestroy() {
         if (this.manifestEditor != null) this.manifestEditor.removeCallbacks(this.manifestAutosave);
         this.screenDestroyed = true;
+        if (localTranslationCancellation != null) localTranslationCancellation.set(true);
+        com.gmail.heagoo.apkeditor.translate.LocalInference engineToCancel = localEngine.get();
+        if (engineToCancel != null) engineToCancel.requestCancel();
         if (this.analysisJob != null) {
             this.analysisJob.cancelled.set(true);
             if (this.analysisJob.worker != null) {
@@ -3117,20 +3120,14 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         dlg.show();
     }
 
+    private boolean useLocalTranslation;
+    private String localTranslationSource;
+    private java.util.concurrent.atomic.AtomicBoolean localTranslationCancellation;
+    private final java.util.concurrent.atomic.AtomicReference<com.gmail.heagoo.apkeditor.translate.LocalInference> localEngine = new java.util.concurrent.atomic.AtomicReference<>();
+
     private void initTranslateBtn() {
         ImageView iv = (ImageView) findViewById(R.id.translate);
-        if (generalTranslatePluginExist(this)) {
-            iv.setOnClickListener(this);
-        } else if (proTranslatePluginExist()) {
-            iv.setOnClickListener(this);
-        } else {
-            iv.setOnClickListener(new View.OnClickListener() {
-                @Override // android.view.View.OnClickListener
-                public final void onClick(View view) {
-                    ApkInfoActivity.this.m58xb7ddd23b(view);
-                }
-            });
-        }
+        iv.setOnClickListener(this);
     }
 
     void m58xb7ddd23b(View v) {
@@ -3155,9 +3152,193 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     public void startNewTranslation() {
+        if (generalTranslatePluginExist(this) || proTranslatePluginExist()) {
+            new AlertDialog.Builder(this).setTitle(R.string.ai_translate_title)
+                    .setItems(new String[]{getString(R.string.ai_local), getString(R.string.translate_plugin)}, (d, which) -> {
+                        useLocalTranslation = which == 0;
+                        beginTranslation();
+                    }).setNegativeButton(android.R.string.cancel, null).show();
+        } else {
+            useLocalTranslation = true;
+            beginTranslation();
+        }
+    }
+
+    private void beginTranslation() {
+        if (useLocalTranslation && com.gmail.heagoo.apkeditor.translate.LocalModelManager.selected(this) == null) {
+            new AlertDialog.Builder(this).setMessage(R.string.ai_choose_first)
+                    .setPositiveButton(R.string.ai_models, (d, w) -> startActivity(new Intent(this, SettingActivity.class)))
+                    .setNegativeButton(android.R.string.cancel, null).show();
+            return;
+        }
         LanguageSelectDialog dlg = new LanguageSelectDialog(this, PossibleLanguages.languages, PossibleLanguages.codes);
-        dlg.setTitle(R.string.select_target_lang);
+        if (useLocalTranslation) {
+            if (curConfig == null || allStringValues == null || !allStringValues.containsKey(curConfig)) {
+                Toast.makeText(this, R.string.ai_no_source, Toast.LENGTH_LONG).show();
+                return;
+            }
+            localTranslationSource = curConfig;
+            dlg.setTranslationSource(localSourceName(localTranslationSource));
+        } else {
+            dlg.setTitle(R.string.select_target_lang);
+        }
         dlg.show();
+    }
+
+    private String localSourceName(String qualifier) {
+        if (qualifier == null || qualifier.isEmpty()) return getString(R.string.ai_default_source);
+        String name = brut.util.LanguageMapping.getLanguage(qualifier);
+        return name == null || name.isEmpty() ? qualifier : name;
+    }
+
+    private void translateLocally(String qualifier) {
+        String targetName = qualifier;
+        for (int i = 0; i < PossibleLanguages.codes.length; i++) {
+            if (PossibleLanguages.codes[i].equals(qualifier)) { targetName = PossibleLanguages.languages[i]; break; }
+        }
+        new AlertDialog.Builder(this).setTitle(getString(R.string.ai_mode_title, localSourceName(localTranslationSource), targetName))
+                .setItems(new String[]{getString(R.string.ai_sample_option), getString(R.string.ai_full_option)},
+                        (dialog, which) -> runLocalTranslation(qualifier, which == 0))
+                .setNegativeButton(android.R.string.cancel, null).show();
+    }
+
+    private void runLocalTranslation(String qualifier, boolean sample) {
+        if (!sample && (allStringValues.containsKey(qualifier) || new File(decodeRootPath + "/res/values" + qualifier + "/strings.xml").exists())) {
+            new AlertDialog.Builder(this).setMessage(R.string.ai_existing_language).setPositiveButton(android.R.string.ok, null).show();
+            return;
+        }
+        // Include edits made in the current editor, and translate the language
+        // the user selected rather than silently using the default resources.
+        if (stringListAdapter != null) PendingStringEdits.merge(allStringValues, stringListAdapter.getChangedValues());
+        List<StringItem> source = com.gmail.heagoo.apkeditor.translate.TranslationSource.selected(allStringValues, localTranslationSource);
+        File model = com.gmail.heagoo.apkeditor.translate.LocalModelManager.selected(this);
+        if (source == null || source.isEmpty() || model == null) {
+            Toast.makeText(this, R.string.ai_no_source, Toast.LENGTH_LONG).show(); return;
+        }
+        ArrayList<StringItem> snapshot = new ArrayList<>();
+        for (StringItem item : source) {
+            if (sample && (item.styledValue != null || item.value == null || item.value.isEmpty()
+                    || item.value.startsWith("@") || item.value.startsWith("?") || item.value.length() > 300
+                    || item.value.codePoints().anyMatch(c -> c > 0xffff))) continue;
+            snapshot.add(new StringItem(item.name, item.value, item.styledValue));
+            if (sample && snapshot.size() == 3) break;
+        }
+        if (snapshot.isEmpty()) { Toast.makeText(this, R.string.ai_no_source, Toast.LENGTH_LONG).show(); return; }
+        String language = qualifier;
+        for (int i = 0; i < PossibleLanguages.codes.length; i++) {
+            if (PossibleLanguages.codes[i].equals(qualifier)) { language = PossibleLanguages.languages[i]; break; }
+        }
+        final String targetLanguage = language;
+        com.gmail.heagoo.apkeditor.translate.TranslationTrace trace = new com.gmail.heagoo.apkeditor.translate.TranslationTrace(
+                snapshot.size(), com.gmail.heagoo.apkeditor.translate.LocalInference.threadCount(), model.length(), sample, qualifier);
+        com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics diagnostics = new com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics(this, trace);
+        diagnostics.save();
+        android.app.ProgressDialog progress = new android.app.ProgressDialog(this);
+        progress.setTitle(R.string.ai_translate_title);
+        progress.setMessage(getString(R.string.ai_loading));
+        progress.setCancelable(false);
+        java.util.concurrent.atomic.AtomicBoolean cancelled = new java.util.concurrent.atomic.AtomicBoolean(false);
+        localTranslationCancellation = cancelled;
+        java.util.concurrent.atomic.AtomicInteger completed = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.atomic.AtomicReference<String> currentName = new java.util.concurrent.atomic.AtomicReference<>("");
+        long started = android.os.SystemClock.elapsedRealtime();
+        android.os.Handler timer = new android.os.Handler(android.os.Looper.getMainLooper());
+        Runnable update = new Runnable() {
+            int ticks;
+            @Override public void run() {
+                if (isFinishing() || isDestroyed() || !progress.isShowing()) return;
+                if (cancelled.get()) progress.setMessage(getString(R.string.ai_translate_cancelling));
+                else if (currentName.get().isEmpty()) progress.setMessage(getString(R.string.ai_loading_elapsed,
+                        (android.os.SystemClock.elapsedRealtime() - started) / 1000));
+                else progress.setMessage(getString(R.string.ai_progress_elapsed, completed.get(), snapshot.size(),
+                        currentName.get(), (android.os.SystemClock.elapsedRealtime() - started) / 1000) + "\n" + trace.nativeStatus());
+                if (++ticks % 5 == 0) diagnostics.save();
+                timer.postDelayed(this, 1000);
+            }
+        };
+        progress.setButton(DialogInterface.BUTTON_NEUTRAL, getString(R.string.ai_copy_log), (d, w) -> {});
+        progress.setButton(DialogInterface.BUTTON_NEGATIVE, getString(android.R.string.cancel), (d, w) -> {});
+        progress.setOnShowListener(d -> {
+            progress.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener(v -> diagnostics.copy(this));
+            progress.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener(v -> {
+                cancelled.set(true);
+                com.gmail.heagoo.apkeditor.translate.LocalInference active = localEngine.get();
+                if (active != null) active.requestCancel();
+                trace.cancelRequested();
+                diagnostics.save();
+                v.setEnabled(false);
+                progress.setMessage(getString(R.string.ai_translate_cancelling));
+            });
+        });
+        progress.show();
+        timer.post(update);
+        new Thread(() -> {
+            ArrayList<StringItem> result = new ArrayList<>();
+            // Identical source text for the same target language has the same
+            // placeholders and needs to be translated only once per session.
+            java.util.Map<String, String> translationCache = new java.util.HashMap<>();
+            String failure = null;
+            try (com.gmail.heagoo.apkeditor.translate.LocalInference engine = new com.gmail.heagoo.apkeditor.translate.LocalInference(model, trace, cancelled)) {
+                localEngine.set(engine);
+                if (cancelled.get()) engine.requestCancel();
+                for (StringItem item : snapshot) {
+                    if (cancelled.get()) break;
+                    currentName.set(item.name);
+                    if (item.value == null) throw new java.io.IOException("Empty resource: " + item.name);
+                    if (item.styledValue != null || item.value.isEmpty() || item.value.startsWith("@") || item.value.startsWith("?")) {
+                        trace.stringStart(item.value.length(), 0);
+                        result.add(item);
+                    } else {
+                        String translated = translationCache.get(item.value);
+                        if (translated == null) {
+                            translated = engine.translate(item.value, targetLanguage);
+                            translationCache.put(item.value, translated);
+                        } else {
+                            trace.stringStart(item.value.length(), 0);
+                            trace.translationCacheHit();
+                        }
+                        result.add(new StringItem(item.name, translated));
+                    }
+                    completed.incrementAndGet();
+                    trace.stringDone();
+                }
+            } catch (Exception | LinkageError e) {
+                trace.failure(e instanceof java.io.IOException, e instanceof LinkageError);
+                failure = e.getMessage() == null ? e.toString() : e.getMessage();
+            } finally {
+                localEngine.set(null);
+                if (failure == null) trace.stage(com.gmail.heagoo.apkeditor.translate.TranslationTrace.Stage.FINISHED);
+                diagnostics.save();
+            }
+            String error = failure;
+            runOnUiThread(() -> {
+                timer.removeCallbacks(update);
+                if (localTranslationCancellation == cancelled) localTranslationCancellation = null;
+                if (isFinishing() || isDestroyed()) return;
+                progress.dismiss();
+                if (cancelled.get()) return;
+                if (error != null) { new AlertDialog.Builder(this).setTitle(R.string.ai_translate_title).setMessage(error)
+                        .setNeutralButton(R.string.ai_copy_log, (d, w) -> diagnostics.copy(this))
+                        .setPositiveButton(android.R.string.ok, null).show(); return; }
+                StringBuilder preview = new StringBuilder();
+                for (int i = 0; i < Math.min(10, result.size()); i++) preview.append(result.get(i).name).append(": ").append(result.get(i).value).append("\n\n");
+                if (sample) {
+                    new AlertDialog.Builder(this).setTitle(R.string.ai_sample_title)
+                            .setMessage(getString(R.string.ai_sample_note) + "\n\n" + preview)
+                            .setNeutralButton(R.string.ai_copy_log, (d, w) -> diagnostics.copy(this))
+                            .setPositiveButton(android.R.string.ok, null).show();
+                    return;
+                }
+                new AlertDialog.Builder(this).setTitle(R.string.ai_preview).setMessage(getString(R.string.ai_preview_note, result.size()) + "\n\n" + preview)
+                        .setNegativeButton(android.R.string.cancel, null).setPositiveButton(R.string.ai_save, (d, w) -> {
+                            if (allStringValues.containsKey(qualifier) || new File(decodeRootPath + "/res/values" + qualifier + "/strings.xml").exists()) {
+                                Toast.makeText(this, R.string.ai_existing_language, Toast.LENGTH_LONG).show(); return;
+                            }
+                            try { saveTranslatedLanguage(qualifier, result); Toast.makeText(this, R.string.ai_saved, Toast.LENGTH_LONG).show(); }
+                            catch (Exception e) { Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show(); }
+                        }).show();
+            });
+        }, "local-ai-translate").start();
     }
 
     public void saveTranslatedLanguage(String qualifier, List<StringItem> stringValues) throws Exception {
@@ -3182,6 +3363,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     public void translateLanguage(String strQualifier) {
+        if (useLocalTranslation) { translateLocally(strQualifier); return; }
         Intent intent;
         List<TranslateItem> translatedList = new ArrayList<>();
         List<TranslateItem> untranslatedList = new ArrayList<>();

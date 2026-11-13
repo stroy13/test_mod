@@ -29,14 +29,34 @@ public final class Aapt2Pipeline {
             throw new IOException("Cannot remove old AAPT2 output");
         }
         Path staged = null;
+        Path stagedManifest = null;
         try {
             Path original = new File(resDir).toPath().toAbsolutePath();
             long repairStart = System.nanoTime();
             Map<Path, byte[]> repairs = Aapt2DummyResources.findRepairs(original, logger);
+            long aliasesStart = System.nanoTime();
+            Map<String, String> aliases = Aapt2SyntheticNames.find(original);
+            if (logger != null) logger.log("AAPT2 synthetic name scan: " + elapsed(aliasesStart) + " ms; aliases=" + aliases.size());
             String compileDir = resDir;
-            if (!repairs.isEmpty()) {
+            String linkManifest = manifest;
+            if (!repairs.isEmpty() || !aliases.isEmpty()) {
                 staged = Files.createTempDirectory(out.getAbsoluteFile().getParentFile().toPath(), "aapt2-res-");
+                long copyStart = System.nanoTime();
                 Aapt2DummyResources.stage(original, staged, repairs);
+                if (logger != null) logger.log("AAPT2 temporary resource copy: " + elapsed(copyStart) + " ms");
+                if (!aliases.isEmpty()) {
+                    long rewriteStart = System.nanoTime();
+                    Aapt2SyntheticNames.rewriteStage(staged, aliases);
+                    if (logger != null) logger.log("AAPT2 synthetic name rewrite: " + elapsed(rewriteStart) + " ms");
+                    String originalManifest = new String(Files.readAllBytes(new File(manifest).toPath()), java.nio.charset.StandardCharsets.UTF_8);
+                    String rewrittenManifest = Aapt2SyntheticNames.rewriteXml(originalManifest, aliases);
+                    if (!originalManifest.equals(rewrittenManifest)) {
+                        stagedManifest = Files.createTempFile(out.getAbsoluteFile().getParentFile().toPath(), "aapt2-manifest-", ".xml");
+                        Files.write(stagedManifest, rewrittenManifest.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        linkManifest = stagedManifest.toString();
+                    }
+                    if (logger != null) logger.log("AAPT2 temporary synthetic drawable aliases: " + aliases.size());
+                }
                 compileDir = staged.toString();
             }
             if (logger != null) logger.log("AAPT2 resource scan and staging: " + elapsed(repairStart) + " ms; repaired files=" + repairs.size());
@@ -46,7 +66,27 @@ public final class Aapt2Pipeline {
                 if (staged == null || e.getMessage() == null) throw e;
                 throw new IOException(e.getMessage().replace(staged.toString(), original.toString()), e);
             }
-            runTimed(new String[]{aapt2, "link", "--auto-add-overlay", "--no-version-vectors", "-I", framework, "--manifest", manifest, "-o", out.getAbsolutePath(), flat.getAbsolutePath()}, logger);
+            String[] linkArgs = {aapt2, "link", "--auto-add-overlay", "--no-version-vectors", "-I", framework, "--manifest", linkManifest, "-o", out.getAbsolutePath(), flat.getAbsolutePath()};
+            try {
+                runTimed(linkArgs, logger);
+            } catch (IOException strictFailure) {
+                if (!isKnownOldManifestValidationFailure(strictFailure.getMessage())) throw strictFailure;
+                if (out.exists() && !out.delete()) throw new IOException("Cannot remove failed AAPT2 output", strictFailure);
+                if (logger != null) logger.log("AAPT2: older manifest validator rejected modern elements; retrying with validation warnings. Original error: " + strictFailure.getMessage());
+                String[] retry = new String[linkArgs.length + 1];
+                System.arraycopy(linkArgs, 0, retry, 0, linkArgs.length);
+                retry[linkArgs.length] = "--warn-manifest-validation";
+                String warnings = runTimed(retry, logger);
+                if (!safeRetryWarnings(warnings)) {
+                    if (out.exists()) out.delete();
+                    throw new IOException("AAPT2 manifest validation reported additional problems: " + warnings, strictFailure);
+                }
+            }
+            if (!aliases.isEmpty()) {
+                long restoreStart = System.nanoTime();
+                Aapt2SyntheticNames.restoreApk(out, aliases);
+                if (logger != null) logger.log("AAPT2 synthetic drawable names restored in resource table: " + elapsed(restoreStart) + " ms");
+            }
             if (!out.isFile() || out.length() == 0) {
                 throw new IOException("AAPT2 produced no output");
             }
@@ -55,6 +95,7 @@ public final class Aapt2Pipeline {
             }
         } finally {
             if (staged != null) Aapt2DummyResources.deleteTree(staged);
+            if (stagedManifest != null) Files.deleteIfExists(stagedManifest);
             if (flat.exists()) {
                 flat.delete();
             }
@@ -65,16 +106,48 @@ public final class Aapt2Pipeline {
         return (System.nanoTime() - started) / 1000000L;
     }
 
-    private static void runTimed(String[] args, ApkBuildPipeline.Logger logger) throws IOException, InterruptedException {
+    static boolean isKnownOldManifestValidationFailure(String message) {
+        if (message == null || message.length() >= 131072) return false;
+        boolean found = false;
+        for (String line : message.split("\n")) {
+            if (!line.contains("error:")) continue;
+            if (!knownManifestDiagnostic(line, "error")) return false;
+            found = true;
+        }
+        return found;
+    }
+
+    private static boolean knownManifestDiagnostic(String line, String level) {
+        return line.contains(level + ": unexpected element <queries> found in <manifest>.")
+                || line.contains(level + ": unexpected element <profileable> found in <manifest><application>.")
+                || line.contains(level + ": unexpected element <property> found in <manifest><application>.")
+                || line.contains(level + ": unexpected element <property> found in <manifest><application><service>.")
+                || line.contains(level + ": unexpected element <property> found in <manifest><application><activity>.")
+                || line.contains(level + ": unexpected element <property> found in <manifest><application><receiver>.")
+                || line.contains(level + ": unexpected element <property> found in <manifest><application><provider>.");
+    }
+
+    static boolean safeRetryWarnings(String message) {
+        if (message == null || message.length() >= 131072) return false;
+        for (String line : message.split("\n")) {
+            if (line.contains("error:")) return false;
+            if (line.contains("warning: unexpected element") && !knownManifestDiagnostic(line, "warning")) return false;
+        }
+        return true;
+    }
+
+    private static String runTimed(String[] args, ApkBuildPipeline.Logger logger) throws IOException, InterruptedException {
         long started = System.nanoTime();
         try {
-            run(args);
+            String output = run(args);
+            if (logger != null && !output.trim().isEmpty()) logger.log("AAPT2 " + args[1] + " output: " + output);
+            return output;
         } finally {
             if (logger != null) logger.log("AAPT2 " + args[1] + ": " + elapsed(started) + " ms");
         }
     }
 
-    private static void run(String[] args) throws IOException, InterruptedException {
+    private static String run(String[] args) throws IOException, InterruptedException {
         final Process p = new ProcessBuilder(args).redirectErrorStream(true).start();
         final StringBuilder msg = new StringBuilder();
         Thread drain = new Thread(new Runnable() {
@@ -93,10 +166,9 @@ public final class Aapt2Pipeline {
                 throw new IOException("AAPT2 timed out");
             }
             drain.join(1000L);
-            if (p.exitValue() != 0) {
-                synchronized (msg) {
-                    throw new IOException("AAPT2 " + args[1] + ": " + msg.toString());
-                }
+            synchronized (msg) {
+                if (p.exitValue() != 0) throw new IOException("AAPT2 " + args[1] + ": " + msg.toString());
+                return msg.toString();
             }
         } catch (InterruptedException interrupted) {
             p.destroyForcibly();

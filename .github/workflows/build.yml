@@ -32,7 +32,7 @@ jobs:
           echo "sdkmanager=$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses > /tmp/licenses.log 2>&1
           "$SDKMANAGER" --list_installed > /tmp/installed.log 2>&1
-          "$SDKMANAGER" "platform-tools" "platforms;android-37.0" "build-tools;37.0.0" "ndk;30.0.16248370" > /tmp/sdk.log 2>&1
+          "$SDKMANAGER" "platform-tools" "platforms;android-37.0" "build-tools;37.0.0" "ndk;30.0.16248370" "cmake;3.22.1" > /tmp/sdk.log 2>&1
           code=$?
           if [ $code -ne 0 ]; then
             msg=$(tail -n 30 /tmp/sdk.log | sed ':a;N;$!ba;s/\n/%0A/g')
@@ -49,6 +49,7 @@ jobs:
             msg=$(grep -A 12 -m 1 -E "^FAILURE:|What went wrong|FAILED" /tmp/test.log | head -n 40 | sed ':a;N;$!ba;s/\n/%0A/g')
             [ -z "$msg" ] && msg=$(tail -n 30 /tmp/test.log | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error title=Unit tests failed::$msg"
+            python3 -c 'import glob,xml.etree.ElementTree as E; [print("::error title=Test failure::" + (f.get("message", "") or "unknown")) for p in glob.glob("*/build/test-results/testDebugUnitTest/TEST-*.xml") for f in E.parse(p).iter("failure")]'
             tail -n 60 /tmp/test.log
             echo "--- AAPT/resource errors"
             grep -n -E "error:|AAPT|Android resource linking failed|\.xml:[0-9]+" /tmp/test.log | head -n 100 || true
@@ -86,6 +87,28 @@ jobs:
             exit $code
           fi
           tail -n 15 /tmp/build.log
+
+      - name: Проверка разрешения уведомлений в APK
+        run: |
+          set -eu
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME}}"
+          "$SDK_ROOT/build-tools/37.0.0/aapt" dump permissions apkEditorPlus/build/outputs/apk/debug/apkEditorPlus-debug.apk | grep -F 'android.permission.POST_NOTIFICATIONS'
+
+      - name: Проверка оптимизированного CPU-движка в APK
+        run: |
+          set -eu
+          APK=apkEditorPlus/build/outputs/apk/debug/apkEditorPlus-debug.apk
+          unzip -p "$APK" lib/arm64-v8a/liblocal_llama_fast.so > /tmp/liblocal_llama_fast.so
+          test -s /tmp/liblocal_llama_fast.so
+          NDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME}}/ndk/30.0.16248370"
+          READELF=$(find "$NDK" -name llvm-readelf | head -1)
+          OBJDUMP=$(find "$NDK" -name llvm-objdump | head -1)
+          "$READELF" --dyn-syms /tmp/liblocal_llama_fast.so > /tmp/fast-symbols.txt
+          grep -q 'llama_model_default_params' /tmp/fast-symbols.txt
+          grep -q 'llama_decode' /tmp/fast-symbols.txt
+          "$OBJDUMP" -d /tmp/liblocal_llama_fast.so > /tmp/fast-disassembly.txt
+          grep -Eq '[[:space:]](sdot|udot)[[:space:]]' /tmp/fast-disassembly.txt
+          echo 'Optimized backend packaged, API exported, dot-product instructions found.'
 
       - name: Отчёт об ошибке
         if: failure()

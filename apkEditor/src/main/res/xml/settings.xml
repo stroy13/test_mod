@@ -12,6 +12,8 @@
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/apk_decoding" android:key="DecodeCategory">
         <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/decode_mode_key" android:title="@string/decode_mode" android:key="DecodeMode" android:entryValues="@array/decode_mode_value" />
+        <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/smali_tool_names" android:title="@string/smali_decoder_title" android:summary="@string/smali_decoder_summary" android:key="SmaliDecoderVersion" android:defaultValue="modern" android:entryValues="@array/smali_tool_values" />
+        <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/smali_tool_names" android:title="@string/smali_encoder_title" android:summary="@string/smali_encoder_summary" android:key="SmaliEncoderVersion" android:defaultValue="legacy" android:entryValues="@array/smali_tool_values" />
         <com.gmail.heagoo.apkeditor.DecodeDirectoryPreference android:title="@string/decode_dir" android:key="DecodeDirectory" android:summary="@string/decode_dir_summary_may_change" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/apk_building" android:key="ApkBuilding">
@@ -27,6 +29,8 @@
         <CheckBoxPreference android:title="@string/rebuild_confirmation" android:key="RebuildConfirmation" android:summary="@string/rebuild_confirm_d_summary" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/others">
+        <Preference android:title="@string/notification_settings_title" android:key="NotificationSettings" android:summary="@string/notification_settings_summary" />
+        <Preference android:title="@string/ai_models" android:key="LocalAiModels" android:summary="@string/ai_models_summary" />
         <Preference android:title="@string/clean_garbage" android:key="CleanGarbage" android:summary="@string/clean_garbage_summary" />
         <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/file_extract_rename_key" android:title="@string/file_rename" android:key="FileRenameOption" android:summary="@string/file_extract_rename_summary" android:entryValues="@array/file_extract_rename_value" />
     </PreferenceCategory>

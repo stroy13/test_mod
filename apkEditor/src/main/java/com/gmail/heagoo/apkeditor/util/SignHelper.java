@@ -127,6 +127,17 @@ public final class SignHelper {
         }
 
         ManifestInfo manifest = readManifest(new File(srcApkPath));
+        // Use the manifest that will actually be packaged, not the source one.
+        ManifestInfo effectiveManifest = manifest;
+        if (replacedFiles != null && replacedFiles.containsKey("AndroidManifest.xml")) {
+            try (InputStream input = new BufferedInputStream(new FileInputStream(replacedFiles.get("AndroidManifest.xml")))) {
+                ManifestParser parser = new ManifestParser(input);
+                parser.parse();
+                effectiveManifest = parser.getManifestInfo();
+                if (effectiveManifest == null) throw new IOException("Cannot parse replacement manifest");
+            }
+            if (out != null) out.log("Effective replacement manifest: " + ManifestParser.describe(effectiveManifest));
+        }
         if (out != null) {
             out.log("Source manifest: " + ManifestParser.describe(manifest));
         }
@@ -140,15 +151,16 @@ public final class SignHelper {
             v2 = true;
             v3 = true;
         }
-        int minSdk = manifest.minSdkVersion > 0 ? manifest.minSdkVersion : 26;
-        int targetSdk = manifest.targetSdkVersion > 0 ? manifest.targetSdkVersion : minSdk;
+        int minSdk = effectiveManifest.minSdkVersion > 0 ? effectiveManifest.minSdkVersion : 26;
+        int targetSdk = effectiveManifest.targetSdkVersion > 0 ? effectiveManifest.targetSdkVersion : minSdk;
         int compressionLevel = SettingActivity.getCompressionLevel(ctx);
         if (out != null) {
             out.log("Signature schemes preference: " + schemes + " -> v1=" + v1 + ", v2=" + v2
                     + ", v3=" + v3 + ", v4=" + v4 + "; compressionLevel=" + compressionLevel);
         }
         ApkBuildPipeline.SigningOptions options = new ApkBuildPipeline.SigningOptions(
-                privateKey, certificate, minSdk, targetSdk, v1, v2, v3, v4, compressionLevel);
+                privateKey, certificate, minSdk, targetSdk, v1, v2, v3, v4, compressionLevel,
+                effectiveManifest.extractNativeLibs);
         ApkBuildPipeline.build(new File(srcApkPath), new File(targetApkPath),
                 replacedFiles, addedFiles, deletedFiles, options, progress, cancellation, out);
         try {

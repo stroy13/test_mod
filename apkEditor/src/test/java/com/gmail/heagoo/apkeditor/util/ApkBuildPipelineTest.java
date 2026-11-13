@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -58,7 +59,7 @@ public class ApkBuildPipelineTest {
         try (InputStream in = new FileInputStream(asset("testkey.x509.pem"))) {
             cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(in);
         }
-        return new ApkBuildPipeline.SigningOptions(key, cert, 26, 35, true, true, true, false, 6);
+        return new ApkBuildPipeline.SigningOptions(key, cert, 26, 35, true, true, true, false, 6, 1);
     }
 
     private File sourceApk() throws Exception {
@@ -230,6 +231,27 @@ public class ApkBuildPipelineTest {
         // Output may differ by signature blocks, but must not multiply the payload size.
         assertTrue("output inflated: " + target.length() + " vs " + source.length(),
                 target.length() < source.length() + 200000);
+    }
+
+    @Test
+    public void directNativeLibrariesAreStoredAndAlignedAfterSigning() throws Exception {
+        File source = sourceApk();
+        File target = new File(folder.getRoot(), "direct.apk");
+        ApkBuildPipeline.SigningOptions base = options();
+        ApkBuildPipeline.SigningOptions direct = new ApkBuildPipeline.SigningOptions(
+                base.privateKey, base.certificate, 26, 35, true, true, true, false, 6, 0);
+        File unsigned = new File(folder.getRoot(), "direct-unsigned.apk");
+        ApkBuildPipeline.merge(source, unsigned, null, null, null, direct, null, null);
+        try { NativeLibraryZipVerifier.verify(unsigned, true); }
+        catch (IOException e) { throw new IOException("UNSIGNED: " + e.getMessage(), e); }
+        ApkBuildPipeline.build(source, target, null, null, null, direct, null, null);
+        try (ZipFile zip = new ZipFile(target)) {
+            assertEquals(ZipEntry.STORED, zip.getEntry("lib/armeabi-v7a/libcompressed.so").getMethod());
+            assertArrayEquals(compressibleLibrary(), zip.getInputStream(zip.getEntry("lib/armeabi-v7a/libcompressed.so")).readAllBytes());
+        }
+        NativeLibraryZipVerifier.verify(target, true);
+        try { NativeLibraryZipVerifier.verify(source, true); fail("compressed native must fail"); }
+        catch (IOException expected) { assertTrue(expected.getMessage().contains("Native library")); }
     }
 
     @Test

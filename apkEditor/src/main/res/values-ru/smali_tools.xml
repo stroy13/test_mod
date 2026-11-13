@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="smali_decoder_title">Версия DEX → smali</string>
+    <string name="smali_decoder_summary">Дизассемблер для последующих преобразований DEX.</string>
+    <string name="smali_encoder_title">Версия smali → DEX</string>
+    <string name="smali_encoder_summary">Сборщик 3.0.10 экспериментальный. Проверяйте готовый APK.</string>
+    <string-array name="smali_tool_names">
+        <item>smali / baksmali 2.4.0</item>
+        <item>Android smali / baksmali 3.0.10 (экспериментальный)</item>
+    </string-array>
+</resources>

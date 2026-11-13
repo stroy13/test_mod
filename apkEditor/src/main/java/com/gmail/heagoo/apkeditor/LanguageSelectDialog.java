@@ -49,6 +49,14 @@ public class LanguageSelectDialog extends Dialog implements View.OnClickListener
         titleTv.setText(resId);
     }
 
+    /** Explain that this picker selects the destination, not the source. */
+    public void setTranslationSource(String source) {
+        TextView title = (TextView) this.contentView.findViewById(R.id.tv_title);
+        title.setText(getContext().getString(R.string.ai_target_picker_title, source));
+        TextView label = (TextView) this.contentView.findViewById(R.id.language_tv);
+        label.setText(R.string.ai_target_language);
+    }
+
     private void initButton() {
         Button okBtn = (Button) this.contentView.findViewById(R.id.btn_addlang_ok);
         okBtn.setOnClickListener(this);
@@ -64,8 +72,8 @@ public class LanguageSelectDialog extends Dialog implements View.OnClickListener
             LanguageMapping.getLanguages(this.codes, this.languages);
         }
         Spinner spinner = (Spinner) findViewById(R.id.language_spinner);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>((Context) this.activityRef.get(), android.R.layout.simple_spinner_item, this.languages);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>((Context) this.activityRef.get(), R.layout.language_spinner_item, this.languages);
+        adapter.setDropDownViewResource(R.layout.language_spinner_dropdown_item);
         spinner.setAdapter((SpinnerAdapter) adapter);
         Locale locale = Locale.getDefault();
         String code = "-" + locale.getLanguage();

@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="notification_build_channel">Ход сборки</string>
+    <string name="notification_settings_title">Уведомления</string>
+    <string name="notification_settings_summary">Открыть системные настройки уведомлений</string>
+    <string name="notification_settings_unavailable">Не удалось открыть настройки уведомлений</string>
     <string name="abc_action_bar_home_description">На главный экран</string>
     <string name="abc_action_bar_home_description_format">%1$s, %2$s</string>
     <string name="abc_action_bar_home_subtitle_description_format">%1$s, %2$s, %3$s</string>
@@ -621,4 +625,7 @@ APK Editor предназначен для пользователей Android, �
     <string name="lab_manifest_load_failed">Не удалось открыть манифест.</string>
     <string name="lab_manifest_external_change">Файл изменён вне редактора. Ваш текст остался в редакторе; скопируйте его перед повторным открытием файла.</string>
     <string name="lab_manifest_draft_failed">Не удалось сохранить черновик манифеста.</string>
+    <string name="file_browser_permission_required">Для просмотра файлов нужен доступ к хранилищу. Нажмите здесь, чтобы запросить доступ.</string>
+    <string name="file_browser_read_failed">Не удалось прочитать папку: %1$s\nПроверьте доступ к памяти и ограничения устройства. Нажмите, чтобы повторить.</string>
+    <string name="file_browser_empty">Эта папка пуста.</string>
 </resources>

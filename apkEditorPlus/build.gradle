@@ -8,8 +8,8 @@ android {
     ndkVersion "30.0.16248370"
 
     defaultConfig {
-        versionCode 212
-        versionName "1.10.0.212"
+        versionCode 233
+        versionName "1.10.0.233"
         applicationId "ru.apkeditor.plus"
         minSdk 26
         targetSdk 37
@@ -52,6 +52,7 @@ android {
 }
 
 dependencies {
+    implementation project(':fastLlama')
     implementation project(':apkEditor')
     implementation project(':appDataEditor')
     implementation('org.smali:baksmali:2.4.0') { exclude group: 'com.beust', module: 'jcommander' }

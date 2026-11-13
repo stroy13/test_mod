@@ -306,9 +306,14 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
                 }
                 this.buildTrace.begin("prepare and compile resources");
                 setNextStep(this.ctx.getString(R.string.compose));
-                if (!prepare() || !composeResource()) {
-                    return;
-                }
+                long prepareStarted = System.nanoTime();
+                boolean prepared = prepare();
+                if (this.buildTrace.logger() != null) this.buildTrace.logger().log("Resource tool preparation: " + (System.nanoTime() - prepareStarted) / 1000000L + " ms");
+                if (!prepared) return;
+                long compileStarted = System.nanoTime();
+                boolean compiled = composeResource();
+                if (this.buildTrace.logger() != null) this.buildTrace.logger().log("Resource compose total: " + (System.nanoTime() - compileStarted) / 1000000L + " ms");
+                if (!compiled) return;
                 if (isStopped()) {
                     return;
                 }
@@ -503,7 +508,10 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
         String dexFilePath = getPathInSameDirectory(this.targetApkPath, dexFileName);
         try {
             long start = System.currentTimeMillis();
-            Class<?> obj_class = Class.forName("com.gmail.heagoo.apkeditor.plus.DexEncoder");
+            Class<?> obj_class = Class.forName(com.gmail.heagoo.apkeditor.smali.SmaliToolChoice.encoderClass(this.ctx));
+            if (this.buildTrace != null && this.buildTrace.logger() != null) {
+                this.buildTrace.logger().log("Smali assembler: " + obj_class.getName());
+            }
             Method method = obj_class.getMethod("smali2Dex", String.class, String.class, ISmaliAssembleCallback.class);
             method.invoke(null, smaliFilePath, dexFilePath, this);
             Log.i("DEBUG", "Encode time=" + (System.currentTimeMillis() - start));
