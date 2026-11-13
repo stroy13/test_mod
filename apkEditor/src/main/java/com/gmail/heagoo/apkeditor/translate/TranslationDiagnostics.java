@@ -17,9 +17,16 @@ public final class TranslationDiagnostics {
     private final TranslationTrace trace;
     private final long initialCpuMs;
     private final boolean googleMlKit;
+    private final String sourceLanguage;
+    private final String targetLanguage;
     public TranslationDiagnostics(Context context, TranslationTrace trace) { this(context, trace, false); }
     public TranslationDiagnostics(Context context, TranslationTrace trace, boolean googleMlKit) {
+        this(context, trace, googleMlKit, null, null);
+    }
+    public TranslationDiagnostics(Context context, TranslationTrace trace, boolean googleMlKit, String sourceLanguage, String targetLanguage) {
         this.googleMlKit = googleMlKit;
+        this.sourceLanguage = sourceLanguage;
+        this.targetLanguage = targetLanguage;
         this.context = context.getApplicationContext();
         this.trace = trace;
         this.initialCpuMs = android.os.Process.getElapsedCpuTime();
@@ -34,6 +41,7 @@ public final class TranslationDiagnostics {
             if (power != null) thermal = Integer.toString(power.getCurrentThermalStatus());
         }
         return trace.report() + "app_version=" + version + (googleMlKit ? " engine=google-ml-kit-on-device\n" : " engine=instrumented-llama-android-0.1.1 backend=cpu context=2048\n")
+                + (googleMlKit ? "source_language=" + sourceLanguage + " target_language=" + targetLanguage + "\n" : "")
                 + "device=" + Build.MANUFACTURER + " " + Build.MODEL + " android=" + Build.VERSION.RELEASE
                 + " sdk=" + Build.VERSION.SDK_INT + " supported_64bit=" + Arrays.toString(Build.SUPPORTED_64_BIT_ABIS)
                 + " process_64bit=" + android.os.Process.is64Bit() + " processors=" + Runtime.getRuntime().availableProcessors() + "\n"

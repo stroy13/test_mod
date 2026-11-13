@@ -3222,12 +3222,13 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         String qualifier = localTranslationSource;
         String tag = com.gmail.heagoo.apkeditor.translate.ResourceLanguageTag.fromQualifier(qualifier);
         googleSourceLanguage = tag == null ? null : com.google.mlkit.nl.translate.TranslateLanguage.fromLanguageTag(tag);
-        if (googleSourceLanguage != null) { showLocalTargetPicker(); return; }
         List<String> codes = new ArrayList<>(com.google.mlkit.nl.translate.TranslateLanguage.getAllLanguages());
         codes.sort(Comparator.comparing(code -> java.util.Locale.forLanguageTag(code).getDisplayName(java.util.Locale.getDefault())));
         String[] names = new String[codes.size()];
         for (int i = 0; i < codes.size(); i++) names[i] = java.util.Locale.forLanguageTag(codes.get(i)).getDisplayName(java.util.Locale.getDefault()) + " (" + codes.get(i) + ")";
-        new AlertDialog.Builder(this).setTitle(R.string.ai_google_source).setItems(names, (dialog, which) -> {
+        int suggested = codes.indexOf(googleSourceLanguage);
+        new AlertDialog.Builder(this).setTitle(R.string.ai_google_source).setSingleChoiceItems(names, suggested, (dialog, which) -> {
+            dialog.dismiss();
             googleSourceLanguage = codes.get(which);
             showLocalTargetPicker();
         }).setNegativeButton(android.R.string.cancel, null).show();
@@ -3244,7 +3245,10 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         for (int i = 0; i < PossibleLanguages.codes.length; i++) {
             if (PossibleLanguages.codes[i].equals(qualifier)) { targetName = PossibleLanguages.languages[i]; break; }
         }
-        new AlertDialog.Builder(this).setTitle(getString(R.string.ai_mode_title, localSourceName(localTranslationSource), targetName))
+        String sourceName = useGoogleTranslation && googleSourceLanguage != null
+                ? java.util.Locale.forLanguageTag(googleSourceLanguage).getDisplayName(java.util.Locale.getDefault())
+                : localSourceName(localTranslationSource);
+        new AlertDialog.Builder(this).setTitle(getString(R.string.ai_mode_title, sourceName, targetName))
                 .setItems(new String[]{getString(R.string.ai_sample_option), getString(R.string.ai_full_option)},
                         (dialog, which) -> runLocalTranslation(qualifier, which == 0))
                 .setNegativeButton(android.R.string.cancel, null).show();
@@ -3256,6 +3260,12 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             String target = tag == null ? null : com.google.mlkit.nl.translate.TranslateLanguage.fromLanguageTag(tag);
             if (target == null || googleSourceLanguage == null) {
                 new AlertDialog.Builder(this).setMessage(R.string.ai_google_unsupported).setPositiveButton(android.R.string.ok, null).show();
+                return;
+            }
+            if (googleSourceLanguage.equals(target)) {
+                new AlertDialog.Builder(this).setMessage(R.string.ai_google_same_language)
+                        .setPositiveButton(R.string.ai_google_change_source, (dialog, which) -> selectGoogleSource())
+                        .setNegativeButton(android.R.string.cancel, null).show();
                 return;
             }
             new AlertDialog.Builder(this).setMessage(R.string.ai_google_download_consent)
@@ -3296,7 +3306,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         final String sourceQualifier = localTranslationSource;
         com.gmail.heagoo.apkeditor.translate.TranslationTrace trace = new com.gmail.heagoo.apkeditor.translate.TranslationTrace(
                 snapshot.size(), googleEngine ? 0 : com.gmail.heagoo.apkeditor.translate.LocalInference.threadCount(), googleEngine ? 0 : model.length(), sample, qualifier);
-        com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics diagnostics = new com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics(this, trace, googleEngine);
+        com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics diagnostics = new com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics(this, trace, googleEngine, googleSource, googleTarget);
         diagnostics.save();
         android.app.ProgressDialog progress = new android.app.ProgressDialog(this);
         progress.setTitle(googleEngine ? R.string.ai_google_action : R.string.ai_translate_title);

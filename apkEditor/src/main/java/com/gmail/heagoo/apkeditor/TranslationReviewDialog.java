@@ -73,7 +73,8 @@ final class TranslationReviewDialog {
                 ((TextView) row.getChildAt(1)).setText(context.getString(R.string.ai_review_source, original.value));
                 ((TextView) row.getChildAt(2)).setText(context.getString(R.string.ai_review_result, output.value));
                 int status = rejected.contains(original.name) ? R.string.ai_review_rejected
-                        : translated.containsKey(original.name) ? R.string.ai_review_translated : R.string.ai_review_unchanged;
+                        : translated.containsKey(original.name) && !java.util.Objects.equals(original.value, output.value)
+                                ? R.string.ai_review_translated : R.string.ai_review_unchanged;
                 ((TextView) row.getChildAt(3)).setText(status);
                 return row;
             }

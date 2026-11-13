@@ -24,6 +24,7 @@ public final class GoogleMlInference implements TranslationSession {
         String from = TranslateLanguage.fromLanguageTag(source);
         String to = TranslateLanguage.fromLanguageTag(target);
         if (from == null || to == null) throw new IOException("Unsupported ML Kit language");
+        if (from.equals(to)) throw new IOException("Source and target languages must differ");
         translator = Translation.getClient(new TranslatorOptions.Builder().setSourceLanguage(from).setTargetLanguage(to).build());
         try {
             trace.stage(TranslationTrace.Stage.LOAD_MODEL);

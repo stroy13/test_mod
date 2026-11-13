@@ -63,4 +63,6 @@
     <string name="ai_google_source">Choose the actual language of these source strings</string>
     <string name="ai_google_unsupported">This target language is not supported by Google ML Kit. Choose another target language.</string>
     <string name="ai_google_download_consent">Translation runs on your device. Google ML Kit may download language models (about 30 MB per language) over your current connection. Translation quality can vary; check the result. Translations are provided as is and do not replace human translators. Continue?</string>
+    <string name="ai_google_same_language">The source and target languages are the same. Choose the actual language of the source text to translate it.</string>
+    <string name="ai_google_change_source">Choose source language</string>
 </resources>
