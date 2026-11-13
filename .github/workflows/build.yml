@@ -49,6 +49,7 @@ jobs:
             msg=$(grep -A 12 -m 1 -E "^FAILURE:|What went wrong|FAILED" /tmp/test.log | head -n 40 | sed ':a;N;$!ba;s/\n/%0A/g')
             [ -z "$msg" ] && msg=$(tail -n 30 /tmp/test.log | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error title=Unit tests failed::$msg"
+            python3 -c 'import glob,xml.etree.ElementTree as E; [print("::error title=Test failure::" + (f.get("message", "") or "unknown")) for p in glob.glob("*/build/test-results/testDebugUnitTest/TEST-*.xml") for f in E.parse(p).iter("failure")]'
             tail -n 60 /tmp/test.log
             echo "--- AAPT/resource errors"
             grep -n -E "error:|AAPT|Android resource linking failed|\.xml:[0-9]+" /tmp/test.log | head -n 100 || true
