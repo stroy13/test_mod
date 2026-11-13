@@ -621,4 +621,7 @@ APK Editor предназначен для пользователей Android, �
     <string name="lab_manifest_load_failed">Не удалось открыть манифест.</string>
     <string name="lab_manifest_external_change">Файл изменён вне редактора. Ваш текст остался в редакторе; скопируйте его перед повторным открытием файла.</string>
     <string name="lab_manifest_draft_failed">Не удалось сохранить черновик манифеста.</string>
+    <string name="file_browser_permission_required">Для просмотра файлов нужен доступ к хранилищу. Нажмите здесь, чтобы запросить доступ.</string>
+    <string name="file_browser_read_failed">Не удалось прочитать папку: %1$s\nПроверьте доступ к памяти и ограничения устройства. Нажмите, чтобы повторить.</string>
+    <string name="file_browser_empty">Эта папка пуста.</string>
 </resources>

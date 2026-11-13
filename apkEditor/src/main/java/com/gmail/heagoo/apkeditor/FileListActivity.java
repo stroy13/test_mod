@@ -58,6 +58,7 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
     private boolean isDarkTheme;
     private ListView listView;
     private TextView pathTV;
+    private TextView listStatus;
     private ImageView sdCardImg;
     private View switchView;
     private boolean showingExtSdCard = false;
@@ -83,6 +84,12 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
             getWindow().setFlags(ParserRule.NO_WORD_BREAK, ParserRule.NO_WORD_BREAK);
         }
         setContentView(R.layout.activity_listfile);
+        listStatus = findViewById(R.id.file_list_status);
+        if (!StorageAccess.has(this)) {
+            listStatus.setText(R.string.file_browser_permission_required);
+            listStatus.setVisibility(View.VISIBLE);
+            listStatus.setOnClickListener(v -> StorageAccess.request(this, WRITE_EXTERNAL_STORAGE_REQUEST_CODE));
+        }
         if (this.parseThread == null) {
             this.parseThread = new ApkParseThread();
             this.parseThread.start();
@@ -107,10 +114,10 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
 
     public void onResume() {
         super.onResume();
-        if (this.foderWrapper != null || !StorageAccess.has(this)) {
-            return;
-        }
-        init();
+        if (!StorageAccess.has(this)) return;
+        if (this.foderWrapper == null) init();
+        else if (this.foderWrapper.getAdapter().getReadFailurePath() != null)
+            this.foderWrapper.openDirectory(this.foderWrapper.getAdapter().getReadFailurePath());
     }
 
     private void initWithPermChecking() {
@@ -127,6 +134,12 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         this.pathTV.setText(curDir);
         this.listView = (ListView) findViewById(R.id.file_list);
         this.foderWrapper = new FolderListWrapper(this, this.listView, curDir, "/", this, this);
+        this.pathTV.setText(this.foderWrapper.getAdapter().getData(null));
+        this.foderWrapper.getAdapter().registerDataSetObserver(new android.database.DataSetObserver() {
+            @Override public void onChanged() { updateDirectoryStatus(); }
+            @Override public void onInvalidated() { updateDirectoryStatus(); }
+        });
+        updateDirectoryStatus();
         SharedPreferences sorting = getSharedPreferences("config", 0);
         this.foderWrapper.getAdapter().setSort(sorting.getInt("file_sort_key", 0), sorting.getBoolean("file_sort_desc", false));
         findViewById(R.id.sort_files).setOnClickListener(new View.OnClickListener() {
@@ -155,6 +168,25 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
         });
         Button searchBtn = (Button) findViewById(R.id.search_button);
         searchBtn.setOnClickListener(this);
+    }
+
+    private void updateDirectoryStatus() {
+        if (listStatus == null || foderWrapper == null) return;
+        String failed = foderWrapper.getAdapter().getReadFailurePath();
+        if (failed != null) {
+            listStatus.setText(getString(R.string.file_browser_read_failed, failed));
+            listStatus.setOnClickListener(v -> {
+                if (!StorageAccess.has(this)) StorageAccess.request(this, WRITE_EXTERNAL_STORAGE_REQUEST_CODE);
+                else foderWrapper.openDirectory(failed);
+            });
+            listStatus.setVisibility(View.VISIBLE);
+        } else if (foderWrapper.getAdapter().isDirectoryEmpty()) {
+            listStatus.setText(R.string.file_browser_empty);
+            listStatus.setOnClickListener(null);
+            listStatus.setVisibility(View.VISIBLE);
+        } else {
+            listStatus.setVisibility(View.GONE);
+        }
     }
 
     void m204lambda$init$0$comgmailheagooapkeditorFileListActivity(View v) {
@@ -305,7 +337,7 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
     }
 
     public boolean fileClicked(String filePath) {
-        if (!filePath.endsWith(".apk")) {
+        if (!com.gmail.heagoo.apkeditor.util.ApkFileName.isApk(filePath)) {
             return false;
         }
         String directory = filePath.substring(0, filePath.lastIndexOf(47));
@@ -342,7 +374,7 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
     }
 
     public Drawable getFileIcon(String dirPath, FileRecord record) {
-        if (record == null || record.isDir || !record.fileName.endsWith(".apk")) {
+        if (record == null || record.isDir || !com.gmail.heagoo.apkeditor.util.ApkFileName.isApk(record.fileName)) {
             return null;
         }
         String path = dirPath + "/" + record.fileName;

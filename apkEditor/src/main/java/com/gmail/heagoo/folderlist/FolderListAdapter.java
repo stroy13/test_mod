@@ -29,6 +29,14 @@ public class FolderListAdapter extends BaseAdapter {
     private int themeId;
     private int sortKey = FileSort.NAME;
     private boolean sortDescending;
+    private String readFailurePath;
+
+    public String getReadFailurePath() { synchronized (fileList) { return readFailurePath; } }
+    public boolean isDirectoryEmpty() {
+        synchronized (fileList) {
+            return fileList.isEmpty() || (fileList.size() == 1 && "..".equals(fileList.get(0).fileName));
+        }
+    }
 
     public FolderListAdapter(Context ctx, String rootPath, String curPath, IListItemProducer producer) {
         this.ctx = ctx;
@@ -80,8 +88,11 @@ public class FolderListAdapter extends BaseAdapter {
                 path = this.rootPath;
                 dir = new File(path);
             }
-            File[] subFiles = dir.listFiles();
+            File[] subFiles;
+            try { subFiles = dir.listFiles(); }
+            catch (SecurityException e) { subFiles = null; }
             if (subFiles != null) {
+                readFailurePath = null;
                 fileList.clear();
 
                 for (File f : subFiles) {
@@ -111,6 +122,7 @@ public class FolderListAdapter extends BaseAdapter {
             // Special case: in the parent path of SD card (like /storage/emulated/0)
             // As on some phones, we cannot access the directory like /storage/emulated
             else if (PathUtil.isParentFolderOf(path, SDCard.getRootDirectory())) {
+                readFailurePath = null;
                 fileList.clear();
 
                 SDCard.getRootDirectory();
@@ -131,6 +143,10 @@ public class FolderListAdapter extends BaseAdapter {
 
                 curPath = path;
                 FileListSorter.sort(fileList, sortKey, sortDescending, curPath);
+            } else {
+                // Keep the previous directory and its listing; never pretend that
+                // a failed directory read succeeded or that the folder is empty.
+                readFailurePath = path;
             }
         }
     }
