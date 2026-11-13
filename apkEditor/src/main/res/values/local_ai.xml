@@ -31,7 +31,7 @@
     <string name="ai_progress">Translating %1$d of %2$d</string>
     <string name="ai_preview">Review translation</string>
     <string name="ai_preview_note">%1$d strings. First 10 shown; styled strings and references remain unchanged. Review all strings after saving.</string>
-    <string name="ai_save">Save new language</string>
+    <string name="ai_save">Save translation</string>
     <string name="ai_saved">Language saved. Review the translation before building.</string>
     <string name="ai_selected">Selected: %1$s</string>
     <string name="ai_sample_option">Test 3 strings without saving</string>
@@ -46,4 +46,7 @@
     <string name="ai_log_empty">There is no translation diagnostic yet.</string>
     <string name="ai_log_copied">Diagnostics copied. It includes device details and timings, but no resource text or file paths.</string>
     <string name="ai_log_copy_failed">Could not access the clipboard.</string>
+    <string name="ai_replace_confirm">Replace matching translations? Other strings in this language will be kept. Review the result before building.</string>
+    <string name="ai_replace">Replace</string>
+    <string name="ai_pending_target">Save or resolve pending target-language edits before replacing translations.</string>
 </resources>

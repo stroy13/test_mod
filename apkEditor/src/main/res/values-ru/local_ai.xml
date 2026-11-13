@@ -31,7 +31,7 @@
     <string name="ai_progress">Перевод %1$d из %2$d</string>
     <string name="ai_preview">Проверьте перевод</string>
     <string name="ai_preview_note">Строк: %1$d. Показаны первые 10; форматированные строки и ссылки не изменяются. После сохранения проверьте все строки.</string>
-    <string name="ai_save">Сохранить новый язык</string>
+    <string name="ai_save">Сохранить перевод</string>
     <string name="ai_saved">Язык сохранён. Проверьте перевод перед сборкой.</string>
     <string name="ai_selected">Выбрана: %1$s</string>
     <string name="ai_sample_option">Проверить 3 строки без сохранения</string>
@@ -46,4 +46,7 @@
     <string name="ai_log_empty">Лога перевода пока нет.</string>
     <string name="ai_log_copied">Лог скопирован. Он содержит сведения об устройстве и времени работы, но не тексты ресурсов и пути к файлам.</string>
     <string name="ai_log_copy_failed">Не удалось открыть буфер обмена.</string>
+    <string name="ai_replace_confirm">Заменить совпадающие строки переводом? Остальные строки языка сохранятся. Проверьте результат перед сборкой.</string>
+    <string name="ai_replace">Заменить</string>
+    <string name="ai_pending_target">Сначала сохраните или разрешите отложенные изменения языка назначения.</string>
 </resources>

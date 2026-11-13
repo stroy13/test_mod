@@ -3225,10 +3225,6 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     private void runLocalTranslation(String qualifier, boolean sample) {
-        if (!sample && (allStringValues.containsKey(qualifier) || new File(decodeRootPath + "/res/values" + qualifier + "/strings.xml").exists())) {
-            new AlertDialog.Builder(this).setMessage(R.string.ai_existing_language).setPositiveButton(android.R.string.ok, null).show();
-            return;
-        }
         // Include edits made in the current editor, and translate the language
         // the user selected rather than silently using the default resources.
         if (stringListAdapter != null) PendingStringEdits.merge(allStringValues, stringListAdapter.getChangedValues());
@@ -3300,6 +3296,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             // Identical source text for the same target language has the same
             // placeholders and needs to be translated only once per session.
             java.util.Map<String, String> translationCache = new java.util.HashMap<>();
+            java.util.Map<String, String> translatedValues = new java.util.LinkedHashMap<>();
             String failure = null;
             try (com.gmail.heagoo.apkeditor.translate.LocalInference engine = new com.gmail.heagoo.apkeditor.translate.LocalInference(model, trace, cancelled)) {
                 localEngine.set(engine);
@@ -3321,6 +3318,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                             trace.stringStart(item.value.length(), 0);
                             trace.translationCacheHit();
                         }
+                        translatedValues.put(item.name, translated);
                         result.add(new StringItem(item.name, translated));
                     }
                     completed.incrementAndGet();
@@ -3355,14 +3353,85 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 }
                 new AlertDialog.Builder(this).setTitle(R.string.ai_preview).setMessage(getString(R.string.ai_preview_note, result.size()) + "\n\n" + preview)
                         .setNegativeButton(android.R.string.cancel, null).setPositiveButton(R.string.ai_save, (d, w) -> {
-                            if (allStringValues.containsKey(qualifier) || new File(decodeRootPath + "/res/values" + qualifier + "/strings.xml").exists()) {
-                                Toast.makeText(this, R.string.ai_existing_language, Toast.LENGTH_LONG).show(); return;
+                            File targetDir = new File(decodeRootPath, "res/values" + qualifier);
+                            if (allStringValues.containsKey(qualifier) || targetDir.exists()) {
+                                new AlertDialog.Builder(this).setMessage(R.string.ai_replace_confirm)
+                                        .setNegativeButton(android.R.string.cancel, null)
+                                        .setPositiveButton(R.string.ai_replace, (confirm, ignored) -> {
+                                            try { updateExistingTranslation(qualifier, translatedValues); Toast.makeText(this, R.string.ai_saved, Toast.LENGTH_LONG).show(); }
+                                            catch (Exception e) { new AlertDialog.Builder(this).setMessage(e.toString()).setPositiveButton(android.R.string.ok, null).show(); }
+                                        }).show();
+                            } else {
+                                try { saveTranslatedLanguage(qualifier, result); Toast.makeText(this, R.string.ai_saved, Toast.LENGTH_LONG).show(); }
+                                catch (Exception e) { Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show(); }
                             }
-                            try { saveTranslatedLanguage(qualifier, result); Toast.makeText(this, R.string.ai_saved, Toast.LENGTH_LONG).show(); }
-                            catch (Exception e) { Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show(); }
                         }).show();
             });
         }, "local-ai-translate").start();
+    }
+
+    /** Update only translated scalar strings, leaving target-only and skipped resources intact. */
+    private void updateExistingTranslation(String qualifier, Map<String, String> updates) throws Exception {
+        if (!qualifier.matches("-[A-Za-z0-9+-]+")) throw new IOException("Invalid target qualifier");
+        Map<String, String> pending = stringListAdapter.getChangedValues().get(qualifier);
+        if (pending != null && !pending.isEmpty()) throw new IOException(getString(R.string.ai_pending_target));
+        if (updates.isEmpty()) return;
+        File directory = new File(decodeRootPath, "res/values" + qualifier);
+        if (!directory.isDirectory() || Files.isSymbolicLink(directory.toPath())) throw new IOException("Target resource folder is unavailable");
+        String prefix = "res/values" + qualifier + "/";
+        for (String entry : resListAdapter.getAddedFiles().keySet())
+            if (entry.startsWith(prefix) && entry.endsWith(".xml")) throw new IOException(getString(R.string.ai_pending_target));
+        for (String entry : resListAdapter.getDeletedFiles())
+            if (entry.startsWith(prefix) && entry.endsWith(".xml")) throw new IOException(getString(R.string.ai_pending_target));
+        File[] xmlFiles = directory.listFiles((folder, name) -> name.endsWith(".xml"));
+        if (xmlFiles == null || xmlFiles.length == 0) throw new IOException("Target XML resources are unavailable");
+        java.util.Arrays.sort(xmlFiles, java.util.Comparator.comparing(File::getName));
+        Map<String, String> originals = new java.util.LinkedHashMap<>();
+        for (File file : xmlFiles) {
+            if (!file.isFile() || Files.isSymbolicLink(file.toPath()) || file.length() > 4194304) throw new IOException("Unsupported resource file: " + file.getName());
+            String staged = resListAdapter.getReplacedFilePath(prefix + file.getName());
+            if (staged != null && !new File(staged).getCanonicalFile().equals(file.getCanonicalFile())) throw new IOException(getString(R.string.ai_pending_target));
+            originals.put(file.getName(), StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+                    .decode(java.nio.ByteBuffer.wrap(Files.readAllBytes(file.toPath()))).toString());
+        }
+        java.util.Set<String> expected = new java.util.HashSet<>();
+        List<StringItem> target = allStringValues.get(qualifier);
+        if (target != null) for (StringItem item : target) if (updates.containsKey(item.name)) expected.add(item.name);
+        Map<String, String> changes = com.gmail.heagoo.apkeditor.translate.ExistingTranslationUpdate.plan(originals, updates, expected);
+        Map<File, File> temporary = new java.util.LinkedHashMap<>();
+        List<File> replaced = new ArrayList<>();
+        try {
+            for (Map.Entry<String, String> change : changes.entrySet()) {
+                File file = new File(directory, change.getKey());
+                if (!originals.containsKey(change.getKey())) throw new IOException("Unexpected resource file");
+                File tmp = File.createTempFile(".ai-translation-", ".tmp", directory);
+                temporary.put(file, tmp);
+                Files.write(tmp.toPath(), change.getValue().getBytes(StandardCharsets.UTF_8));
+            }
+            for (Map.Entry<File, File> change : temporary.entrySet()) {
+                String original = originals.get(change.getKey().getName());
+                if (!java.util.Arrays.equals(Files.readAllBytes(change.getKey().toPath()), original.getBytes(StandardCharsets.UTF_8))) throw new IOException("Resource changed during translation save");
+                Files.move(change.getValue().toPath(), change.getKey().toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                replaced.add(change.getKey());
+            }
+        } catch (Exception failure) {
+            for (File file : replaced) {
+                try { Files.write(file.toPath(), originals.get(file.getName()).getBytes(StandardCharsets.UTF_8)); }
+                catch (Exception rollback) { failure.addSuppressed(rollback); }
+            }
+            throw failure;
+        } finally { for (File tmp : temporary.values()) tmp.delete(); }
+        for (File file : replaced) resListAdapter.fileModified(prefix + file.getName(), file.getAbsolutePath());
+        if (target == null) { target = new ArrayList<>(); allStringValues.put(qualifier, (ArrayList<StringItem>) target); }
+        java.util.Set<String> handled = new java.util.HashSet<>();
+        for (StringItem item : target) if (updates.containsKey(item.name)) {
+            item.value = updates.get(item.name); item.styledValue = null; handled.add(item.name);
+        }
+        for (Map.Entry<String, String> update : updates.entrySet()) if (!handled.contains(update.getKey())) target.add(new StringItem(update.getKey(), update.getValue()));
+        stringModified = true;
+        resetSpinner();
     }
 
     public void saveTranslatedLanguage(String qualifier, List<StringItem> stringValues) throws Exception {
