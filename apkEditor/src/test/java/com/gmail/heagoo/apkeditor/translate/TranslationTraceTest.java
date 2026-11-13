@@ -52,4 +52,11 @@ public class TranslationTraceTest {
         t.nativeResult(12, 32, 100);
         assertTrue(t.report().contains("native_result tokens=12 prompt_ms=32 generation_ms=100"));
     }
+    @Test public void reportsRejectedReasonWithoutResourceText() {
+        TranslationTrace t = new TranslationTrace(1, 1, 1, true, "-ru");
+        t.stringRejected(TranslationRejectedException.Reason.PLACEHOLDER);
+        t.stringDone();
+        assertTrue(t.report().contains("rejected=1"));
+        assertTrue(t.report().contains("string_rejected reason=PLACEHOLDER"));
+    }
 }

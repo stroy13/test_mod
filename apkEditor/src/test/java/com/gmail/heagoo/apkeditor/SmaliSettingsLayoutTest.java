@@ -22,4 +22,15 @@ public class SmaliSettingsLayoutTest {
             assertFalse(xml.substring(decoder, encoder).contains("</PreferenceCategory>"));
         }
     }
+    @Test public void appOverrideKeepsSettingsInSyncWithLibrary() throws Exception {
+        Path root = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
+        while (root != null && !Files.exists(root.resolve("settings.gradle"))) root = root.getParent();
+        assertNotNull(root);
+        String library = new String(Files.readAllBytes(root.resolve("apkEditor/src/main/res/xml/settings.xml")), StandardCharsets.UTF_8);
+        String app = new String(Files.readAllBytes(root.resolve("apkEditorPlus/src/main/res/xml/settings.xml")), StandardCharsets.UTF_8);
+        assertEquals("App resource overrides the library settings; keep both in sync", library, app);
+        assertTrue(app.contains("android:key=\"NotificationSettings\""));
+        assertTrue(app.contains("android:key=\"BuildLogLanguage\""));
+        assertTrue(app.contains("android:key=\"LocalAiModels\""));
+    }
 }

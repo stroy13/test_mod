@@ -23,4 +23,12 @@ public class TranslationOutputTest {
         try { TranslationOutput.clean("<think> hi </think>", "<think> hi </think>"); fail(); }
         catch (IOException expected) { }
     }
+    @Test public void reportsSafeReasonForRejectedTranslations() {
+        try { TranslationOutput.clean("Hello %s", "Hello"); fail(); }
+        catch (TranslationRejectedException expected) { assertEquals(TranslationRejectedException.Reason.PLACEHOLDER, expected.reason()); }
+        catch (IOException unexpected) { fail(unexpected.toString()); }
+        try { TranslationOutput.clean("Hello", "<think>unfinished"); fail(); }
+        catch (TranslationRejectedException expected) { assertEquals(TranslationRejectedException.Reason.REASONING, expected.reason()); }
+        catch (IOException unexpected) { fail(unexpected.toString()); }
+    }
 }

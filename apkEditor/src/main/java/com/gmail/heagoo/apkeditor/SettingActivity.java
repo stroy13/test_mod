@@ -159,10 +159,15 @@ public class SettingActivity extends ThemedPreferenceActivity implements Prefere
         }
         addPreferencesFromResource(R.xml.settings);
         initData();
-        findPreference("NotificationSettings").setOnPreferenceClickListener(pref -> {
-            NotificationAccess.openSettings(this);
-            return true;
-        });
+        Preference notificationSettings = findPreference("NotificationSettings");
+        if (notificationSettings != null) {
+            notificationSettings.setOnPreferenceClickListener(pref -> {
+                NotificationAccess.openSettings(this);
+                return true;
+            });
+        } else {
+            android.util.Log.w("SettingActivity", "NotificationSettings preference is missing");
+        }
         findPreference("LocalAiModels").setOnPreferenceClickListener(pref -> {
             com.gmail.heagoo.apkeditor.translate.LocalModelManager.show(this);
             return true;

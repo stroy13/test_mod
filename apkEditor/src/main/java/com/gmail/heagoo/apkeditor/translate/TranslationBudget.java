@@ -4,6 +4,6 @@ package com.gmail.heagoo.apkeditor.translate;
 public final class TranslationBudget {
     private TranslationBudget() {}
     public static int maxTokens(String value) {
-        return Math.min(384, Math.max(96, 32 + value.length()));
+        return Math.min(768, Math.max(128, 96 + 2 * value.length()));
     }
 }
