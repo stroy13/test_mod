@@ -3122,6 +3122,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
 
     private boolean useLocalTranslation;
     private boolean useGoogleTranslation;
+    private boolean useFoxletTranslation;
     private String googleSourceLanguage;
     private String localTranslationSource;
     private java.util.concurrent.atomic.AtomicBoolean localTranslationCancellation;
@@ -3157,11 +3158,18 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         boolean plugin = generalTranslatePluginExist(this) || proTranslatePluginExist();
         java.util.ArrayList<String> options = new java.util.ArrayList<>();
         options.add(getString(R.string.ai_google_action));
+        options.add(getString(R.string.ai_foxlet_action));
         if (plugin) options.add(getString(R.string.translate_plugin));
         new AlertDialog.Builder(this).setTitle(R.string.ai_translate_title)
                 .setItems(options.toArray(new String[0]), (dialog, which) -> {
                     useGoogleTranslation = which == 0;
-                    useLocalTranslation = which == 0;
+                    useFoxletTranslation = which == 1;
+                    useLocalTranslation = which < 2;
+                    if (useFoxletTranslation && (android.os.Build.VERSION.SDK_INT < 28 || !android.os.Process.is64Bit()
+                            || !java.util.Arrays.asList(android.os.Build.SUPPORTED_64_BIT_ABIS).contains("arm64-v8a"))) {
+                        new AlertDialog.Builder(this).setMessage(R.string.ai_foxlet_unsupported_device).setPositiveButton(android.R.string.ok, null).show();
+                        return;
+                    }
                     beginTranslation();
                 }).setNegativeButton(android.R.string.cancel, null).show();
     }
@@ -3197,7 +3205,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 .setSingleChoiceItems(names, checked, (dialog, which) -> {
                     localTranslationSource = configs.get(which);
                     dialog.dismiss();
-                    if (useGoogleTranslation) selectGoogleSource();
+                    if (useGoogleTranslation || useFoxletTranslation) selectGoogleSource();
                     else showLocalTargetPicker();
                 }).setNegativeButton(android.R.string.cancel, null).show();
     }
@@ -3205,7 +3213,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     private void showLocalTargetPicker() {
         LanguageSelectDialog target = new LanguageSelectDialog(this, PossibleLanguages.languages, PossibleLanguages.codes);
         String displaySource = localSourceName(localTranslationSource);
-        if (useGoogleTranslation && googleSourceLanguage != null)
+        if (useLocalTranslation && googleSourceLanguage != null)
             displaySource += " / " + java.util.Locale.forLanguageTag(googleSourceLanguage).getDisplayName(java.util.Locale.getDefault());
         target.setTranslationSource(displaySource);
         target.show();
@@ -3227,6 +3235,11 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         }).setNegativeButton(android.R.string.cancel, null).show();
     }
 
+    private static String foxletTag(String code) {
+        if ("zh".equals(code)) return "zh-Hans";
+        return code;
+    }
+
     private String localSourceName(String qualifier) {
         if (qualifier == null || qualifier.isEmpty()) return getString(R.string.ai_default_source);
         String name = brut.util.LanguageMapping.getLanguage(qualifier);
@@ -3238,7 +3251,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         for (int i = 0; i < PossibleLanguages.codes.length; i++) {
             if (PossibleLanguages.codes[i].equals(qualifier)) { targetName = PossibleLanguages.languages[i]; break; }
         }
-        String sourceName = useGoogleTranslation && googleSourceLanguage != null
+        String sourceName = useLocalTranslation && googleSourceLanguage != null
                 ? java.util.Locale.forLanguageTag(googleSourceLanguage).getDisplayName(java.util.Locale.getDefault())
                 : localSourceName(localTranslationSource);
         new AlertDialog.Builder(this).setTitle(getString(R.string.ai_mode_title, sourceName, targetName))
@@ -3248,7 +3261,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
     }
 
     private void runLocalTranslation(String qualifier, boolean sample) {
-        if (useGoogleTranslation) {
+        if (useGoogleTranslation || useFoxletTranslation) {
             String tag = com.gmail.heagoo.apkeditor.translate.ResourceLanguageTag.fromQualifier(qualifier);
             String target = tag == null ? null : com.google.mlkit.nl.translate.TranslateLanguage.fromLanguageTag(tag);
             if (target == null || googleSourceLanguage == null) {
@@ -3261,9 +3274,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                         .setNegativeButton(android.R.string.cancel, null).show();
                 return;
             }
-            new AlertDialog.Builder(this).setMessage(R.string.ai_google_download_consent)
+            new AlertDialog.Builder(this).setMessage(useFoxletTranslation ? R.string.ai_foxlet_download_consent : R.string.ai_google_download_consent)
                     .setNegativeButton(android.R.string.cancel, null)
-                    .setPositiveButton(R.string.ai_google_action, (dialog, which) -> runLocalTranslationConfirmed(qualifier, sample, target))
+                    .setPositiveButton(useFoxletTranslation ? R.string.ai_foxlet_action : R.string.ai_google_action, (dialog, which) -> runLocalTranslationConfirmed(qualifier, sample, target))
                     .show();
             return;
         }
@@ -3276,6 +3289,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         if (stringListAdapter != null) PendingStringEdits.merge(allStringValues, stringListAdapter.getChangedValues());
         List<StringItem> source = com.gmail.heagoo.apkeditor.translate.TranslationSource.selected(allStringValues, localTranslationSource);
         final boolean googleEngine = useGoogleTranslation;
+        final boolean foxletEngine = useFoxletTranslation;
         final String googleSource = googleSourceLanguage;
         if (source == null || source.isEmpty()) {
             Toast.makeText(this, R.string.ai_no_source, Toast.LENGTH_LONG).show(); return;
@@ -3301,7 +3315,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics diagnostics = new com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics(this, trace, googleEngine, googleSource, googleTarget);
         diagnostics.save();
         android.app.ProgressDialog progress = new android.app.ProgressDialog(this);
-        progress.setTitle(googleEngine ? R.string.ai_google_action : R.string.ai_translate_title);
+        progress.setTitle(googleEngine ? R.string.ai_google_action : R.string.ai_foxlet_action);
         progress.setMessage(getString(R.string.ai_loading));
         progress.setCancelable(false);
         java.util.concurrent.atomic.AtomicBoolean cancelled = new java.util.concurrent.atomic.AtomicBoolean(false);
@@ -3348,7 +3362,9 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             java.util.Map<String, com.gmail.heagoo.apkeditor.translate.TranslationRejectedException.Reason> rejectedCache = new java.util.HashMap<>();
             String failure = null;
             try (com.gmail.heagoo.apkeditor.translate.TranslationSession engine =
-                    new com.gmail.heagoo.apkeditor.translate.GoogleMlInference(googleSource, googleTarget, trace, cancelled)) {
+                    foxletEngine
+                            ? new com.gmail.heagoo.apkeditor.translate.FoxletInference(getApplicationContext(), foxletTag(googleSource), foxletTag(googleTarget), trace, cancelled)
+                            : new com.gmail.heagoo.apkeditor.translate.GoogleMlInference(googleSource, googleTarget, trace, cancelled)) {
                 localEngine.set(engine);
                 if (cancelled.get()) engine.requestCancel();
                 for (int index = 0; index < snapshot.size(); index++) {

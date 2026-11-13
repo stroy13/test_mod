@@ -65,4 +65,7 @@
     <string name="ai_google_download_consent">Translation runs on your device. Google ML Kit may download language models (about 30 MB per language) over your current connection. Translation quality can vary; check the result. Translations are provided as is and do not replace human translators. Continue?</string>
     <string name="ai_google_same_language">The source and target languages are the same. Choose the actual language of the source text to translate it.</string>
     <string name="ai_google_change_source">Choose source language</string>
+    <string name="ai_foxlet_action">Translate with Firefox / Bergamot</string>
+    <string name="ai_foxlet_unsupported_device">Firefox translation requires Android 9 or later and a 64-bit arm64 process.</string>
+    <string name="ai_foxlet_download_consent">Translation runs on your device. Firefox language-pair models may be downloaded from Mozilla using your current connection, typically tens of megabytes per pair. Non-English pairs may require two models. Some language pairs are unsupported. Continue?</string>
 </resources>

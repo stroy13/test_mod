@@ -8,8 +8,8 @@ android {
     ndkVersion "30.0.16248370"
 
     defaultConfig {
-        versionCode 248
-        versionName "1.10.0.248"
+        versionCode 249
+        versionName "1.10.0.249"
         applicationId "ru.apkeditor.plus"
         minSdk 26
         targetSdk 37
@@ -52,6 +52,7 @@ android {
 }
 
 dependencies {
+    implementation files("../third_party/foxlet/foxlet-v0.5.0.aar")
     implementation project(':apkEditor')
     implementation project(':appDataEditor')
     implementation('org.smali:baksmali:2.4.0') { exclude group: 'com.beust', module: 'jcommander' }
