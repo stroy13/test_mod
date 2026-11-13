@@ -3157,23 +3157,16 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         boolean plugin = generalTranslatePluginExist(this) || proTranslatePluginExist();
         java.util.ArrayList<String> options = new java.util.ArrayList<>();
         options.add(getString(R.string.ai_google_action));
-        options.add(getString(R.string.ai_local));
         if (plugin) options.add(getString(R.string.translate_plugin));
         new AlertDialog.Builder(this).setTitle(R.string.ai_translate_title)
                 .setItems(options.toArray(new String[0]), (dialog, which) -> {
                     useGoogleTranslation = which == 0;
-                    useLocalTranslation = which != 2;
+                    useLocalTranslation = which == 0;
                     beginTranslation();
                 }).setNegativeButton(android.R.string.cancel, null).show();
     }
 
     private void beginTranslation() {
-        if (useLocalTranslation && !useGoogleTranslation && com.gmail.heagoo.apkeditor.translate.LocalModelManager.selected(this) == null) {
-            new AlertDialog.Builder(this).setMessage(R.string.ai_choose_first)
-                    .setPositiveButton(R.string.ai_models, (d, w) -> startActivity(new Intent(this, SettingActivity.class)))
-                    .setNegativeButton(android.R.string.cancel, null).show();
-            return;
-        }
         if (!useLocalTranslation) {
             LanguageSelectDialog dlg = new LanguageSelectDialog(this, PossibleLanguages.languages, PossibleLanguages.codes);
             dlg.setTitle(R.string.select_target_lang);
@@ -3284,8 +3277,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         List<StringItem> source = com.gmail.heagoo.apkeditor.translate.TranslationSource.selected(allStringValues, localTranslationSource);
         final boolean googleEngine = useGoogleTranslation;
         final String googleSource = googleSourceLanguage;
-        File model = googleEngine ? null : com.gmail.heagoo.apkeditor.translate.LocalModelManager.selected(this);
-        if (source == null || source.isEmpty() || (!googleEngine && model == null)) {
+        if (source == null || source.isEmpty()) {
             Toast.makeText(this, R.string.ai_no_source, Toast.LENGTH_LONG).show(); return;
         }
         ArrayList<StringItem> snapshot = new ArrayList<>();
@@ -3305,7 +3297,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         final String targetLanguage = language;
         final String sourceQualifier = localTranslationSource;
         com.gmail.heagoo.apkeditor.translate.TranslationTrace trace = new com.gmail.heagoo.apkeditor.translate.TranslationTrace(
-                snapshot.size(), googleEngine ? 0 : com.gmail.heagoo.apkeditor.translate.LocalInference.threadCount(), googleEngine ? 0 : model.length(), sample, qualifier);
+                snapshot.size(), 0, 0, sample, qualifier);
         com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics diagnostics = new com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics(this, trace, googleEngine, googleSource, googleTarget);
         diagnostics.save();
         android.app.ProgressDialog progress = new android.app.ProgressDialog(this);
@@ -3355,39 +3347,14 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             ArrayList<String> rejectedNames = new ArrayList<>();
             java.util.Map<String, com.gmail.heagoo.apkeditor.translate.TranslationRejectedException.Reason> rejectedCache = new java.util.HashMap<>();
             String failure = null;
-            boolean batchEnabled = !googleEngine;
-            java.util.Map<Integer, String> readyBatch = new java.util.HashMap<>();
-            try (com.gmail.heagoo.apkeditor.translate.TranslationSession engine = googleEngine
-                    ? new com.gmail.heagoo.apkeditor.translate.GoogleMlInference(googleSource, googleTarget, trace, cancelled)
-                    : new com.gmail.heagoo.apkeditor.translate.LocalInference(model, trace, cancelled)) {
+            try (com.gmail.heagoo.apkeditor.translate.TranslationSession engine =
+                    new com.gmail.heagoo.apkeditor.translate.GoogleMlInference(googleSource, googleTarget, trace, cancelled)) {
                 localEngine.set(engine);
                 if (cancelled.get()) engine.requestCancel();
                 for (int index = 0; index < snapshot.size(); index++) {
                     if (cancelled.get()) break;
                     StringItem item = snapshot.get(index);
                     currentName.set(item.name);
-                    if (batchEnabled && readyBatch.isEmpty()
-                            && com.gmail.heagoo.apkeditor.translate.TranslationBatch.eligible(item)) {
-                        List<StringItem> group = new ArrayList<>();
-                        for (int j = index; j < snapshot.size() && group.size() < com.gmail.heagoo.apkeditor.translate.TranslationBatch.MAX_ITEMS; j++) {
-                            StringItem candidate = snapshot.get(j);
-                            if (!com.gmail.heagoo.apkeditor.translate.TranslationBatch.eligible(candidate)) break;
-                            group.add(candidate);
-                        }
-                        if (group.size() >= 2) {
-                            trace.batchAttempt(group.size());
-                            try {
-                                List<String> batch = engine.translateBatch(group, targetLanguage, sourceQualifier);
-                                if (cancelled.get()) break;
-                                for (int j = 0; j < batch.size(); j++) readyBatch.put(index + j, batch.get(j));
-                                trace.batchSuccess();
-                            } catch (com.gmail.heagoo.apkeditor.translate.LocalInference.BatchRejectedException rejectedBatch) {
-                                if (cancelled.get()) break;
-                                trace.batchFallback();
-                                batchEnabled = false;
-                            }
-                        }
-                    }
                     if (item.value == null) throw new java.io.IOException("Empty resource: " + item.name);
                     if (item.styledValue != null || item.value.isEmpty() || item.value.startsWith("@") || item.value.startsWith("?")
                             || com.gmail.heagoo.apkeditor.translate.TranslationSource.isInvariant(item.value)) {
@@ -3401,18 +3368,13 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                                 trace.stringStart(item.value.length(), 0);
                                 throw new com.gmail.heagoo.apkeditor.translate.TranslationRejectedException(prior, "Previously rejected");
                             }
-                            String translated = readyBatch.remove(index);
-                            if (translated != null) {
-                                trace.stringStart(item.value.length(), 0);
+                            String translated = translationCache.get(cacheKey);
+                            if (translated == null) {
+                                translated = engine.translate(item.value, targetLanguage, sourceQualifier, item.name);
+                                translationCache.put(cacheKey, translated);
                             } else {
-                                translated = translationCache.get(cacheKey);
-                                if (translated == null) {
-                                    translated = engine.translate(item.value, targetLanguage, sourceQualifier, item.name);
-                                    translationCache.put(cacheKey, translated);
-                                } else {
-                                    trace.stringStart(item.value.length(), 0);
-                                    trace.translationCacheHit();
-                                }
+                                trace.stringStart(item.value.length(), 0);
+                                trace.translationCacheHit();
                             }
                             translatedValues.put(item.name, translated);
                             result.add(new StringItem(item.name, translated));

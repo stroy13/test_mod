@@ -40,7 +40,7 @@ public final class TranslationDiagnostics {
             android.os.PowerManager power = (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
             if (power != null) thermal = Integer.toString(power.getCurrentThermalStatus());
         }
-        return trace.report() + "app_version=" + version + (googleMlKit ? " engine=google-ml-kit-on-device\n" : " engine=instrumented-llama-android-0.1.1 backend=cpu context=2048\n")
+        return trace.report() + "app_version=" + version + (googleMlKit ? " engine=google-ml-kit-on-device\n" : " engine=unknown\n")
                 + (googleMlKit ? "source_language=" + sourceLanguage + " target_language=" + targetLanguage + "\n" : "")
                 + "device=" + Build.MANUFACTURER + " " + Build.MODEL + " android=" + Build.VERSION.RELEASE
                 + " sdk=" + Build.VERSION.SDK_INT + " supported_64bit=" + Arrays.toString(Build.SUPPORTED_64_BIT_ABIS)

@@ -7,5 +7,3 @@ include ':sqliteUtil'
 include ':_AndroidEditor'
 include ':appDataEditor'
 include ':apkEditorPlus'
-
-include ":fastLlama"

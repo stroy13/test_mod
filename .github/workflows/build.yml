@@ -63,11 +63,6 @@ jobs:
           fi
           tail -n 15 /tmp/test.log
 
-      - name: Проверка отключения рассуждений Qwen3
-        run: |
-          g++ -std=c++11 -Wall -Wextra -Werror apkEditorPlus/src/test/native/qwen3_no_think_test.cpp -o /tmp/qwen3-no-think-test
-          /tmp/qwen3-no-think-test
-
       - name: Проверка AAPT2 для dummy-ресурсов
         run: |
           set -e
@@ -98,22 +93,6 @@ jobs:
           set -eu
           SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME}}"
           "$SDK_ROOT/build-tools/37.0.0/aapt" dump permissions apkEditorPlus/build/outputs/apk/debug/apkEditorPlus-debug.apk | grep -F 'android.permission.POST_NOTIFICATIONS'
-
-      - name: Проверка оптимизированного CPU-движка в APK
-        run: |
-          set -eu
-          APK=apkEditorPlus/build/outputs/apk/debug/apkEditorPlus-debug.apk
-          unzip -p "$APK" lib/arm64-v8a/liblocal_llama_fast.so > /tmp/liblocal_llama_fast.so
-          test -s /tmp/liblocal_llama_fast.so
-          NDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME}}/ndk/30.0.16248370"
-          READELF=$(find "$NDK" -name llvm-readelf | head -1)
-          OBJDUMP=$(find "$NDK" -name llvm-objdump | head -1)
-          "$READELF" --dyn-syms /tmp/liblocal_llama_fast.so > /tmp/fast-symbols.txt
-          grep -q 'llama_model_default_params' /tmp/fast-symbols.txt
-          grep -q 'llama_decode' /tmp/fast-symbols.txt
-          "$OBJDUMP" -d /tmp/liblocal_llama_fast.so > /tmp/fast-disassembly.txt
-          grep -Eq '[[:space:]](sdot|udot)[[:space:]]' /tmp/fast-disassembly.txt
-          echo 'Optimized backend packaged, API exported, dot-product instructions found.'
 
       - name: Отчёт об ошибке
         if: failure()
