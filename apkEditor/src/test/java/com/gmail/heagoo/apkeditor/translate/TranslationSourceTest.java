@@ -8,6 +8,16 @@ import java.util.Map;
 import org.junit.Test;
 
 public class TranslationSourceTest {
+    @Test public void copiesOnlyClearlyInvariantAscii() {
+        assertTrue(TranslationSource.isInvariant("123.45%"));
+        assertTrue(TranslationSource.isInvariant("..."));
+        assertFalse(TranslationSource.isInvariant("Version 123"));
+        assertFalse(TranslationSource.isInvariant("%s"));
+        assertFalse(TranslationSource.isInvariant("Привет"));
+        assertFalse(TranslationSource.isInvariant("😀"));
+        assertFalse(TranslationSource.isInvariant(""));
+        assertFalse(TranslationSource.isInvariant(null));
+    }
     @Test public void selectedLanguageIsUsedNotDefault() {
         Map<String, List<String>> sources = new HashMap<>();
         sources.put("", Arrays.asList("default"));

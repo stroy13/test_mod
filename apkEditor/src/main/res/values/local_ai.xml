@@ -23,6 +23,7 @@
     <string name="ai_existing_language">This language already exists. To protect existing translations, a full translation can only be saved as a new language. Choose another destination language.</string>
     <string name="ai_no_source">No strings found for the selected source language, or no model selected.</string>
     <string name="ai_default_source">Default language (base strings)</string>
+    <string name="ai_source_picker_title">Choose source language</string>
     <string name="ai_target_picker_title">Source language: %1$s\nChoose the language to translate INTO</string>
     <string name="ai_target_language">Translate into</string>
     <string name="ai_mode_title">Translate: %1$s → %2$s</string>

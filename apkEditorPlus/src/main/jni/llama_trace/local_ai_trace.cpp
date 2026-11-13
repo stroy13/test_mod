@@ -162,7 +162,7 @@ Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_complete(JNIEnv *env
     s->cached_prompt.clear(); // Never reuse an interrupted or failed prefill.
     if (!report(env, observer, callback, 9, (int) reused, n, 0)) return nullptr;
     if (!report(env, observer, callback, 3, 0, n, 0)) return nullptr;
-    a.llama_set_n_threads_fn(s->ctx, s->best_threads, s->best_threads);
+    a.llama_set_n_threads_fn(s->ctx, s->best_threads, s->max_threads);
     int rc = a.llama_decode_fn(s->ctx, a.llama_batch_get_one_fn(tokens.data() + reused, n - (int) reused));
     if (rc != 0) { report(env, observer, callback, 6, 0, n, rc); fail(env, s->cancelled.load() ? "Translation cancelled" : "Prompt decode failed"); return nullptr; }
     s->cached_prompt = tokens;
