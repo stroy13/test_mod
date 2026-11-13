@@ -222,7 +222,7 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         this.fixLayout = (LinearLayout) findViewById(R.id.fix_layout);
         this.fixTipTv = (TextView) findViewById(R.id.tv_fix_tip);
         this.resultTv.setOnClickListener(this);
-        this.composedLayout.setVisibility(4);
+        this.composedLayout.setVisibility(View.GONE);
         Button closeBtn = (Button) findViewById(R.id.btn_close);
         closeBtn.setOnClickListener(this);
         this.removeBtn = (Button) findViewById(R.id.btn_remove);
@@ -255,6 +255,12 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         params.weight = logExpanded ? 1f : 0f;
         panel.setLayoutParams(params);
         buildLogToggle.setText(logExpanded ? R.string.build_log_collapse : R.string.build_log_expand);
+        View frame = findViewById(R.id.build_main_frame);
+        LinearLayout.LayoutParams frameParams = (LinearLayout.LayoutParams) frame.getLayoutParams();
+        boolean compact = logExpanded && composingLayout.getVisibility() == View.VISIBLE;
+        frameParams.height = compact ? android.view.ViewGroup.LayoutParams.WRAP_CONTENT : 0;
+        frameParams.weight = compact ? 0f : 1f;
+        frame.setLayoutParams(frameParams);
     }
 
     private void startBuildLog(long started) {
@@ -376,8 +382,9 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
     }
 
     public void composeFinished(boolean ret) {
-        this.composingLayout.setVisibility(4);
-        this.composedLayout.setVisibility(0);
+        this.composingLayout.setVisibility(View.GONE);
+        this.composedLayout.setVisibility(View.VISIBLE);
+        updateLogVisibility();
         if (this.binder != null && this.isActivityVisible) {
             this.binder.hideNotification();
         }
@@ -645,7 +652,8 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
             this.progressTv.setText("");
             dismissBuildWarnings();
             this.composingLayout.setVisibility(0);
-            this.composedLayout.setVisibility(8);
+            this.composedLayout.setVisibility(View.GONE);
+            updateLogVisibility();
             this.binder.buildAgain();
             Map<String, Object> values = this.binder.getValues();
             Long started = (Long) values.get("logBuildStartedAt");

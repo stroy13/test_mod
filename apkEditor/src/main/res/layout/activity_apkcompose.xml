@@ -5,6 +5,7 @@
     android:orientation="vertical">
 
     <FrameLayout
+        android:id="@+id/build_main_frame"
         android:layout_width="match_parent"
         android:layout_height="0dip"
         android:layout_weight="1">
@@ -12,15 +13,14 @@
         <LinearLayout
             android:id="@+id/layout_apk_composing"
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
+            android:layout_height="wrap_content"
             android:background="?labSurface"
             android:gravity="center"
             android:orientation="vertical">
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="0dip"
-                android:layout_weight="1"
+                android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical">
 
