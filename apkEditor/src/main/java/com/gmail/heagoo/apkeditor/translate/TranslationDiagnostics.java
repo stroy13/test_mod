@@ -17,6 +17,7 @@ public final class TranslationDiagnostics {
     private final TranslationTrace trace;
     private final long initialCpuMs;
     private final boolean googleMlKit;
+    private final boolean foxlet;
     private final String sourceLanguage;
     private final String targetLanguage;
     public TranslationDiagnostics(Context context, TranslationTrace trace) { this(context, trace, false); }
@@ -24,7 +25,11 @@ public final class TranslationDiagnostics {
         this(context, trace, googleMlKit, null, null);
     }
     public TranslationDiagnostics(Context context, TranslationTrace trace, boolean googleMlKit, String sourceLanguage, String targetLanguage) {
+        this(context, trace, googleMlKit, false, sourceLanguage, targetLanguage);
+    }
+    public TranslationDiagnostics(Context context, TranslationTrace trace, boolean googleMlKit, boolean foxlet, String sourceLanguage, String targetLanguage) {
         this.googleMlKit = googleMlKit;
+        this.foxlet = foxlet;
         this.sourceLanguage = sourceLanguage;
         this.targetLanguage = targetLanguage;
         this.context = context.getApplicationContext();
@@ -40,15 +45,15 @@ public final class TranslationDiagnostics {
             android.os.PowerManager power = (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
             if (power != null) thermal = Integer.toString(power.getCurrentThermalStatus());
         }
-        return trace.report() + "app_version=" + version + (googleMlKit ? " engine=google-ml-kit-on-device\n" : " engine=unknown\n")
-                + (googleMlKit ? "source_language=" + sourceLanguage + " target_language=" + targetLanguage + "\n" : "")
+        return trace.report() + "app_version=" + version + (googleMlKit ? " engine=google-ml-kit-on-device\n" : foxlet ? " engine=firefox-bergamot-foxlet\n" : " engine=unknown\n")
+                + ((googleMlKit || foxlet) ? "source_language=" + sourceLanguage + " target_language=" + targetLanguage + "\n" : "")
                 + "device=" + Build.MANUFACTURER + " " + Build.MODEL + " android=" + Build.VERSION.RELEASE
                 + " sdk=" + Build.VERSION.SDK_INT + " supported_64bit=" + Arrays.toString(Build.SUPPORTED_64_BIT_ABIS)
                 + " process_64bit=" + android.os.Process.is64Bit() + " processors=" + Runtime.getRuntime().availableProcessors() + "\n"
                 + "thermal_status=" + thermal + " (0=none, 1=light, 2=moderate, 3=severe, 4+=critical)\n"
                 + "process_cpu_ms=" + (android.os.Process.getElapsedCpuTime() - initialCpuMs)
                 + " native_heap_bytes=" + Debug.getNativeHeapAllocatedSize() + "\n"
-                + (googleMlKit ? "ML Kit stages describe local model download and translation.\n" : "Native stages show token counts, but cannot inspect inside an individual decode call.\n");
+                + (googleMlKit ? "ML Kit stages describe local model download and translation.\n" : foxlet ? "Bergamot stages describe local model download and translation.\n" : "Native stages show token counts, but cannot inspect inside an individual decode call.\n");
     }
     public void save() { PreferenceManager.getDefaultSharedPreferences(context).edit().putString(KEY, report()).apply(); }
     public void copy(Context ui) { String report = report(); save(); copyText(ui, report); }

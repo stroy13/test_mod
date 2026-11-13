@@ -3312,7 +3312,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         final String sourceQualifier = localTranslationSource;
         com.gmail.heagoo.apkeditor.translate.TranslationTrace trace = new com.gmail.heagoo.apkeditor.translate.TranslationTrace(
                 snapshot.size(), 0, 0, sample, qualifier);
-        com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics diagnostics = new com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics(this, trace, googleEngine, googleSource, googleTarget);
+        com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics diagnostics = new com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics(this, trace, googleEngine, foxletEngine, googleSource, googleTarget);
         diagnostics.save();
         android.app.ProgressDialog progress = new android.app.ProgressDialog(this);
         progress.setTitle(googleEngine ? R.string.ai_google_action : R.string.ai_foxlet_action);
