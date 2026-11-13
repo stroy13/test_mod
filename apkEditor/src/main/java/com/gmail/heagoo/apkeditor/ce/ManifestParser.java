@@ -357,7 +357,7 @@ public class ManifestParser implements IAttributeCallback {
             } else if ("icon".equals(attrName)) {
                 this.result.launcherId = idx;
             } else if ("extractNativeLibs".equals(attrName)) {
-                this.result.extractNativeLibs = idx != 0 ? 1 : 0;
+                this.result.extractNativeLibs = type == TypedValue.TYPE_INT_BOOLEAN ? (idx != 0 ? 1 : 0) : -1;
             } else if ("useEmbeddedDex".equals(attrName)) {
                 this.result.useEmbeddedDex = idx != 0 ? 1 : 0;
             }
