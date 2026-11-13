@@ -3248,6 +3248,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             if (PossibleLanguages.codes[i].equals(qualifier)) { language = PossibleLanguages.languages[i]; break; }
         }
         final String targetLanguage = language;
+        final String sourceQualifier = localTranslationSource;
         com.gmail.heagoo.apkeditor.translate.TranslationTrace trace = new com.gmail.heagoo.apkeditor.translate.TranslationTrace(
                 snapshot.size(), com.gmail.heagoo.apkeditor.translate.LocalInference.threadCount(), model.length(), sample, qualifier);
         com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics diagnostics = new com.gmail.heagoo.apkeditor.translate.TranslationDiagnostics(this, trace);
@@ -3293,8 +3294,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         timer.post(update);
         new Thread(() -> {
             ArrayList<StringItem> result = new ArrayList<>();
-            // Identical source text for the same target language has the same
-            // placeholders and needs to be translated only once per session.
+            // Resource key is part of the prompt, so different keys may have different meanings.
             java.util.Map<String, String> translationCache = new java.util.HashMap<>();
             java.util.Map<String, String> translatedValues = new java.util.LinkedHashMap<>();
             ArrayList<String> rejectedNames = new ArrayList<>();
@@ -3312,16 +3312,17 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                         trace.stringStart(item.value.length(), 0);
                         result.add(item);
                     } else {
+                        String cacheKey = item.name + "\u0000" + item.value;
                         try {
-                            com.gmail.heagoo.apkeditor.translate.TranslationRejectedException.Reason prior = rejectedCache.get(item.value);
+                            com.gmail.heagoo.apkeditor.translate.TranslationRejectedException.Reason prior = rejectedCache.get(cacheKey);
                             if (prior != null) {
                                 trace.stringStart(item.value.length(), 0);
                                 throw new com.gmail.heagoo.apkeditor.translate.TranslationRejectedException(prior, "Previously rejected");
                             }
-                            String translated = translationCache.get(item.value);
+                            String translated = translationCache.get(cacheKey);
                             if (translated == null) {
-                                translated = engine.translate(item.value, targetLanguage);
-                                translationCache.put(item.value, translated);
+                                translated = engine.translate(item.value, targetLanguage, sourceQualifier, item.name);
+                                translationCache.put(cacheKey, translated);
                             } else {
                                 trace.stringStart(item.value.length(), 0);
                                 trace.translationCacheHit();
@@ -3330,7 +3331,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                             result.add(new StringItem(item.name, translated));
                         } catch (com.gmail.heagoo.apkeditor.translate.TranslationRejectedException rejected) {
                             if (cancelled.get()) break;
-                            rejectedCache.put(item.value, rejected.reason());
+                            rejectedCache.put(cacheKey, rejected.reason());
                             rejectedNames.add(item.name);
                             trace.stringRejected(rejected.reason());
                             result.add(item);
@@ -3357,24 +3358,8 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                 if (error != null) { new AlertDialog.Builder(this).setTitle(R.string.ai_translate_title).setMessage(error)
                         .setNeutralButton(R.string.ai_copy_log, (d, w) -> diagnostics.copy(this))
                         .setPositiveButton(android.R.string.ok, null).show(); return; }
-                StringBuilder preview = new StringBuilder();
-                for (int i = 0; i < Math.min(10, result.size()); i++) preview.append(result.get(i).name).append(": ").append(result.get(i).value).append("\n\n");
-                StringBuilder rejectedNotice = new StringBuilder();
-                if (!rejectedNames.isEmpty()) {
-                    rejectedNotice.append(getString(R.string.ai_rejected_note, rejectedNames.size())).append("\n");
-                    for (int i = 0; i < Math.min(20, rejectedNames.size()); i++) rejectedNotice.append(rejectedNames.get(i)).append("\n");
-                    if (rejectedNames.size() > 20) rejectedNotice.append("…\n");
-                    rejectedNotice.append("\n");
-                }
-                if (sample) {
-                    new AlertDialog.Builder(this).setTitle(R.string.ai_sample_title)
-                            .setMessage(getString(R.string.ai_sample_note) + "\n\n" + rejectedNotice + preview)
-                            .setNeutralButton(R.string.ai_copy_log, (d, w) -> diagnostics.copy(this))
-                            .setPositiveButton(android.R.string.ok, null).show();
-                    return;
-                }
-                new AlertDialog.Builder(this).setTitle(R.string.ai_preview).setMessage(getString(R.string.ai_preview_note, result.size()) + "\n\n" + rejectedNotice + preview)
-                        .setNegativeButton(android.R.string.cancel, null).setPositiveButton(R.string.ai_save, (d, w) -> {
+                TranslationReviewDialog.show(this, snapshot, result, translatedValues, rejectedNames, sample,
+                        () -> diagnostics.copy(this), () -> {
                             File targetDir = new File(decodeRootPath, "res/values" + qualifier);
                             if (allStringValues.containsKey(qualifier) || targetDir.exists()) {
                                 new AlertDialog.Builder(this).setMessage(R.string.ai_replace_confirm)
@@ -3387,7 +3372,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                                 try { saveTranslatedLanguage(qualifier, result); Toast.makeText(this, R.string.ai_saved, Toast.LENGTH_LONG).show(); }
                                 catch (Exception e) { Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show(); }
                             }
-                        }).show();
+                        });
             });
         }, "local-ai-translate").start();
     }

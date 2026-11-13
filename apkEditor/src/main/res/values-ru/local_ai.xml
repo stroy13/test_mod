@@ -35,7 +35,7 @@
     <string name="ai_saved">Язык сохранён. Проверьте перевод перед сборкой.</string>
     <string name="ai_selected">Выбрана: %1$s</string>
     <string name="ai_sample_option">Проверить 3 строки без сохранения</string>
-    <string name="ai_full_option">Полный перевод выбранных исходных строк в новый язык</string>
+    <string name="ai_full_option">Полный перевод выбранных исходных строк</string>
     <string name="ai_sample_title">Проверка перевода</string>
     <string name="ai_sample_note">Ничего не сохранено. Проверьте качество и скорость перед полным переводом.</string>
     <string name="ai_loading_elapsed">Загрузка модели… %1$d сек.</string>
@@ -50,4 +50,12 @@
     <string name="ai_replace">Заменить</string>
     <string name="ai_pending_target">Сначала сохраните или разрешите отложенные изменения языка назначения.</string>
     <string name="ai_rejected_note">Не удалось безопасно перевести строк: %1$d. В существующем языке прежние переводы сохранятся, в новом — останется исходный текст. Имена ресурсов (первые 20):</string>
+    <string name="ai_review_hint">Ниже показаны все строки. Нажмите на строку, чтобы исправить её перед сохранением. Форматированные строки и ссылки не изменяются.</string>
+    <string name="ai_review_source">Исходный текст: %1$s</string>
+    <string name="ai_review_result">Результат: %1$s</string>
+    <string name="ai_review_rejected">Не переведено — нажмите для исправления; иначе существующий перевод сохранится</string>
+    <string name="ai_review_translated">Переведено — нажмите для изменения</string>
+    <string name="ai_review_unchanged">Без изменений — можно изменить, если поддерживается</string>
+    <string name="ai_review_uneditable">Форматированные строки и ссылки на ресурсы нельзя изменить здесь.</string>
+    <string name="ai_review_invalid">Сохраните все плейсхолдеры и используйте допустимый текст.</string>
 </resources>
