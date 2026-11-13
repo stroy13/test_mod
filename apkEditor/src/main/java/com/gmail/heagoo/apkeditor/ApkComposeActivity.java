@@ -1,8 +1,6 @@
 package com.gmail.heagoo.apkeditor;
 
 import android.app.AlertDialog;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -121,20 +119,9 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         }
     };
 
-    private void createChannel() {
-        int i = Build.VERSION.SDK_INT;
-        NotificationManager notificationManager = (NotificationManager) getSystemService("notification");
-        NotificationChannel chan1 = new NotificationChannel(PRIMARY_NOTIF_CHANNEL, PRIMARY_NOTIF_CHANNEL, 3);
-        chan1.setLightColor(0);
-        chan1.enableVibration(false);
-        chan1.setVibrationPattern(new long[]{0});
-        chan1.setLockscreenVisibility(1);
-        notificationManager.createNotificationChannel(chan1);
-    }
-
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        createChannel();
+        NotificationAccess.createBuildChannel(this);
         Intent intent = getIntent();
         this.intentAction = intent.getAction();
         getWindow().setFlags(BinaryDiffIndex.PAGE_ROWS, BinaryDiffIndex.PAGE_ROWS);

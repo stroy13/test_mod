@@ -159,6 +159,10 @@ public class SettingActivity extends ThemedPreferenceActivity implements Prefere
         }
         addPreferencesFromResource(R.xml.settings);
         initData();
+        findPreference("NotificationSettings").setOnPreferenceClickListener(pref -> {
+            NotificationAccess.openSettings(this);
+            return true;
+        });
         findPreference("LocalAiModels").setOnPreferenceClickListener(pref -> {
             com.gmail.heagoo.apkeditor.translate.LocalModelManager.show(this);
             return true;

@@ -88,6 +88,12 @@ jobs:
           fi
           tail -n 15 /tmp/build.log
 
+      - name: Проверка разрешения уведомлений в APK
+        run: |
+          set -eu
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME}}"
+          "$SDK_ROOT/build-tools/37.0.0/aapt" dump permissions apkEditorPlus/build/outputs/apk/debug/apkEditorPlus-debug.apk | grep -F 'android.permission.POST_NOTIFICATIONS'
+
       - name: Проверка оптимизированного CPU-движка в APK
         run: |
           set -eu
