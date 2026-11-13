@@ -31,6 +31,6 @@ public class SmaliSettingsLayoutTest {
         assertEquals("App resource overrides the library settings; keep both in sync", library, app);
         assertTrue(app.contains("android:key=\"NotificationSettings\""));
         assertTrue(app.contains("android:key=\"BuildLogLanguage\""));
-        assertTrue(app.contains("android:key=\"LocalAiModels\""));
+        assertFalse(app.contains("android:key=\"LocalAiModels\""));
     }
 }
