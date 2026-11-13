@@ -3300,12 +3300,37 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             ArrayList<String> rejectedNames = new ArrayList<>();
             java.util.Map<String, com.gmail.heagoo.apkeditor.translate.TranslationRejectedException.Reason> rejectedCache = new java.util.HashMap<>();
             String failure = null;
+            boolean batchEnabled = true;
+            java.util.Map<Integer, String> readyBatch = new java.util.HashMap<>();
             try (com.gmail.heagoo.apkeditor.translate.LocalInference engine = new com.gmail.heagoo.apkeditor.translate.LocalInference(model, trace, cancelled)) {
                 localEngine.set(engine);
                 if (cancelled.get()) engine.requestCancel();
-                for (StringItem item : snapshot) {
+                for (int index = 0; index < snapshot.size(); index++) {
                     if (cancelled.get()) break;
+                    StringItem item = snapshot.get(index);
                     currentName.set(item.name);
+                    if (batchEnabled && readyBatch.isEmpty()
+                            && com.gmail.heagoo.apkeditor.translate.TranslationBatch.eligible(item)) {
+                        List<StringItem> group = new ArrayList<>();
+                        for (int j = index; j < snapshot.size() && group.size() < com.gmail.heagoo.apkeditor.translate.TranslationBatch.MAX_ITEMS; j++) {
+                            StringItem candidate = snapshot.get(j);
+                            if (!com.gmail.heagoo.apkeditor.translate.TranslationBatch.eligible(candidate)) break;
+                            group.add(candidate);
+                        }
+                        if (group.size() >= 2) {
+                            trace.batchAttempt(group.size());
+                            try {
+                                List<String> batch = engine.translateBatch(group, targetLanguage, sourceQualifier);
+                                if (cancelled.get()) break;
+                                for (int j = 0; j < batch.size(); j++) readyBatch.put(index + j, batch.get(j));
+                                trace.batchSuccess();
+                            } catch (com.gmail.heagoo.apkeditor.translate.LocalInference.BatchRejectedException rejectedBatch) {
+                                if (cancelled.get()) break;
+                                trace.batchFallback();
+                                batchEnabled = false;
+                            }
+                        }
+                    }
                     if (item.value == null) throw new java.io.IOException("Empty resource: " + item.name);
                     if (item.styledValue != null || item.value.isEmpty() || item.value.startsWith("@") || item.value.startsWith("?")
                             || com.gmail.heagoo.apkeditor.translate.TranslationSource.isInvariant(item.value)) {
@@ -3319,13 +3344,18 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                                 trace.stringStart(item.value.length(), 0);
                                 throw new com.gmail.heagoo.apkeditor.translate.TranslationRejectedException(prior, "Previously rejected");
                             }
-                            String translated = translationCache.get(cacheKey);
-                            if (translated == null) {
-                                translated = engine.translate(item.value, targetLanguage, sourceQualifier, item.name);
-                                translationCache.put(cacheKey, translated);
-                            } else {
+                            String translated = readyBatch.remove(index);
+                            if (translated != null) {
                                 trace.stringStart(item.value.length(), 0);
-                                trace.translationCacheHit();
+                            } else {
+                                translated = translationCache.get(cacheKey);
+                                if (translated == null) {
+                                    translated = engine.translate(item.value, targetLanguage, sourceQualifier, item.name);
+                                    translationCache.put(cacheKey, translated);
+                                } else {
+                                    trace.stringStart(item.value.length(), 0);
+                                    trace.translationCacheHit();
+                                }
                             }
                             translatedValues.put(item.name, translated);
                             result.add(new StringItem(item.name, translated));

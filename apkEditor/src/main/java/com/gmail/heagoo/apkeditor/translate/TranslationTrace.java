@@ -15,6 +15,8 @@ public final class TranslationTrace {
     private long stageTime = start;
     private int completed;
     private int rejected;
+    private int batchAttempts, batchSuccesses, batchFallbacks, batchItems;
+    private long batchStarted, batchTotalMs;
     private final java.util.EnumMap<TranslationRejectedException.Reason, Integer> rejectionCounts = new java.util.EnumMap<>(TranslationRejectedException.Reason.class);
     private int generated;
     private int promptTokens;
@@ -125,6 +127,16 @@ public final class TranslationTrace {
     }
     public synchronized void cancelRequested() { add("cancel_requested (waiting for current operation)"); }
     public synchronized void translationCacheHit() { add("translation_cache_hit"); }
+    public synchronized void batchAttempt(int count) {
+        batchAttempts++; batchItems += count; batchStarted = System.nanoTime(); add("batch_attempt items=" + count);
+    }
+    public synchronized void batchSuccess() { batchSuccesses++; finishBatch("batch_success"); }
+    public synchronized void batchFallback() { batchFallbacks++; finishBatch("batch_fallback to_individual=true"); }
+    private void finishBatch(String event) {
+        long elapsed = batchStarted == 0 ? 0 : TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - batchStarted);
+        batchTotalMs += elapsed; batchStarted = 0;
+        add(event + " elapsed_ms=" + elapsed);
+    }
     public synchronized void stringRejected(TranslationRejectedException.Reason reason) {
         rejected++;
         Integer count = rejectionCounts.get(reason);
@@ -147,6 +159,9 @@ public final class TranslationTrace {
                 .append(" total_elapsed_ms=").append(TimeUnit.NANOSECONDS.toMillis(now - start)).append('\n');
         out.append("prompt_tokens=").append(promptTokens).append(" generated_tokens=").append(generated)
                 .append(" template_status=").append(templateStatus).append(" native_detail=").append(nativeDetail).append('\n');
+        out.append("batch_attempts=").append(batchAttempts).append(" batch_items=").append(batchItems)
+                .append(" batch_successes=").append(batchSuccesses).append(" batch_fallbacks=").append(batchFallbacks)
+                .append(" batch_total_ms=").append(batchTotalMs).append('\n');
         out.append("qwen3_no_think_prefix=").append(noThinkPrefix ? "applied" : "not_applied").append('\n');
         out.append("reused_prompt_tokens=").append(reusedPromptTokens).append('\n');
         out.append("prefill_ms=").append(prefillMs).append(" generation_elapsed_ms=")

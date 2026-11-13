@@ -81,6 +81,37 @@ public final class LocalInference implements AutoCloseable {
         } catch (CharacterCodingException e) { throw new TranslationRejectedException(TranslationRejectedException.Reason.INVALID_UTF8, "Invalid UTF-8 from model"); }
         return TranslationOutput.clean(value, text);
     }
+    /** A batch is accepted only when every ID and placeholder is unambiguous. */
+    public java.util.List<String> translateBatch(java.util.List<common.types.StringItem> items,
+            String language, String sourceQualifier) throws Exception {
+        if (handle == 0) throw new IOException("Model is closed");
+        String prompt = TranslationBatch.prompt(items, sourceQualifier, language);
+        int chars = 0, max = 0;
+        for (common.types.StringItem item : items) {
+            chars += item.value.length();
+            max += TranslationBudget.maxTokens(item.value);
+        }
+        max = Math.min(768, max + 64);
+        trace.stringStart(chars, max);
+        byte[] output;
+        try {
+            output = InstrumentedLlama.complete(handle, prompt.getBytes(StandardCharsets.UTF_8),
+                    TranslationBatch.SYSTEM.getBytes(StandardCharsets.UTF_8), max, trace::nativeProgress);
+        } catch (IOException e) {
+            if ("Translation incomplete (token limit)".equals(e.getMessage()) || "Invalid or oversized prompt".equals(e.getMessage()))
+                throw new BatchRejectedException();
+            throw e;
+        }
+        trace.stage(TranslationTrace.Stage.VALIDATE);
+        try {
+            String text = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(output)).toString().trim();
+            return TranslationBatch.parse(items, text);
+        } catch (CharacterCodingException e) { throw new BatchRejectedException(); }
+        catch (IOException e) { throw new BatchRejectedException(); }
+    }
+    public static final class BatchRejectedException extends IOException { }
+
     @Override public void close() {
         try {
             synchronized (handleLock) {

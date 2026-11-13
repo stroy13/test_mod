@@ -18,7 +18,7 @@ public final class LocalModelManager {
     public static final int PICK_MODEL = 19613;
     private static final String SELECTED = "LocalAiModel";
     private static final String[] NAMES = {
-            "Qwen3 0.6B Q4_K_M (~0.48 GB)", "Qwen3 1.7B Q4_K_M (~1.28 GB)",
+            "Qwen3 0.6B Q4_K_M (~0.48 GB, fast / less accurate)", "Qwen3 1.7B Q4_K_M (~1.28 GB)",
             "Qwen3 4B Q4_K_M (~2.50 GB)", "Qwen2.5 3B Instruct Q4_K_M (~1.93 GB)",
             "Qwen3 4B Q5_K_M (~2.89 GB)"};
     private static final String[] LINKS = {

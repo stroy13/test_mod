@@ -22,7 +22,7 @@ public class TranslationTraceTest {
         assertTrue(report.contains("target=other"));
         assertFalse(report.contains("string=1/100"));
         assertTrue(report.contains("string=60/100"));
-        assertTrue(report.split("\n").length <= 50);
+        assertTrue(report.split("\n").length <= 51);
     }
     @Test public void tracksNativeStagesAndTokenCount() {
         TranslationTrace t = new TranslationTrace(1, 4, 100, true, "-en");
@@ -65,5 +65,10 @@ public class TranslationTraceTest {
         assertTrue(t.report().contains("qwen3_no_think_prefix=applied"));
         t.nativeProgress(11, 0, 0, 0);
         assertTrue(t.report().contains("qwen3_no_think_prefix=not_applied"));
+    }
+    @Test public void reportsBatchAttemptsAndFallback() {
+        TranslationTrace t = new TranslationTrace(3, 2, 1, true, "-ru");
+        t.batchAttempt(3); t.batchFallback();
+        assertTrue(t.report().contains("batch_attempts=1 batch_items=3 batch_successes=0 batch_fallbacks=1"));
     }
 }
