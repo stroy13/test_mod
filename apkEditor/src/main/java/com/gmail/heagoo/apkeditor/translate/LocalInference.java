@@ -54,21 +54,19 @@ public final class LocalInference implements AutoCloseable {
         cancelled.set(true);
         synchronized (handleLock) { if (handle != 0) InstrumentedLlama.cancel(handle); }
     }
-    public String translate(String value, String language) throws Exception {
+    public String translate(String value, String language, String sourceQualifier, String resourceName) throws Exception {
         if (handle == 0) throw new IOException("Model is closed");
         if (value.length() > 1000) {
             trace.stringStart(value.length(), 0);
             throw new TranslationRejectedException(TranslationRejectedException.Reason.SOURCE_TOO_LONG, "String is too long for local translation");
         }
-        String prompt = "Translate the following application UI text into " + language
-                + ". Output only the translation. Preserve all placeholders, escapes and tags exactly.\n"
-                + value + "\n/no_think";
+        String prompt = TranslationPrompt.user(value, sourceQualifier, language, resourceName);
         int max = TranslationBudget.maxTokens(value);
         trace.stringStart(value.length(), max);
         byte[] result;
         try {
             result = InstrumentedLlama.complete(handle, prompt.getBytes(StandardCharsets.UTF_8),
-                    "You are a precise and natural software localization translator.".getBytes(StandardCharsets.UTF_8),
+                    TranslationPrompt.SYSTEM.getBytes(StandardCharsets.UTF_8),
                     max, trace::nativeProgress);
         } catch (IOException e) {
             if ("Translation incomplete (token limit)".equals(e.getMessage()))

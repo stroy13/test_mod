@@ -35,7 +35,7 @@
     <string name="ai_saved">Language saved. Review the translation before building.</string>
     <string name="ai_selected">Selected: %1$s</string>
     <string name="ai_sample_option">Test 3 strings without saving</string>
-    <string name="ai_full_option">Translate all selected source strings into a new language</string>
+    <string name="ai_full_option">Translate all selected source strings</string>
     <string name="ai_sample_title">Test translation</string>
     <string name="ai_sample_note">Nothing has been saved. Check the translation and speed before running the full translation.</string>
     <string name="ai_loading_elapsed">Loading model… %1$d s</string>
@@ -50,4 +50,12 @@
     <string name="ai_replace">Replace</string>
     <string name="ai_pending_target">Save or resolve pending target-language edits before replacing translations.</string>
     <string name="ai_rejected_note">%1$d strings could not be safely translated. Existing translations are kept; new languages retain the source text. Resource names (first 20):</string>
+    <string name="ai_review_hint">All strings are shown below. Tap a row to edit it before saving. Styled strings and references remain unchanged.</string>
+    <string name="ai_review_source">Source: %1$s</string>
+    <string name="ai_review_result">Result: %1$s</string>
+    <string name="ai_review_rejected">Not translated — tap to correct; existing target will be kept otherwise</string>
+    <string name="ai_review_translated">Translated — tap to edit</string>
+    <string name="ai_review_unchanged">Unchanged — tap to edit where supported</string>
+    <string name="ai_review_uneditable">Styled strings and resource references cannot be edited here.</string>
+    <string name="ai_review_invalid">Keep all placeholders and use valid text.</string>
 </resources>
