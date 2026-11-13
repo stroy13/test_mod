@@ -494,7 +494,7 @@ public final class ApkBuildPipeline {
         long dataStart = counting.written + 30 + nameLength;
         int padding = (int) ((alignment - (dataStart % alignment)) % alignment);
         {
-            if (padding < 6) {
+            while (padding < 6) {
                 padding += alignment;
             }
             byte[] extra = new byte[padding];
