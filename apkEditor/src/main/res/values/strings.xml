@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="notification_stage_channel">Build stages (silent pop-ups)</string>
     <string name="notification_build_channel">Build progress</string>
     <string name="notification_settings_title">Notifications</string>
     <string name="notification_settings_summary">Open system notification settings</string>

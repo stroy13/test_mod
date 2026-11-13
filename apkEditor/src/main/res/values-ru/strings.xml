@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="notification_stage_channel">Этапы сборки (без звука)</string>
     <string name="notification_build_channel">Ход сборки</string>
     <string name="notification_settings_title">Уведомления</string>
     <string name="notification_settings_summary">Открыть системные настройки уведомлений</string>
