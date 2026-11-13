@@ -31,7 +31,6 @@
     <PreferenceCategory android:title="@string/others">
         <com.gmail.heagoo.apkeditor.LabListPreference android:title="@string/build_log_language_title" android:summary="@string/build_log_language_summary" android:key="BuildLogLanguage" android:defaultValue="system" android:entries="@array/build_log_language_names" android:entryValues="@array/build_log_language_values" />
         <Preference android:title="@string/notification_settings_title" android:key="NotificationSettings" android:summary="@string/notification_settings_summary" />
-        <Preference android:title="@string/ai_models" android:key="LocalAiModels" android:summary="@string/ai_models_summary" />
         <Preference android:title="@string/clean_garbage" android:key="CleanGarbage" android:summary="@string/clean_garbage_summary" />
         <com.gmail.heagoo.apkeditor.LabListPreference android:entries="@array/file_extract_rename_key" android:title="@string/file_rename" android:key="FileRenameOption" android:summary="@string/file_extract_rename_summary" android:entryValues="@array/file_extract_rename_value" />
     </PreferenceCategory>
