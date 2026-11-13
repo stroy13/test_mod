@@ -5,7 +5,7 @@
         <LinearLayout android:orientation="vertical" android:id="@id/layout_apk_composing" android:background="?labSurface" android:padding="20.0dip" android:layout_width="fill_parent" android:layout_height="fill_parent">
             <TextView android:textSize="21.0sp" android:textStyle="bold" android:textColor="?labText" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/lab_build_title" />
             <TextView android:textSize="12.0sp" android:textColor="?labMuted" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="5.0dip" android:text="@string/lab_build_subtitle" />
-            <LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="0.0dip" android:layout_weight="1.0">
+            <LinearLayout android:gravity="top" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="16dip">
                 <LinearLayout android:orientation="vertical" android:background="?labCardBackground" android:padding="20.0dip" android:layout_width="fill_parent" android:layout_height="wrap_content">
                     <TextView android:textSize="11.0sp" android:textColor="?labMuted" android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="@string/lab_build_current" android:textAllCaps="true" android:letterSpacing="0.08" />
                     <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="?labText" android:id="@id/progress_tip" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="10.0dip" android:text="@string/in_progress" />
@@ -13,7 +13,7 @@
                     <TextView android:textSize="12.0sp" android:textColor="?labMuted" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginTop="12.0dip" android:text="@string/lab_build_wait" />
                 </LinearLayout>
             </LinearLayout>
-            <Button android:id="@id/btn_bg" android:layout_width="fill_parent" android:layout_height="48.0dip" android:text="@string/put_to_background" />
+            <Button android:id="@id/btn_bg" android:layout_marginTop="12dip" android:layout_width="fill_parent" android:layout_height="48.0dip" android:text="@string/put_to_background" />
         </LinearLayout>
         <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/layout_apk_composed" android:background="?labSurface" android:layout_width="fill_parent" android:layout_height="fill_parent">
             <ImageView android:id="@id/result_image" android:layout_width="72.0dip" android:layout_height="72.0dip" android:layout_marginTop="24.0dip" android:src="@drawable/succeed" />
@@ -42,12 +42,12 @@
             </LinearLayout>
         </LinearLayout>
     </FrameLayout>
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+    <LinearLayout android:id="@+id/build_log_panel" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
         android:orientation="vertical" android:background="?labSurface" android:paddingLeft="16dp" android:paddingRight="16dp">
         <Button android:id="@+id/build_log_toggle" android:layout_width="match_parent"
             android:layout_height="48dp" android:text="@string/build_log_collapse" />
         <ListView android:id="@+id/build_log_list" android:layout_width="match_parent"
-            android:layout_height="200dp" android:background="?labCardBackground"
+            android:layout_height="0dp" android:layout_weight="1" android:background="?labCardBackground"
             android:divider="@android:color/transparent" android:dividerHeight="0dp" />
     </LinearLayout>
     <LinearLayout android:orientation="vertical" android:id="@+id/layout_build_warning" android:background="?labCardBackground" android:padding="12.0dip" android:visibility="gone" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_margin="12.0dip">

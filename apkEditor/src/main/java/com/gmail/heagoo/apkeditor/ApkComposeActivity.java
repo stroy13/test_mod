@@ -249,6 +249,11 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
 
     private void updateLogVisibility() {
         buildLogList.setVisibility(logExpanded ? View.VISIBLE : View.GONE);
+        View panel = findViewById(R.id.build_log_panel);
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) panel.getLayoutParams();
+        params.height = logExpanded ? 0 : android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+        params.weight = logExpanded ? 1f : 0f;
+        panel.setLayoutParams(params);
         buildLogToggle.setText(logExpanded ? R.string.build_log_collapse : R.string.build_log_expand);
     }
 
@@ -290,7 +295,12 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
                     buildLogAdapter.setNotifyOnChange(false);
                     for (String line : batch) {
                         if ("\u0000RESET".equals(line)) buildLogAdapter.clear();
-                        else buildLogAdapter.add(line);
+                        else {
+                            String preference = android.preference.PreferenceManager.getDefaultSharedPreferences(this).getString("BuildLogLanguage", "system");
+                            String systemLanguage = android.content.res.Resources.getSystem().getConfiguration().getLocales().get(0).getLanguage();
+                            String lang = com.gmail.heagoo.apkeditor.util.BuildLogDisplay.resolveLanguage(preference, systemLanguage);
+                            buildLogAdapter.add(com.gmail.heagoo.apkeditor.util.BuildLogDisplay.render(line, lang));
+                        }
                     }
                     if (!batch.isEmpty()) buildLogAdapter.notifyDataSetChanged();
                     if (!batch.isEmpty() && atBottom && logExpanded) buildLogList.setSelection(buildLogAdapter.getCount() - 1);

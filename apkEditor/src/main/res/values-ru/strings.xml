@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="build_log_language_title">Язык лога сборки</string>
+    <string name="build_log_language_summary">Язык системы (поддерживаются русский и английский; для остальных используется английский). Сообщения инструментов остаются без изменений.</string>
+    <string-array name="build_log_language_names"><item>Системный</item><item>Русский</item><item>Английский</item></string-array>
     <string name="build_log_expand">Развернуть лог сборки</string>
     <string name="build_log_collapse">Свернуть лог сборки</string>
     <string name="file_browser_no_results">В этой папке ничего не найдено</string>

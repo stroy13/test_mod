@@ -49,7 +49,7 @@ public class ApkComposeThreadNew extends ComposeThread implements ISmaliAssemble
     private ITaskCallback taskCallback;
     private Map<String, String> builtDexFiles = new HashMap();
     private List<String> modifiedSmaliFolders = new ArrayList();
-    private final com.gmail.heagoo.apkeditor.util.ProgressThrottle assembleProgress = new com.gmail.heagoo.apkeditor.util.ProgressThrottle(500);
+    private final com.gmail.heagoo.apkeditor.util.ProgressThrottle assembleProgress = new com.gmail.heagoo.apkeditor.util.ProgressThrottle(100);
     private boolean stopFlag = false;
     private ComposeBuildTrace buildTrace;
 

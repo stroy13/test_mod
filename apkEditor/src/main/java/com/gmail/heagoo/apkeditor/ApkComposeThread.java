@@ -65,7 +65,7 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
     private ITaskCallback taskCallback;
     private String tempApkPath;
     private Map<String, String> dexReplaces = new HashMap();
-    private final com.gmail.heagoo.apkeditor.util.ProgressThrottle assembleProgress = new com.gmail.heagoo.apkeditor.util.ProgressThrottle(500);
+    private final com.gmail.heagoo.apkeditor.util.ProgressThrottle assembleProgress = new com.gmail.heagoo.apkeditor.util.ProgressThrottle(100);
     private boolean stopFlag = false;
     private ComposeBuildTrace buildTrace;
 
