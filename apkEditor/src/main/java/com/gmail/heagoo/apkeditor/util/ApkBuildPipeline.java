@@ -494,7 +494,7 @@ public final class ApkBuildPipeline {
         long dataStart = counting.written + 30 + nameLength;
         int padding = (int) ((alignment - (dataStart % alignment)) % alignment);
         if (padding != 0) {
-            if (padding < 4) {
+            if (padding < 6) {
                 padding += alignment;
             }
             byte[] extra = new byte[padding];
@@ -503,6 +503,10 @@ public final class ApkBuildPipeline {
             int size = padding - 4;
             extra[2] = (byte) (size & 0xff);
             extra[3] = (byte) ((size >> 8) & 0xff);
+            // apksig reads the alignment multiple from the d935 field payload
+            // when signature entries shift the local headers.
+            extra[4] = (byte) (alignment & 0xff);
+            extra[5] = (byte) ((alignment >> 8) & 0xff);
             entry.setExtra(extra);
         }
     }
