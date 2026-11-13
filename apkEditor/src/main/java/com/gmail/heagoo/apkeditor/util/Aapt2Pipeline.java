@@ -29,14 +29,28 @@ public final class Aapt2Pipeline {
             throw new IOException("Cannot remove old AAPT2 output");
         }
         Path staged = null;
+        Path stagedManifest = null;
         try {
             Path original = new File(resDir).toPath().toAbsolutePath();
             long repairStart = System.nanoTime();
             Map<Path, byte[]> repairs = Aapt2DummyResources.findRepairs(original, logger);
+            Map<String, String> aliases = Aapt2SyntheticNames.find(original);
             String compileDir = resDir;
-            if (!repairs.isEmpty()) {
+            String linkManifest = manifest;
+            if (!repairs.isEmpty() || !aliases.isEmpty()) {
                 staged = Files.createTempDirectory(out.getAbsoluteFile().getParentFile().toPath(), "aapt2-res-");
                 Aapt2DummyResources.stage(original, staged, repairs);
+                if (!aliases.isEmpty()) {
+                    Aapt2SyntheticNames.rewriteStage(staged, aliases);
+                    String originalManifest = new String(Files.readAllBytes(new File(manifest).toPath()), java.nio.charset.StandardCharsets.UTF_8);
+                    String rewrittenManifest = Aapt2SyntheticNames.rewriteXml(originalManifest, aliases);
+                    if (!originalManifest.equals(rewrittenManifest)) {
+                        stagedManifest = Files.createTempFile(out.getAbsoluteFile().getParentFile().toPath(), "aapt2-manifest-", ".xml");
+                        Files.write(stagedManifest, rewrittenManifest.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        linkManifest = stagedManifest.toString();
+                    }
+                    if (logger != null) logger.log("AAPT2 temporary synthetic drawable aliases: " + aliases.size());
+                }
                 compileDir = staged.toString();
             }
             if (logger != null) logger.log("AAPT2 resource scan and staging: " + elapsed(repairStart) + " ms; repaired files=" + repairs.size());
@@ -46,7 +60,11 @@ public final class Aapt2Pipeline {
                 if (staged == null || e.getMessage() == null) throw e;
                 throw new IOException(e.getMessage().replace(staged.toString(), original.toString()), e);
             }
-            runTimed(new String[]{aapt2, "link", "--auto-add-overlay", "--no-version-vectors", "-I", framework, "--manifest", manifest, "-o", out.getAbsolutePath(), flat.getAbsolutePath()}, logger);
+            runTimed(new String[]{aapt2, "link", "--auto-add-overlay", "--no-version-vectors", "-I", framework, "--manifest", linkManifest, "-o", out.getAbsolutePath(), flat.getAbsolutePath()}, logger);
+            if (!aliases.isEmpty()) {
+                Aapt2SyntheticNames.restoreApk(out, aliases);
+                if (logger != null) logger.log("AAPT2 synthetic drawable names restored in resource table");
+            }
             if (!out.isFile() || out.length() == 0) {
                 throw new IOException("AAPT2 produced no output");
             }
@@ -55,6 +73,7 @@ public final class Aapt2Pipeline {
             }
         } finally {
             if (staged != null) Aapt2DummyResources.deleteTree(staged);
+            if (stagedManifest != null) Files.deleteIfExists(stagedManifest);
             if (flat.exists()) {
                 flat.delete();
             }
