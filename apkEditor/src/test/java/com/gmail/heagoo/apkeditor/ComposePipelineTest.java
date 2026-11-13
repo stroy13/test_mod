@@ -88,8 +88,11 @@ public class ComposePipelineTest {
     public void resourceStageActuallyBuildsResources() throws Exception {
         for (String name : new String[]{"ApkComposeThreadNew.java", "ApkComposeThread.java"}) {
             String run = runBody(read(name));
-            assertTrue(name + ": prepare() alone does not produce resource.apk",
-                    run.contains("if (!prepare() || !composeResource()) {"));
+            int prepare = run.indexOf("boolean prepared = prepare();");
+            int guard = run.indexOf("if (!prepared) return;", prepare);
+            int compile = run.indexOf("boolean compiled = composeResource();", guard);
+            int check = run.indexOf("if (!compiled) return;", compile);
+            assertTrue(name + ": prepare and resource compile must both succeed", prepare >= 0 && guard > prepare && compile > guard && check > compile);
         }
     }
 
