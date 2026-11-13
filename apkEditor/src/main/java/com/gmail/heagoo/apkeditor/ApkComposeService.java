@@ -118,7 +118,13 @@ public class ApkComposeService extends Service implements ITaskCallback {
         int i2 = Build.VERSION.SDK_INT;
         NotificationAccess.createBuildChannel(this);
         this.mNotifyBuilder = new NotificationCompat.Builder(this, ApkComposeActivity.PRIMARY_NOTIF_CHANNEL);
-        this.mNotifyBuilder.setContentTitle(appName).setTicker(appName).setContentText(getString(R.string.build_ongoing)).setSmallIcon(R.drawable.ic_compose_notification).setContentIntent(pendingIntent).setOngoing(true);
+        this.mNotifyBuilder.setContentTitle(appName).setTicker(appName)
+                .setContentText(getString(R.string.build_ongoing))
+                .setSmallIcon(R.drawable.ic_compose_notification).setContentIntent(pendingIntent)
+                .setOngoing(true)
+                // Progress and completion update the same notification; do not
+                // play the channel sound again on every step.
+                .setOnlyAlertOnce(true);
         startForeground(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE, this.mNotifyBuilder.build());
         this.foregroundStarted = true;
     }
