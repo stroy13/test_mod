@@ -25,7 +25,7 @@ final class TranslationReviewDialog {
 
     static void show(Context context, List<StringItem> source, List<StringItem> result,
             Map<String, String> translated, List<String> rejected, boolean sample,
-            Runnable copyLog, Runnable save) {
+            Runnable copyLog, java.util.function.Consumer<Runnable> save) {
         LinearLayout content = new LinearLayout(context);
         content.setOrientation(LinearLayout.VERTICAL);
         int pad = dp(context, 16);
@@ -104,11 +104,15 @@ final class TranslationReviewDialog {
         });
         AlertDialog.Builder builder = new AlertDialog.Builder(context)
                 .setTitle(sample ? R.string.ai_sample_title : R.string.ai_preview).setView(content)
-                .setNeutralButton(R.string.ai_copy_log, (dialog, which) -> copyLog.run());
+                .setNeutralButton(R.string.ai_copy_log, null);
         if (sample) builder.setPositiveButton(android.R.string.ok, null);
-        else builder.setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(R.string.ai_save, (dialog, which) -> save.run());
-        builder.show();
+        else builder.setNegativeButton(android.R.string.cancel, null).setPositiveButton(R.string.ai_save, null);
+        AlertDialog review = builder.create();
+        review.setOnShowListener(ignored -> {
+            review.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> copyLog.run());
+            if (!sample) review.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> save.accept(review::dismiss));
+        });
+        review.show();
     }
 
     private static int dp(Context context, int value) {

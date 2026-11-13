@@ -3359,17 +3359,17 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                         .setNeutralButton(R.string.ai_copy_log, (d, w) -> diagnostics.copy(this))
                         .setPositiveButton(android.R.string.ok, null).show(); return; }
                 TranslationReviewDialog.show(this, snapshot, result, translatedValues, rejectedNames, sample,
-                        () -> diagnostics.copy(this), () -> {
+                        () -> diagnostics.copy(this), closeReview -> {
                             File targetDir = new File(decodeRootPath, "res/values" + qualifier);
                             if (allStringValues.containsKey(qualifier) || targetDir.exists()) {
                                 new AlertDialog.Builder(this).setMessage(R.string.ai_replace_confirm)
                                         .setNegativeButton(android.R.string.cancel, null)
                                         .setPositiveButton(R.string.ai_replace, (confirm, ignored) -> {
-                                            try { updateExistingTranslation(qualifier, translatedValues); Toast.makeText(this, R.string.ai_saved, Toast.LENGTH_LONG).show(); }
+                                            try { updateExistingTranslation(qualifier, translatedValues); closeReview.run(); Toast.makeText(this, R.string.ai_saved, Toast.LENGTH_LONG).show(); }
                                             catch (Exception e) { new AlertDialog.Builder(this).setMessage(e.toString()).setPositiveButton(android.R.string.ok, null).show(); }
                                         }).show();
                             } else {
-                                try { saveTranslatedLanguage(qualifier, result); Toast.makeText(this, R.string.ai_saved, Toast.LENGTH_LONG).show(); }
+                                try { saveTranslatedLanguage(qualifier, result); closeReview.run(); Toast.makeText(this, R.string.ai_saved, Toast.LENGTH_LONG).show(); }
                                 catch (Exception e) { Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show(); }
                             }
                         });
