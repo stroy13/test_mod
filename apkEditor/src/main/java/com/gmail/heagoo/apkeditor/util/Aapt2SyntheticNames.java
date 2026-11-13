@@ -111,6 +111,7 @@ final class Aapt2SyntheticNames {
                 long count = u32(bytes, pool + 8), flags = u32(bytes, pool + 16), start = u32(bytes, pool + 20);
                 int ph = u16(bytes, pool+2);
                 if (count > (poolSize - ph) / 4 || start >= poolSize) throw new IOException("Invalid key offsets");
+                boolean changedPool = false;
                 for (int i = 0; i < count; i++) {
                     long off = u32(bytes, pool + ph + i * 4);
                     if (off >= poolSize - start) throw new IOException("Invalid key offset");
@@ -121,8 +122,11 @@ final class Aapt2SyntheticNames {
                     if (len < 0 || q + (long)len + (utf8 ? 1 : 2) > end) throw new IOException("Invalid key string");
                     String s = new String(bytes, q, len, utf8 ? StandardCharsets.UTF_8 : StandardCharsets.UTF_16LE);
                     String original = reverse.get(s);
-                    if (original != null) { bytes[q] = '$'; restored.add(s); }
+                    if (original != null) { bytes[q] = '$'; restored.add(s); changedPool = true; }
                 }
+                // Renaming may invalidate the pool's lexical ordering. Android must
+                // use a linear lookup rather than binary search in this pool.
+                if (changedPool) bytes[pool + 16] &= (byte) ~1;
             }
             p += size;
         }
