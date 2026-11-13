@@ -4,7 +4,7 @@
 
 Полноценный форк Android-приложения **APK Editor Plus** (`ru.apkeditor.plus`)
 с собственными исправлениями и развитием кодовой базы. Актуальная версия —
-**245** / **1.10.0.245**, история изменений — в [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
+**246** / **1.10.0.246**, история изменений — в [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
 Проект собирается штатным Gradle: `:apkEditorPlus:assembleDebug` →
 `apkEditorPlus/build/outputs/apk/debug/apkEditorPlus-debug.apk`.
@@ -15,7 +15,7 @@
 | Параметр | Значение |
 |---|---|
 | Package / applicationId | `ru.apkeditor.plus` |
-| versionCode / versionName | `245` / `1.10.0.245` (см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
+| versionCode / versionName | `246` / `1.10.0.246` (см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
 | minSdk / targetSdk / compileSdk | 26 / 37 / 37 |
 | Gradle / AGP | 9.8.2 / 9.5.1 |
 | JDK | 17 |
@@ -125,3 +125,7 @@ applicationId уже давно `ru.apkeditor.plus`. Начиная с 186 мо�
 Файл лицензии не добавлялся: код производный от проприетарного приложения, и автор
 репозитория не вправе выдавать на него свободную лицензию. Использование —
 исключительно в исследовательских/модификационных целях, см. [`NOTICE.md`](NOTICE.md).
+
+## Локальный перевод с Google ML Kit
+
+При выборе «Перевести с Google» приложение использует локальную модель Google Translate через [ML Kit](https://developers.google.com/ml-kit/language/translation). Языковые модели загружаются после согласия пользователя; после загрузки перевод выполняется на устройстве. Машинный перевод предоставляется как есть и требует проверки человеком. [Условия и атрибуция Google](https://developers.google.com/ml-kit/language/translation/translation-terms).

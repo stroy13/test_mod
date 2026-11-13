@@ -16,7 +16,10 @@ public final class TranslationDiagnostics {
     private final Context context;
     private final TranslationTrace trace;
     private final long initialCpuMs;
-    public TranslationDiagnostics(Context context, TranslationTrace trace) {
+    private final boolean googleMlKit;
+    public TranslationDiagnostics(Context context, TranslationTrace trace) { this(context, trace, false); }
+    public TranslationDiagnostics(Context context, TranslationTrace trace, boolean googleMlKit) {
+        this.googleMlKit = googleMlKit;
         this.context = context.getApplicationContext();
         this.trace = trace;
         this.initialCpuMs = android.os.Process.getElapsedCpuTime();
@@ -30,14 +33,14 @@ public final class TranslationDiagnostics {
             android.os.PowerManager power = (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
             if (power != null) thermal = Integer.toString(power.getCurrentThermalStatus());
         }
-        return trace.report() + "app_version=" + version + " engine=instrumented-llama-android-0.1.1 backend=cpu context=2048\n"
+        return trace.report() + "app_version=" + version + (googleMlKit ? " engine=google-ml-kit-on-device\n" : " engine=instrumented-llama-android-0.1.1 backend=cpu context=2048\n")
                 + "device=" + Build.MANUFACTURER + " " + Build.MODEL + " android=" + Build.VERSION.RELEASE
                 + " sdk=" + Build.VERSION.SDK_INT + " supported_64bit=" + Arrays.toString(Build.SUPPORTED_64_BIT_ABIS)
                 + " process_64bit=" + android.os.Process.is64Bit() + " processors=" + Runtime.getRuntime().availableProcessors() + "\n"
                 + "thermal_status=" + thermal + " (0=none, 1=light, 2=moderate, 3=severe, 4+=critical)\n"
                 + "process_cpu_ms=" + (android.os.Process.getElapsedCpuTime() - initialCpuMs)
                 + " native_heap_bytes=" + Debug.getNativeHeapAllocatedSize() + "\n"
-                + "Native stages show token counts, but cannot inspect inside an individual decode call.\n";
+                + (googleMlKit ? "ML Kit stages describe local model download and translation.\n" : "Native stages show token counts, but cannot inspect inside an individual decode call.\n");
     }
     public void save() { PreferenceManager.getDefaultSharedPreferences(context).edit().putString(KEY, report()).apply(); }
     public void copy(Context ui) { String report = report(); save(); copyText(ui, report); }

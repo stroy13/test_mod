@@ -58,4 +58,9 @@
     <string name="ai_review_unchanged">Без изменений — можно изменить, если поддерживается</string>
     <string name="ai_review_uneditable">Форматированные строки и ссылки на ресурсы нельзя изменить здесь.</string>
     <string name="ai_review_invalid">Сохраните все плейсхолдеры и используйте допустимый текст.</string>
+    <string name="ai_google_action">Перевести с Google</string>
+    <string name="ai_google_attribution">Перевод выполнен с помощью Google Translate</string>
+    <string name="ai_google_source">Выберите фактический язык исходных строк</string>
+    <string name="ai_google_unsupported">Этот язык назначения не поддерживается Google ML Kit. Выберите другой язык.</string>
+    <string name="ai_google_download_consent">Перевод выполняется на устройстве. Google ML Kit может скачать языковые модели (около 30 МБ на язык), используя текущее подключение. Качество может различаться; проверьте результат. Перевод предоставляется как есть и не заменяет работу человека. Продолжить?</string>
 </resources>

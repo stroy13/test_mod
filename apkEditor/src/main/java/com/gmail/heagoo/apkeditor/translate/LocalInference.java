@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** A CPU inference session. Inference and close run on the worker; cancel may run on UI. */
-public final class LocalInference implements AutoCloseable {
+public final class LocalInference implements TranslationSession {
     private static final java.util.concurrent.Semaphore ENGINE = new java.util.concurrent.Semaphore(1);
     private final Object handleLock = new Object();
     private final TranslationTrace trace;

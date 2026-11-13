@@ -24,7 +24,7 @@ final class TranslationReviewDialog {
     private TranslationReviewDialog() {}
 
     static void show(Context context, List<StringItem> source, List<StringItem> result,
-            Map<String, String> translated, List<String> rejected, boolean sample,
+            Map<String, String> translated, List<String> rejected, boolean sample, boolean googleEngine,
             Runnable copyLog, java.util.function.Consumer<Runnable> save) {
         LinearLayout content = new LinearLayout(context);
         content.setOrientation(LinearLayout.VERTICAL);
@@ -34,6 +34,13 @@ final class TranslationReviewDialog {
         header.setText(context.getString(sample ? R.string.ai_sample_note : R.string.ai_review_hint));
         header.setPadding(0, 0, 0, dp(context, 8));
         content.addView(header);
+        if (googleEngine) {
+            android.widget.ImageView attribution = new android.widget.ImageView(context);
+            attribution.setImageResource(R.drawable.google_translate_attribution);
+            attribution.setContentDescription(context.getString(R.string.ai_google_attribution));
+            attribution.setScaleType(android.widget.ImageView.ScaleType.FIT_START);
+            content.addView(attribution, new LinearLayout.LayoutParams(dp(context, 150), dp(context, 32)));
+        }
         ListView list = new ListView(context);
         list.setDividerHeight(dp(context, 1));
         int height = Math.min(dp(context, 520), (int) (context.getResources().getDisplayMetrics().heightPixels * 0.55f));

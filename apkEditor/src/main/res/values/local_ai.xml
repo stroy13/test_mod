@@ -58,4 +58,9 @@
     <string name="ai_review_unchanged">Unchanged — tap to edit where supported</string>
     <string name="ai_review_uneditable">Styled strings and resource references cannot be edited here.</string>
     <string name="ai_review_invalid">Keep all placeholders and use valid text.</string>
+    <string name="ai_google_action">Translate with Google</string>
+    <string name="ai_google_attribution">Powered by Google Translate</string>
+    <string name="ai_google_source">Choose the actual language of these source strings</string>
+    <string name="ai_google_unsupported">This target language is not supported by Google ML Kit. Choose another target language.</string>
+    <string name="ai_google_download_consent">Translation runs on your device. Google ML Kit may download language models (about 30 MB per language) over your current connection. Translation quality can vary; check the result. Translations are provided as is and do not replace human translators. Continue?</string>
 </resources>
