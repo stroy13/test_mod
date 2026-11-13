@@ -19,6 +19,7 @@ public final class TranslationTrace {
     private int generated;
     private int promptTokens;
     private int templateStatus;
+    private boolean noThinkPrefix;
     private int nativeDetail;
     private String engineInfo = "unavailable";
     private String backend = "unavailable";
@@ -61,6 +62,11 @@ public final class TranslationTrace {
     }
     /** Called by JNI at phase boundaries and on every generated token. */
     public synchronized void nativeProgress(int phase, int count, int prompt, int detail) {
+        if (phase == 11) {
+            noThinkPrefix = count == 1;
+            add("qwen3_no_think_prefix=" + (noThinkPrefix ? "applied" : "not_applied"));
+            return;
+        }
         if (phase == 10) {
             add("thread_trial_skipped threads=" + count + " after_slow_ms=" + detail);
             return;
@@ -141,6 +147,7 @@ public final class TranslationTrace {
                 .append(" total_elapsed_ms=").append(TimeUnit.NANOSECONDS.toMillis(now - start)).append('\n');
         out.append("prompt_tokens=").append(promptTokens).append(" generated_tokens=").append(generated)
                 .append(" template_status=").append(templateStatus).append(" native_detail=").append(nativeDetail).append('\n');
+        out.append("qwen3_no_think_prefix=").append(noThinkPrefix ? "applied" : "not_applied").append('\n');
         out.append("reused_prompt_tokens=").append(reusedPromptTokens).append('\n');
         out.append("prefill_ms=").append(prefillMs).append(" generation_elapsed_ms=")
                 .append(generationStart == 0 ? -1 : TimeUnit.NANOSECONDS.toMillis(now - generationStart))

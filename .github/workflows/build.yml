@@ -63,6 +63,11 @@ jobs:
           fi
           tail -n 15 /tmp/test.log
 
+      - name: Проверка отключения рассуждений Qwen3
+        run: |
+          g++ -std=c++11 -Wall -Wextra -Werror apkEditorPlus/src/test/native/qwen3_no_think_test.cpp -o /tmp/qwen3-no-think-test
+          /tmp/qwen3-no-think-test
+
       - name: Проверка AAPT2 для dummy-ресурсов
         run: |
           set -e

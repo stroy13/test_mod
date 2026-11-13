@@ -11,6 +11,7 @@
 #include <vector>
 #include "llama.h"
 #include "prefix_cache.h"
+#include "qwen3_no_think.h"
 
 // All public C signatures come from the llama.cpp revision used by llama-android 0.1.1.
 struct Api {
@@ -142,6 +143,8 @@ Java_com_gmail_heagoo_apkeditor_translate_InstrumentedLlama_complete(JNIEnv *env
         else templateStatus = -1;
     }
     if (templateStatus != 1) text = system + "\n\n" + user;
+    bool noThink = templateStatus == 1 && apply_qwen3_no_think(tmpl, text);
+    if (!report(env, observer, callback, 11, noThink ? 1 : 0, 0, 0)) return nullptr;
     if (!report(env, observer, callback, 2, 0, 0, templateStatus)) return nullptr;
     const llama_vocab *vocab = a.llama_model_get_vocab_fn(s->model);
     int needed = -a.llama_tokenize_fn(vocab, text.data(), (int32_t) text.size(), nullptr, 0, true, true);
