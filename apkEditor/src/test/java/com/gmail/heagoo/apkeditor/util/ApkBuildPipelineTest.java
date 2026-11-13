@@ -240,6 +240,10 @@ public class ApkBuildPipelineTest {
         ApkBuildPipeline.SigningOptions base = options();
         ApkBuildPipeline.SigningOptions direct = new ApkBuildPipeline.SigningOptions(
                 base.privateKey, base.certificate, 26, 35, true, true, true, false, 6, 0);
+        File unsigned = new File(folder.getRoot(), "direct-unsigned.apk");
+        ApkBuildPipeline.merge(source, unsigned, null, null, null, direct, null, null);
+        try { NativeLibraryZipVerifier.verify(unsigned, true); }
+        catch (IOException e) { throw new IOException("UNSIGNED: " + e.getMessage(), e); }
         ApkBuildPipeline.build(source, target, null, null, null, direct, null, null);
         try (ZipFile zip = new ZipFile(target)) {
             assertEquals(ZipEntry.STORED, zip.getEntry("lib/armeabi-v7a/libcompressed.so").getMethod());
