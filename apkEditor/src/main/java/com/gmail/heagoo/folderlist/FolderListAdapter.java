@@ -22,6 +22,8 @@ import java.util.List;
 public class FolderListAdapter extends BaseAdapter {
 
     List<FileRecord> fileList = new ArrayList<FileRecord>();
+    private final List<FileRecord> allFiles = new ArrayList<>();
+    private String filter = "";
     private Context ctx;
     private String rootPath;
     private String curPath;
@@ -93,7 +95,7 @@ public class FolderListAdapter extends BaseAdapter {
             catch (SecurityException e) { subFiles = null; }
             if (subFiles != null) {
                 readFailurePath = null;
-                fileList.clear();
+                allFiles.clear();
 
                 for (File f : subFiles) {
                     FileRecord fr = new FileRecord();
@@ -104,7 +106,7 @@ public class FolderListAdapter extends BaseAdapter {
                     } else {
                         fr.totalSize = -1;
                     }
-                    fileList.add(fr);
+                    allFiles.add(fr);
                 }
 
                 // In root directory, will not show parent folder
@@ -113,24 +115,24 @@ public class FolderListAdapter extends BaseAdapter {
                     fr.fileName = "..";
                     fr.isDir = true;
                     fr.totalSize = -1;
-                    fileList.add(0, fr);
+                    allFiles.add(0, fr);
                 }
 
                 curPath = path;
-                FileListSorter.sort(fileList, sortKey, sortDescending, curPath);
+                sortAndFilterLocked();
             }
             // Special case: in the parent path of SD card (like /storage/emulated/0)
             // As on some phones, we cannot access the directory like /storage/emulated
             else if (PathUtil.isParentFolderOf(path, SDCard.getRootDirectory())) {
                 readFailurePath = null;
-                fileList.clear();
+                allFiles.clear();
 
                 SDCard.getRootDirectory();
                 FileRecord fr = new FileRecord();
                 fr.fileName = PathUtil.getSubFolder(path, SDCard.getRootDirectory());
                 fr.isDir = true;
                 fr.totalSize = -1;
-                fileList.add(fr);
+                allFiles.add(fr);
 
                 // In root directory, will not show parent folder
                 if (!path.equals(rootPath)) {
@@ -138,11 +140,11 @@ public class FolderListAdapter extends BaseAdapter {
                     fr.fileName = "..";
                     fr.isDir = true;
                     fr.totalSize = -1;
-                    fileList.add(0, fr);
+                    allFiles.add(0, fr);
                 }
 
                 curPath = path;
-                FileListSorter.sort(fileList, sortKey, sortDescending, curPath);
+                sortAndFilterLocked();
             } else {
                 // Keep the previous directory and its listing; never pretend that
                 // a failed directory read succeeded or that the folder is empty.
@@ -242,30 +244,52 @@ public class FolderListAdapter extends BaseAdapter {
 
     public void fileRenamed(String dirPath, String fileName, String newName) {
         synchronized (fileList) {
-            for (FileRecord rec : fileList) {
+            for (FileRecord rec : allFiles) {
                 if (rec.fileName.equals(fileName)) {
                     rec.fileName = newName;
                     break;
                 }
             }
-            FileListSorter.sort(fileList, sortKey, sortDescending, curPath);
+            sortAndFilterLocked();
         }
         this.notifyDataSetChanged();
     }
 
     public void fileDeleted(String dirPath, String fileName) {
         synchronized (fileList) {
-            for (int i = 0; i < fileList.size(); i++) {
-                FileRecord rec = fileList.get(i);
+            for (int i = 0; i < allFiles.size(); i++) {
+                FileRecord rec = allFiles.get(i);
                 if (rec.fileName.equals(fileName)) {
-                    fileList.remove(i);
+                    allFiles.remove(i);
                     break;
                 }
             }
+            sortAndFilterLocked();
         }
         this.notifyDataSetChanged();
     }
 
+
+    public void setFilter(String query) {
+        synchronized (fileList) {
+            filter = query == null ? "" : query;
+            applyFilterLocked();
+        }
+        notifyDataSetChanged();
+    }
+
+    public boolean hasFilter() { synchronized (fileList) { return !filter.isEmpty(); } }
+
+    private void applyFilterLocked() {
+        fileList.clear();
+        for (FileRecord rec : allFiles) {
+            if (FileNameFilter.matches(rec.fileName, filter)) fileList.add(rec);
+        }
+    }
+    private void sortAndFilterLocked() {
+        FileListSorter.sort(allFiles, sortKey, sortDescending, curPath);
+        applyFilterLocked();
+    }
     private static class ViewHolder {
         ImageView icon;
         TextView filename;
@@ -276,7 +300,7 @@ public class FolderListAdapter extends BaseAdapter {
         synchronized (fileList) {
             sortKey = FileSort.normalizeKey(key);
             sortDescending = descending;
-            FileListSorter.sort(fileList, sortKey, sortDescending, curPath);
+            sortAndFilterLocked();
         }
         notifyDataSetChanged();
     }

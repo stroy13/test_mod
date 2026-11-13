@@ -23,12 +23,12 @@ public final class ComposeBuildTrace implements AutoCloseable {
         end();
         phase = name;
         started = System.nanoTime();
-        if (log != null) log.log("Compose stage start: " + name);
+        if (log != null) { log.log("Compose stage start: " + name); log.flush(); }
     }
     public void end() {
         if (phase != null) {
             long millis = (System.nanoTime() - started) / 1000000L;
-            if (log != null) log.log("Compose stage end: " + phase + " (" + millis + " ms)");
+            if (log != null) { log.log("Compose stage end: " + phase + " (" + millis + " ms)"); log.flush(); }
             phase = null;
         }
     }

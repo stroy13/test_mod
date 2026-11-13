@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="notification_stage_channel">Build stages (silent pop-ups)</string>
+    <string name="build_log_expand">Show build log</string>
+    <string name="build_log_collapse">Hide build log</string>
+    <string name="file_browser_no_results">No matching files in this folder</string>
+    <string name="notification_stage_channel">Build stage alerts</string>
     <string name="notification_build_channel">Build progress</string>
     <string name="notification_settings_title">Notifications</string>
     <string name="notification_settings_summary">Open system notification settings</string>

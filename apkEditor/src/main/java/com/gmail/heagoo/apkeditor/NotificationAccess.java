@@ -19,7 +19,7 @@ import com.gmail.heagoo.apkeditor.base.R;
 final class NotificationAccess {
     static final String PERMISSION = "android.permission.POST_NOTIFICATIONS";
     static final String ASKED = "notification_permission_requested_v1";
-    static final String STAGE_CHANNEL = "build_stages_silent";
+    static final String STAGE_CHANNEL = "build_stages_alert";
     static final String CHANNEL = "default"; // Preserve the existing build channel and user settings.
     private NotificationAccess() {}
 
@@ -36,7 +36,6 @@ final class NotificationAccess {
         manager.createNotificationChannel(channel);
         NotificationChannel stages = new NotificationChannel(STAGE_CHANNEL,
                 context.getString(R.string.notification_stage_channel), NotificationManager.IMPORTANCE_HIGH);
-        stages.setSound(null, null);
         stages.enableVibration(false);
         stages.setLockscreenVisibility(android.app.Notification.VISIBILITY_PRIVATE);
         manager.createNotificationChannel(stages);

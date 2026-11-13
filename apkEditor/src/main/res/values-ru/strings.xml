@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="notification_stage_channel">Этапы сборки (без звука)</string>
+    <string name="build_log_expand">Развернуть лог сборки</string>
+    <string name="build_log_collapse">Свернуть лог сборки</string>
+    <string name="file_browser_no_results">В этой папке ничего не найдено</string>
+    <string name="notification_stage_channel">Уведомления об этапах сборки</string>
     <string name="notification_build_channel">Ход сборки</string>
     <string name="notification_settings_title">Уведомления</string>
     <string name="notification_settings_summary">Открыть системные настройки уведомлений</string>

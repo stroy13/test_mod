@@ -166,6 +166,15 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
                 return true;
             }
         });
+        EditText search = findViewById(R.id.keyword_edit);
+        search.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (foderWrapper != null) foderWrapper.getAdapter().setFilter(s.toString());
+            }
+            public void afterTextChanged(android.text.Editable s) { }
+        });
+        this.foderWrapper.getAdapter().setFilter(search.getText().toString());
         Button searchBtn = (Button) findViewById(R.id.search_button);
         searchBtn.setOnClickListener(this);
     }
@@ -181,7 +190,7 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
             });
             listStatus.setVisibility(View.VISIBLE);
         } else if (foderWrapper.getAdapter().isDirectoryEmpty()) {
-            listStatus.setText(R.string.file_browser_empty);
+            listStatus.setText(foderWrapper.getAdapter().hasFilter() ? R.string.file_browser_no_results : R.string.file_browser_empty);
             listStatus.setOnClickListener(null);
             listStatus.setVisibility(View.VISIBLE);
         } else {
@@ -322,9 +331,24 @@ public class FileListActivity extends CustomizedLangActivity implements IListEve
     }
 
     public void dirChanged(String newDir) {
+        EditText search = findViewById(R.id.keyword_edit);
+        if (search != null && search.length() > 0) search.setText("");
         if (this.pathTV != null) {
             this.pathTV.setText(newDir);
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (foderWrapper != null) {
+            String current = foderWrapper.getAdapter().getData(null);
+            File parent = new File(current).getParentFile();
+            if (parent != null) {
+                foderWrapper.openDirectory(parent.getPath());
+                return;
+            }
+        }
+        super.onBackPressed();
     }
 
     public void fileRenamed(String dirPath, String oldName, String newName) {

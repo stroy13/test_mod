@@ -58,6 +58,18 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
     public static final String PRIMARY_NOTIF_CHANNEL = "default";
     public static final int SUCCEED = 10005;
     private Button bgButton;
+    private android.widget.ListView buildLogList;
+    private android.widget.ArrayAdapter<String> buildLogAdapter;
+    private Button buildLogToggle;
+    private boolean logExpanded = true;
+    private File buildLogFile;
+    private long buildLogStart;
+    private int logGeneration;
+    private com.gmail.heagoo.apkeditor.util.BuildLogTail logTail = new com.gmail.heagoo.apkeditor.util.BuildLogTail();
+    private final java.util.concurrent.ExecutorService logReader = java.util.concurrent.Executors.newSingleThreadExecutor();
+    private final android.os.Handler logHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private boolean logReadInFlight;
+    private final Runnable pollLog = this::pollBuildLog;
     private ApkComposeService.ComposeServiceBinder binder;
     private boolean codeModified;
     private LinearLayout composedLayout;
@@ -106,6 +118,8 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
             Map<String, Object> keyValues = ApkComposeActivity.this.binder.getValues();
             ApkComposeActivity.this.srcApkPath = (String) keyValues.get("srcApkPath");
             ApkComposeActivity.this.targetApkPath = (String) keyValues.get("targetApkPath");
+            Long logStart = (Long) keyValues.get("logBuildStartedAt");
+            ApkComposeActivity.this.startBuildLog(logStart == null ? 0 : logStart);
             ApkComposeActivity.this.decodeRootPath = (String) keyValues.get("decodeRootPath");
             ApkComposeActivity.this.codeModified = ((Boolean) keyValues.get("codeModified")).booleanValue();
             ApkComposeActivity.this.signAPK = ((Boolean) keyValues.get("signAPK")).booleanValue();
@@ -130,6 +144,8 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         }
         setContentView(R.layout.activity_apkcompose);
         initView();
+        if (savedInstanceState != null) logExpanded = savedInstanceState.getBoolean("build_log_expanded", true);
+        updateLogVisibility();
         bind2Service();
         this.startTime = System.currentTimeMillis();
     }
@@ -156,10 +172,14 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
 
     public void onPause() {
         this.isActivityVisible = false;
+        logHandler.removeCallbacks(pollLog);
         super.onPause();
     }
 
     protected void onDestroy() {
+        logGeneration++;
+        logHandler.removeCallbacksAndMessages(null);
+        logReader.shutdownNow();
         if (this.connection != null) {
             unbindService(this.connection);
             this.connection = null;
@@ -170,10 +190,29 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
     protected void onResume() {
         super.onResume();
         this.isActivityVisible = true;
+        scheduleLogRead();
+    }
+
+    @Override protected void onSaveInstanceState(Bundle out) {
+        out.putBoolean("build_log_expanded", logExpanded);
+        super.onSaveInstanceState(out);
     }
 
     private void initView() {
         this.msgHandler = new MyHandler(this);
+        buildLogList = findViewById(R.id.build_log_list);
+        buildLogToggle = findViewById(R.id.build_log_toggle);
+        buildLogAdapter = new android.widget.ArrayAdapter<String>(this, android.R.layout.simple_list_item_1) {
+            @Override public View getView(int position, View convertView, android.view.ViewGroup parent) {
+                TextView text = (TextView) super.getView(position, convertView, parent);
+                text.setTextSize(11); text.setTypeface(android.graphics.Typeface.MONOSPACE);
+                text.setTextColor(progressLogColor());
+                text.setPadding(12, 2, 12, 2);
+                return text;
+            }
+        };
+        buildLogList.setAdapter(buildLogAdapter);
+        buildLogToggle.setOnClickListener(v -> { logExpanded = !logExpanded; updateLogVisibility(); });
         this.composingLayout = (LinearLayout) findViewById(R.id.layout_apk_composing);
         this.composedLayout = (LinearLayout) findViewById(R.id.layout_apk_composed);
         this.progressTv = (TextView) findViewById(R.id.progress_tip);
@@ -200,6 +239,65 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
         this.buildWarningTv = (TextView) findViewById(R.id.tv_build_warning);
         findViewById(R.id.btn_copy_build_warning).setOnClickListener(this);
         findViewById(R.id.btn_dismiss_build_warning).setOnClickListener(this);
+    }
+
+    private int progressLogColor() {
+        android.util.TypedValue value = new android.util.TypedValue();
+        getTheme().resolveAttribute(R.attr.labText, value, true);
+        return value.data;
+    }
+
+    private void updateLogVisibility() {
+        buildLogList.setVisibility(logExpanded ? View.VISIBLE : View.GONE);
+        buildLogToggle.setText(logExpanded ? R.string.build_log_collapse : R.string.build_log_expand);
+    }
+
+    private void startBuildLog(long started) {
+        logGeneration++;
+        logHandler.removeCallbacks(pollLog);
+        logTail = new com.gmail.heagoo.apkeditor.util.BuildLogTail();
+        buildLogStart = started;
+        buildLogFile = targetApkPath == null ? null : new File(new File(targetApkPath).getAbsoluteFile().getParentFile(), "build-log.txt");
+        buildLogAdapter.clear();
+        buildLogAdapter.notifyDataSetChanged();
+        scheduleLogRead();
+    }
+
+    private void scheduleLogRead() {
+        if (isActivityVisible && buildLogFile != null && !logReadInFlight) {
+            logHandler.removeCallbacks(pollLog);
+            logHandler.postDelayed(pollLog, 500);
+        }
+    }
+
+    private void pollBuildLog() {
+        if (!isActivityVisible || buildLogFile == null || logReadInFlight) return;
+        logReadInFlight = true;
+        final int generation = logGeneration;
+        final File file = buildLogFile;
+        final long started = buildLogStart;
+        final com.gmail.heagoo.apkeditor.util.BuildLogTail reader = logTail;
+        logReader.execute(() -> {
+            java.util.List<String> lines = java.util.Collections.emptyList();
+            try {
+                if (file.isFile() && file.lastModified() >= started) lines = reader.read(file);
+            } catch (java.io.IOException ignored) { }
+            final java.util.List<String> batch = lines;
+            logHandler.post(() -> {
+                logReadInFlight = false;
+                if (generation == logGeneration && !isFinishing()) {
+                    boolean atBottom = buildLogAdapter.isEmpty() || buildLogList.getLastVisiblePosition() >= buildLogAdapter.getCount() - 2;
+                    buildLogAdapter.setNotifyOnChange(false);
+                    for (String line : batch) {
+                        if ("\u0000RESET".equals(line)) buildLogAdapter.clear();
+                        else buildLogAdapter.add(line);
+                    }
+                    if (!batch.isEmpty()) buildLogAdapter.notifyDataSetChanged();
+                    if (!batch.isEmpty() && atBottom && logExpanded) buildLogList.setSelection(buildLogAdapter.getCount() - 1);
+                }
+                scheduleLogRead();
+            });
+        });
     }
 
     public void setTaskStepInfo(ITaskCallback.TaskStepInfo stepInfo) {
@@ -539,6 +637,9 @@ public class ApkComposeActivity extends CustomizedLangActivity implements ITaskC
             this.composingLayout.setVisibility(0);
             this.composedLayout.setVisibility(8);
             this.binder.buildAgain();
+            Map<String, Object> values = this.binder.getValues();
+            Long started = (Long) values.get("logBuildStartedAt");
+            startBuildLog(started == null ? 0 : started);
         }
     }
 

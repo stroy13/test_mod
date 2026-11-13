@@ -53,6 +53,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
     private MyHandler handler = new MyHandler();
     private ComposeServiceBinder binder = new ComposeServiceBinder();
     private long lastUpdateTime = 0;
+    private long logBuildStartedAt;
     private final BuildStageNotifications stageNotifications = new BuildStageNotifications();
 
     @Override // android.app.Service
@@ -67,6 +68,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
             return 2;
         }
         resetStatus();
+        logBuildStartedAt = System.currentTimeMillis();
         synchronized (this.composeResult) {
             this.composeResult.started = true;
         }
@@ -232,7 +234,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
     }
 
     private void showStageNotification(final String description) {
-        // Each step gets one silent, high-importance notification. Progress within
+        // Each step gets one high-importance notification. Progress within
         // the same step only updates the foreground notification.
         handler.post(() -> {
             if (mNotificationManager == null) return;
@@ -401,6 +403,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
 
         public void buildAgain() {
             ApkComposeService.this.resetStatus();
+            ApkComposeService.this.logBuildStartedAt = System.currentTimeMillis();
             synchronized (ApkComposeService.this.composeResult) {
                 ApkComposeService.this.composeResult.started = true;
             }
@@ -428,6 +431,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
             Map<String, Object> ret = new HashMap<>();
             ret.put("srcApkPath", ApkComposeService.this.srcApkPath);
             ret.put("targetApkPath", ApkComposeService.this.targetApkPath);
+            ret.put("logBuildStartedAt", ApkComposeService.this.logBuildStartedAt);
             ret.put("decodeRootPath", ApkComposeService.this.decodeRootPath);
             boolean codeModified = (ApkComposeService.this.modifiedSmaliFolders == null || ApkComposeService.this.modifiedSmaliFolders.isEmpty()) ? false : true;
             ret.put("codeModified", Boolean.valueOf(codeModified));

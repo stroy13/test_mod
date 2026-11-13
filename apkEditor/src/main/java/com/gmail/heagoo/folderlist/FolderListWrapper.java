@@ -104,8 +104,7 @@ public class FolderListWrapper implements OnItemClickListener,
     @Override
     public boolean onItemLongClick(AdapterView<?> parent, View view,
                                    final int position, long id) {
-        // The first item is always the parent folder
-        if (position == 0)
+        if ("..".equals(adapter.getItemData(position).fileName))
             return true;
         parent.setOnCreateContextMenuListener(new OnCreateContextMenuListener() {
             public void onCreateContextMenu(ContextMenu menu, View v,
