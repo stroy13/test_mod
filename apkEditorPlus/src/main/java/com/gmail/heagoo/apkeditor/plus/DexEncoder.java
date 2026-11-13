@@ -58,26 +58,20 @@ public class DexEncoder {
 
             ExecutorService executor = Executors.newFixedThreadPool(options.jobs);
             try {
-            List<Future<Boolean>> tasks = Lists.newArrayList();
-
+            java.util.concurrent.CompletionService<Boolean> completed =
+                    new java.util.concurrent.ExecutorCompletionService<>(executor);
+            int totalTasks = filesToProcessSet.size();
             for (final File file : filesToProcessSet) {
-                tasks.add(executor.submit(() -> assembleSmaliFile(file, dexBuilder, options)));
+                completed.submit(() -> assembleSmaliFile(file, dexBuilder, options));
             }
-
-            int totalTasks = tasks.size();
             int finishedTasks = 0;
-            for (Future<Boolean> task : tasks) {
-                while (true) {
-                    try {
-                        if (!task.get()) {
-                            errors = true;
-                        }
-                        finishedTasks += 1;
-                        callback.updateAssembledFiles(finishedTasks, totalTasks);
-                    } catch (InterruptedException ex) {
-                        continue;
-                    }
-                    break;
+            while (finishedTasks < totalTasks) {
+                try {
+                    if (!completed.take().get()) errors = true;
+                    finishedTasks++;
+                    callback.updateAssembledFiles(finishedTasks, totalTasks);
+                } catch (InterruptedException ex) {
+                    continue;
                 }
             }
 

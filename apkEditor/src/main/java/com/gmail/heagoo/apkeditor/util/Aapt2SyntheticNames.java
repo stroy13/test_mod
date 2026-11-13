@@ -26,25 +26,22 @@ final class Aapt2SyntheticNames {
             if (TYPE.matcher(tag).find() && n.find()) names.add(n.group(1));
         }
         if (names.isEmpty()) return Collections.emptyMap();
-        // Reserve aliases against all source text and paths, not just public entries.
-        List<String> contents = new ArrayList<>();
+        // Scan every source string once for all possible aliases. This preserves
+        // the conservative substring collision rule without rescanning tens of
+        // megabytes once for each of hundreds of names.
+        Aapt2AliasScanner scanner = new Aapt2AliasScanner(names);
         try (java.util.stream.Stream<Path> paths = Files.walk(res)) {
             for (Path p : (Iterable<Path>) paths::iterator) if (Files.isRegularFile(p)) {
-                contents.add(p.toString());
+                scanner.scan(p.toString());
                 if (p.getFileName().toString().endsWith(".xml")) {
                     if (Files.size(p) > 32L * 1024 * 1024) throw new IOException("XML too large for safe resource name adaptation: " + p);
-                    contents.add(new String(Files.readAllBytes(p), StandardCharsets.UTF_8));
+                    scanner.scan(new String(Files.readAllBytes(p), StandardCharsets.UTF_8));
                 }
             }
         }
         Map<String,String> aliases = new LinkedHashMap<>();
         for (String name : names) {
-            String alias = null;
-            for (char c = 'a'; c <= 'z'; c++) {
-                String candidate = c + name.substring(1); boolean used = aliases.containsValue(candidate);
-                for (String text : contents) if (text.contains(candidate)) { used = true; break; }
-                if (!used) { alias = candidate; break; }
-            }
+            String alias = scanner.choose(name);
             if (alias == null) throw new IOException("No collision-free AAPT2 alias for " + name);
             aliases.put(name, alias);
         }

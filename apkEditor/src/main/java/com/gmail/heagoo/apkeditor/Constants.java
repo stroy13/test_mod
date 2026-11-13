@@ -10,6 +10,7 @@ class Constants {
 
     public interface NOTIFICATION_ID {
         public static final int FOREGROUND_SERVICE = 8001;
+        public static final int BUILD_STAGE = 8002;
     }
 
     Constants() {

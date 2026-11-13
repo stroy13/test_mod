@@ -31,6 +31,7 @@ public final class BuildLog implements Closeable, ApkBuildPipeline.Logger {
     private final SimpleDateFormat clock = new SimpleDateFormat("HH:mm:ss.SSS", Locale.US);
     private boolean closed;
     private int lineCount;
+    private long lastFlushAt;
 
     public BuildLog(File file) throws IOException {
         this.file = file.getAbsoluteFile();
@@ -110,8 +111,10 @@ public final class BuildLog implements Closeable, ApkBuildPipeline.Logger {
         writer.print("ms] ");
         writer.println(message == null ? "null" : message);
         // Periodic flush so a sudden process death still leaves a useful tail on disk.
-        if (++lineCount % 64 == 0) {
+        long now = System.currentTimeMillis();
+        if (++lineCount % 64 == 0 || now - lastFlushAt >= 500) {
             writer.flush();
+            lastFlushAt = now;
         }
     }
 

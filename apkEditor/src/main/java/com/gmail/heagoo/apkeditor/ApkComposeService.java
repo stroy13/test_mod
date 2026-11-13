@@ -53,6 +53,8 @@ public class ApkComposeService extends Service implements ITaskCallback {
     private MyHandler handler = new MyHandler();
     private ComposeServiceBinder binder = new ComposeServiceBinder();
     private long lastUpdateTime = 0;
+    private long logBuildStartedAt;
+    private final BuildStageNotifications stageNotifications = new BuildStageNotifications();
 
     @Override // android.app.Service
     public void onCreate() {
@@ -66,6 +68,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
             return 2;
         }
         resetStatus();
+        logBuildStartedAt = System.currentTimeMillis();
         synchronized (this.composeResult) {
             this.composeResult.started = true;
         }
@@ -142,6 +145,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
     }
 
     public void resetStatus() {
+        stageNotifications.reset();
         if (this.composeThread != null && this.composeThread.isAlive()) {
             this.composeThread.stopRunning();
         }
@@ -226,6 +230,31 @@ public class ApkComposeService extends Service implements ITaskCallback {
         String desc = String.format(getResources().getString(R.string.step) + " %d/%d: %s", Integer.valueOf(stepInfo.stepIndex), Integer.valueOf(stepInfo.stepTotal), stepInfo.stepDescription);
         boolean forceShow = stepInfo.stepIndex == stepInfo.stepTotal;
         updateNotification(forceShow, getString(R.string.build_ongoing), desc);
+        if (stageNotifications.shouldNotify(stepInfo.stepIndex)) showStageNotification(desc);
+    }
+
+    private void showStageNotification(final String description) {
+        // Each step gets one high-importance notification. Progress within
+        // the same step only updates the foreground notification.
+        handler.post(() -> {
+            if (mNotificationManager == null) return;
+            try {
+                Intent intent = new Intent(this, ApkComposeActivity.class);
+                intent.setAction(Constants.ACTION.MAIN_ACTION);
+                intent.setFlags(131072);
+                PendingIntent pending = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+                NotificationCompat.Builder popup = new NotificationCompat.Builder(this, NotificationAccess.STAGE_CHANNEL)
+                        .setSmallIcon(R.drawable.ic_compose_notification)
+                        .setContentTitle(getString(R.string.build_ongoing))
+                        .setContentText(description).setStyle(new NotificationCompat.BigTextStyle().bigText(description))
+                        .setContentIntent(pending).setAutoCancel(true).setTimeoutAfter(8000)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH).setOnlyAlertOnce(false);
+                mNotificationManager.cancel(Constants.NOTIFICATION_ID.BUILD_STAGE);
+                mNotificationManager.notify(Constants.NOTIFICATION_ID.BUILD_STAGE, popup.build());
+            } catch (RuntimeException error) {
+                Log.e("ApkComposeService", "Stage notification failed", error);
+            }
+        });
     }
 
     public void setTaskProgress(float progress) {
@@ -374,6 +403,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
 
         public void buildAgain() {
             ApkComposeService.this.resetStatus();
+            ApkComposeService.this.logBuildStartedAt = System.currentTimeMillis();
             synchronized (ApkComposeService.this.composeResult) {
                 ApkComposeService.this.composeResult.started = true;
             }
@@ -401,6 +431,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
             Map<String, Object> ret = new HashMap<>();
             ret.put("srcApkPath", ApkComposeService.this.srcApkPath);
             ret.put("targetApkPath", ApkComposeService.this.targetApkPath);
+            ret.put("logBuildStartedAt", ApkComposeService.this.logBuildStartedAt);
             ret.put("decodeRootPath", ApkComposeService.this.decodeRootPath);
             boolean codeModified = (ApkComposeService.this.modifiedSmaliFolders == null || ApkComposeService.this.modifiedSmaliFolders.isEmpty()) ? false : true;
             ret.put("codeModified", Boolean.valueOf(codeModified));
@@ -410,6 +441,7 @@ public class ApkComposeService extends Service implements ITaskCallback {
 
         public void hideNotification() {
             if (ApkComposeService.this.mNotificationManager != null) {
+                ApkComposeService.this.mNotificationManager.cancel(Constants.NOTIFICATION_ID.BUILD_STAGE);
                 ApkComposeService.this.mNotificationManager.cancel(Constants.NOTIFICATION_ID.FOREGROUND_SERVICE);
                 if (ApkComposeService.this.foregroundStarted) {
                     ApkComposeService.this.stopForeground(true);

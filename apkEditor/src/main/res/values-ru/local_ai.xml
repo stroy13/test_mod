@@ -23,6 +23,7 @@
     <string name="ai_existing_language">Этот язык уже существует. Чтобы не перезаписать имеющийся перевод, полный перевод можно сохранить только как новый язык. Выберите другой язык назначения.</string>
     <string name="ai_no_source">Не найдены строки выбранного исходного языка или модель.</string>
     <string name="ai_default_source">Язык по умолчанию (основные строки)</string>
+    <string name="ai_source_picker_title">Выберите исходный язык</string>
     <string name="ai_target_picker_title">Исходный язык: %1$s\nВыберите язык, НА который перевести</string>
     <string name="ai_target_language">На язык</string>
     <string name="ai_mode_title">Перевод: %1$s → %2$s</string>

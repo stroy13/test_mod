@@ -3171,18 +3171,40 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                     .setNegativeButton(android.R.string.cancel, null).show();
             return;
         }
-        LanguageSelectDialog dlg = new LanguageSelectDialog(this, PossibleLanguages.languages, PossibleLanguages.codes);
-        if (useLocalTranslation) {
-            if (curConfig == null || allStringValues == null || !allStringValues.containsKey(curConfig)) {
-                Toast.makeText(this, R.string.ai_no_source, Toast.LENGTH_LONG).show();
-                return;
-            }
-            localTranslationSource = curConfig;
-            dlg.setTranslationSource(localSourceName(localTranslationSource));
-        } else {
+        if (!useLocalTranslation) {
+            LanguageSelectDialog dlg = new LanguageSelectDialog(this, PossibleLanguages.languages, PossibleLanguages.codes);
             dlg.setTitle(R.string.select_target_lang);
+            dlg.show();
+            return;
         }
-        dlg.show();
+        if (allStringValues == null || allStringValues.isEmpty()) {
+            Toast.makeText(this, R.string.ai_no_source, Toast.LENGTH_LONG).show();
+            return;
+        }
+        final List<String> configs = new ArrayList<>();
+        for (Map.Entry<String, ArrayList<StringItem>> entry : allStringValues.entrySet()) {
+            if (entry.getKey() != null && entry.getValue() != null && !entry.getValue().isEmpty()) configs.add(entry.getKey());
+        }
+        if (configs.isEmpty()) {
+            Toast.makeText(this, R.string.ai_no_source, Toast.LENGTH_LONG).show();
+            return;
+        }
+        configs.sort(Comparator.comparing(ResourceLocales::sortKey));
+        String[] names = new String[configs.size()];
+        int checked = -1;
+        for (int i = 0; i < configs.size(); i++) {
+            String config = configs.get(i);
+            names[i] = localSourceName(config) + "\n" + ResourceLocales.folder(config);
+            if (config.equals(curConfig)) checked = i;
+        }
+        new AlertDialog.Builder(this).setTitle(R.string.ai_source_picker_title)
+                .setSingleChoiceItems(names, checked, (dialog, which) -> {
+                    localTranslationSource = configs.get(which);
+                    dialog.dismiss();
+                    LanguageSelectDialog target = new LanguageSelectDialog(this, PossibleLanguages.languages, PossibleLanguages.codes);
+                    target.setTranslationSource(localSourceName(localTranslationSource));
+                    target.show();
+                }).setNegativeButton(android.R.string.cancel, null).show();
     }
 
     private String localSourceName(String qualifier) {
@@ -3218,6 +3240,7 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
         ArrayList<StringItem> snapshot = new ArrayList<>();
         for (StringItem item : source) {
             if (sample && (item.styledValue != null || item.value == null || item.value.isEmpty()
+                    || com.gmail.heagoo.apkeditor.translate.TranslationSource.isInvariant(item.value)
                     || item.value.startsWith("@") || item.value.startsWith("?") || item.value.length() > 300
                     || item.value.codePoints().anyMatch(c -> c > 0xffff))) continue;
             snapshot.add(new StringItem(item.name, item.value, item.styledValue));
@@ -3285,7 +3308,8 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                     if (cancelled.get()) break;
                     currentName.set(item.name);
                     if (item.value == null) throw new java.io.IOException("Empty resource: " + item.name);
-                    if (item.styledValue != null || item.value.isEmpty() || item.value.startsWith("@") || item.value.startsWith("?")) {
+                    if (item.styledValue != null || item.value.isEmpty() || item.value.startsWith("@") || item.value.startsWith("?")
+                            || com.gmail.heagoo.apkeditor.translate.TranslationSource.isInvariant(item.value)) {
                         trace.stringStart(item.value.length(), 0);
                         result.add(item);
                     } else {
