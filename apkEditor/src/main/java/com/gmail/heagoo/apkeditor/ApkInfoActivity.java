@@ -3297,6 +3297,8 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
             // placeholders and needs to be translated only once per session.
             java.util.Map<String, String> translationCache = new java.util.HashMap<>();
             java.util.Map<String, String> translatedValues = new java.util.LinkedHashMap<>();
+            ArrayList<String> rejectedNames = new ArrayList<>();
+            java.util.Map<String, com.gmail.heagoo.apkeditor.translate.TranslationRejectedException.Reason> rejectedCache = new java.util.HashMap<>();
             String failure = null;
             try (com.gmail.heagoo.apkeditor.translate.LocalInference engine = new com.gmail.heagoo.apkeditor.translate.LocalInference(model, trace, cancelled)) {
                 localEngine.set(engine);
@@ -3310,16 +3312,29 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                         trace.stringStart(item.value.length(), 0);
                         result.add(item);
                     } else {
-                        String translated = translationCache.get(item.value);
-                        if (translated == null) {
-                            translated = engine.translate(item.value, targetLanguage);
-                            translationCache.put(item.value, translated);
-                        } else {
-                            trace.stringStart(item.value.length(), 0);
-                            trace.translationCacheHit();
+                        try {
+                            com.gmail.heagoo.apkeditor.translate.TranslationRejectedException.Reason prior = rejectedCache.get(item.value);
+                            if (prior != null) {
+                                trace.stringStart(item.value.length(), 0);
+                                throw new com.gmail.heagoo.apkeditor.translate.TranslationRejectedException(prior, "Previously rejected");
+                            }
+                            String translated = translationCache.get(item.value);
+                            if (translated == null) {
+                                translated = engine.translate(item.value, targetLanguage);
+                                translationCache.put(item.value, translated);
+                            } else {
+                                trace.stringStart(item.value.length(), 0);
+                                trace.translationCacheHit();
+                            }
+                            translatedValues.put(item.name, translated);
+                            result.add(new StringItem(item.name, translated));
+                        } catch (com.gmail.heagoo.apkeditor.translate.TranslationRejectedException rejected) {
+                            if (cancelled.get()) break;
+                            rejectedCache.put(item.value, rejected.reason());
+                            rejectedNames.add(item.name);
+                            trace.stringRejected(rejected.reason());
+                            result.add(item);
                         }
-                        translatedValues.put(item.name, translated);
-                        result.add(new StringItem(item.name, translated));
                     }
                     completed.incrementAndGet();
                     trace.stringDone();
@@ -3344,14 +3359,21 @@ public class ApkInfoActivity extends CustomizedLangActivity implements AdapterVi
                         .setPositiveButton(android.R.string.ok, null).show(); return; }
                 StringBuilder preview = new StringBuilder();
                 for (int i = 0; i < Math.min(10, result.size()); i++) preview.append(result.get(i).name).append(": ").append(result.get(i).value).append("\n\n");
+                StringBuilder rejectedNotice = new StringBuilder();
+                if (!rejectedNames.isEmpty()) {
+                    rejectedNotice.append(getString(R.string.ai_rejected_note, rejectedNames.size())).append("\n");
+                    for (int i = 0; i < Math.min(20, rejectedNames.size()); i++) rejectedNotice.append(rejectedNames.get(i)).append("\n");
+                    if (rejectedNames.size() > 20) rejectedNotice.append("…\n");
+                    rejectedNotice.append("\n");
+                }
                 if (sample) {
                     new AlertDialog.Builder(this).setTitle(R.string.ai_sample_title)
-                            .setMessage(getString(R.string.ai_sample_note) + "\n\n" + preview)
+                            .setMessage(getString(R.string.ai_sample_note) + "\n\n" + rejectedNotice + preview)
                             .setNeutralButton(R.string.ai_copy_log, (d, w) -> diagnostics.copy(this))
                             .setPositiveButton(android.R.string.ok, null).show();
                     return;
                 }
-                new AlertDialog.Builder(this).setTitle(R.string.ai_preview).setMessage(getString(R.string.ai_preview_note, result.size()) + "\n\n" + preview)
+                new AlertDialog.Builder(this).setTitle(R.string.ai_preview).setMessage(getString(R.string.ai_preview_note, result.size()) + "\n\n" + rejectedNotice + preview)
                         .setNegativeButton(android.R.string.cancel, null).setPositiveButton(R.string.ai_save, (d, w) -> {
                             File targetDir = new File(decodeRootPath, "res/values" + qualifier);
                             if (allStringValues.containsKey(qualifier) || targetDir.exists()) {

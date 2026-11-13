@@ -4,7 +4,7 @@
 
 Полноценный форк Android-приложения **APK Editor Plus** (`ru.apkeditor.plus`)
 с собственными исправлениями и развитием кодовой базы. Актуальная версия —
-**241** / **1.10.0.241**, история изменений — в [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
+**242** / **1.10.0.242**, история изменений — в [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
 Проект собирается штатным Gradle: `:apkEditorPlus:assembleDebug` →
 `apkEditorPlus/build/outputs/apk/debug/apkEditorPlus-debug.apk`.
@@ -15,7 +15,7 @@
 | Параметр | Значение |
 |---|---|
 | Package / applicationId | `ru.apkeditor.plus` |
-| versionCode / versionName | `241` / `1.10.0.241` (см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
+| versionCode / versionName | `242` / `1.10.0.242` (см. [`docs/CHANGELOG.md`](docs/CHANGELOG.md)) |
 | minSdk / targetSdk / compileSdk | 26 / 37 / 37 |
 | Gradle / AGP | 9.8.2 / 9.5.1 |
 | JDK | 17 |

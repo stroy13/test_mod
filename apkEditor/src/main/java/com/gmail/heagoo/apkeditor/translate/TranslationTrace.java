@@ -14,6 +14,8 @@ public final class TranslationTrace {
     private Stage stage = Stage.START;
     private long stageTime = start;
     private int completed;
+    private int rejected;
+    private final java.util.EnumMap<TranslationRejectedException.Reason, Integer> rejectionCounts = new java.util.EnumMap<>(TranslationRejectedException.Reason.class);
     private int generated;
     private int promptTokens;
     private int templateStatus;
@@ -117,6 +119,12 @@ public final class TranslationTrace {
     }
     public synchronized void cancelRequested() { add("cancel_requested (waiting for current operation)"); }
     public synchronized void translationCacheHit() { add("translation_cache_hit"); }
+    public synchronized void stringRejected(TranslationRejectedException.Reason reason) {
+        rejected++;
+        Integer count = rejectionCounts.get(reason);
+        rejectionCounts.put(reason, count == null ? 1 : count + 1);
+        add("string_rejected reason=" + reason.name());
+    }
     public synchronized void stringDone() { completed++; stage(Stage.STRING_DONE); }
     private void add(String text) {
         if (events.size() == 40) events.removeFirst();
@@ -128,7 +136,7 @@ public final class TranslationTrace {
         out.append("mode=").append(sample ? "sample" : "full").append(" target=").append(language)
                 .append(" model_bytes=").append(modelBytes).append(" threads=").append(threads).append('\n');
         out.append("completed=").append(completed).append('/').append(total)
-                .append(" stage=").append(stage).append(" stage_elapsed_ms=")
+                .append(" rejected=").append(rejected).append(" stage=").append(stage).append(" stage_elapsed_ms=")
                 .append(TimeUnit.NANOSECONDS.toMillis(now - stageTime))
                 .append(" total_elapsed_ms=").append(TimeUnit.NANOSECONDS.toMillis(now - start)).append('\n');
         out.append("prompt_tokens=").append(promptTokens).append(" generated_tokens=").append(generated)
@@ -141,6 +149,8 @@ public final class TranslationTrace {
                 .append(decodedTokens == 0 ? -1 : totalDecodeMs / decodedTokens)
                 .append(" decode_last_ms=").append(lastDecodeMs).append(" decode_max_ms=").append(maxDecodeMs).append('\n');
         out.append("selected_generation_threads=").append(selectedThreads == 0 ? "testing" : selectedThreads).append('\n');
+        for (java.util.Map.Entry<TranslationRejectedException.Reason, Integer> entry : rejectionCounts.entrySet())
+            out.append("rejected_").append(entry.getKey().name()).append('=').append(entry.getValue()).append('\n');
         out.append("engine_backend=").append(backend).append('\n');
         out.append("engine_features=").append(engineInfo).append('\n');
         for (String event : events) out.append(event).append('\n');

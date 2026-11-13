@@ -49,4 +49,5 @@
     <string name="ai_replace_confirm">Replace matching translations? Other strings in this language will be kept. Review the result before building.</string>
     <string name="ai_replace">Replace</string>
     <string name="ai_pending_target">Save or resolve pending target-language edits before replacing translations.</string>
+    <string name="ai_rejected_note">%1$d strings could not be safely translated. Existing translations are kept; new languages retain the source text. Resource names (first 20):</string>
 </resources>

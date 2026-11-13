@@ -56,21 +56,31 @@ public final class LocalInference implements AutoCloseable {
     }
     public String translate(String value, String language) throws Exception {
         if (handle == 0) throw new IOException("Model is closed");
-        if (value.length() > 1000) throw new IOException("String is too long for local translation");
+        if (value.length() > 1000) {
+            trace.stringStart(value.length(), 0);
+            throw new TranslationRejectedException(TranslationRejectedException.Reason.SOURCE_TOO_LONG, "String is too long for local translation");
+        }
         String prompt = "Translate the following application UI text into " + language
                 + ". Output only the translation. Preserve all placeholders, escapes and tags exactly.\n"
                 + value + "\n/no_think";
         int max = TranslationBudget.maxTokens(value);
         trace.stringStart(value.length(), max);
-        byte[] result = InstrumentedLlama.complete(handle, prompt.getBytes(StandardCharsets.UTF_8),
-                "You are a precise and natural software localization translator.".getBytes(StandardCharsets.UTF_8),
-                max, trace::nativeProgress);
+        byte[] result;
+        try {
+            result = InstrumentedLlama.complete(handle, prompt.getBytes(StandardCharsets.UTF_8),
+                    "You are a precise and natural software localization translator.".getBytes(StandardCharsets.UTF_8),
+                    max, trace::nativeProgress);
+        } catch (IOException e) {
+            if ("Translation incomplete (token limit)".equals(e.getMessage()))
+                throw new TranslationRejectedException(TranslationRejectedException.Reason.TOKEN_LIMIT, e.getMessage());
+            throw e;
+        }
         trace.stage(TranslationTrace.Stage.VALIDATE);
         String text;
         try {
             text = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(result)).toString().trim();
-        } catch (CharacterCodingException e) { throw new IOException("Invalid UTF-8 from model", e); }
+        } catch (CharacterCodingException e) { throw new TranslationRejectedException(TranslationRejectedException.Reason.INVALID_UTF8, "Invalid UTF-8 from model"); }
         return TranslationOutput.clean(value, text);
     }
     @Override public void close() {
