@@ -19,6 +19,7 @@ final class Aapt2SyntheticNames {
         if (!Files.isRegularFile(publicXml)) return Collections.emptyMap();
         String xml = new String(Files.readAllBytes(publicXml), StandardCharsets.UTF_8);
         if (xml.contains("<!DOCTYPE") || xml.contains("<!ENTITY")) throw new IOException("AAPT2 cannot safely process a public.xml with a DTD");
+        if (xml.indexOf('$') < 0) return Collections.emptyMap();
         Matcher tags = PUBLIC.matcher(xml); Set<String> names = new TreeSet<>();
         while (tags.find()) {
             String tag = tags.group(); Matcher n = NAME.matcher(tag);
@@ -52,6 +53,9 @@ final class Aapt2SyntheticNames {
 
     static String rewriteXml(String xml, Map<String,String> aliases) throws IOException {
         if (xml.contains("<!DOCTYPE") || xml.contains("<!ENTITY")) throw new IOException("Cannot safely rewrite XML containing a DTD");
+        // Most XML files have no synthetic names. Avoid tokenizing every element,
+        // especially multi-megabyte values files on large applications.
+        if (xml.indexOf('$') < 0 || aliases.isEmpty()) return xml;
         // Only resource references and name attributes, never ordinary text or CDATA/comments.
         Pattern tokens = Pattern.compile("<!--.*?-->|<!\\[CDATA\\[.*?]]>|<\\?.*?\\?>|<[^>]+>|[^<]+", Pattern.DOTALL);
         Pattern ref = Pattern.compile("([@?](?:[+*])?(?:[a-zA-Z0-9_.]+:)?drawable/)(\\$[a-z0-9_]+)(?![a-z0-9_])");
@@ -59,7 +63,7 @@ final class Aapt2SyntheticNames {
         Matcher parts = tokens.matcher(xml); StringBuffer out = new StringBuffer();
         while (parts.find()) {
             String part = parts.group();
-            if (!part.startsWith("<!--") && !part.startsWith("<![CDATA[") && !part.startsWith("<?")) {
+            if (part.indexOf('$') >= 0 && !part.startsWith("<!--") && !part.startsWith("<![CDATA[") && !part.startsWith("<?")) {
                 part = replace(part, ref, aliases);
                 if (part.startsWith("<")) part = replace(part, attr, aliases);
             }

@@ -34,14 +34,20 @@ public final class Aapt2Pipeline {
             Path original = new File(resDir).toPath().toAbsolutePath();
             long repairStart = System.nanoTime();
             Map<Path, byte[]> repairs = Aapt2DummyResources.findRepairs(original, logger);
+            long aliasesStart = System.nanoTime();
             Map<String, String> aliases = Aapt2SyntheticNames.find(original);
+            if (logger != null) logger.log("AAPT2 synthetic name scan: " + elapsed(aliasesStart) + " ms; aliases=" + aliases.size());
             String compileDir = resDir;
             String linkManifest = manifest;
             if (!repairs.isEmpty() || !aliases.isEmpty()) {
                 staged = Files.createTempDirectory(out.getAbsoluteFile().getParentFile().toPath(), "aapt2-res-");
+                long copyStart = System.nanoTime();
                 Aapt2DummyResources.stage(original, staged, repairs);
+                if (logger != null) logger.log("AAPT2 temporary resource copy: " + elapsed(copyStart) + " ms");
                 if (!aliases.isEmpty()) {
+                    long rewriteStart = System.nanoTime();
                     Aapt2SyntheticNames.rewriteStage(staged, aliases);
+                    if (logger != null) logger.log("AAPT2 synthetic name rewrite: " + elapsed(rewriteStart) + " ms");
                     String originalManifest = new String(Files.readAllBytes(new File(manifest).toPath()), java.nio.charset.StandardCharsets.UTF_8);
                     String rewrittenManifest = Aapt2SyntheticNames.rewriteXml(originalManifest, aliases);
                     if (!originalManifest.equals(rewrittenManifest)) {
@@ -77,8 +83,9 @@ public final class Aapt2Pipeline {
                 }
             }
             if (!aliases.isEmpty()) {
+                long restoreStart = System.nanoTime();
                 Aapt2SyntheticNames.restoreApk(out, aliases);
-                if (logger != null) logger.log("AAPT2 synthetic drawable names restored in resource table");
+                if (logger != null) logger.log("AAPT2 synthetic drawable names restored in resource table: " + elapsed(restoreStart) + " ms");
             }
             if (!out.isFile() || out.length() == 0) {
                 throw new IOException("AAPT2 produced no output");

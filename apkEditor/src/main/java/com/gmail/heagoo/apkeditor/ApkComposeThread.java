@@ -306,9 +306,14 @@ public class ApkComposeThread extends ComposeThread implements ISmaliAssembleCal
                 }
                 this.buildTrace.begin("prepare and compile resources");
                 setNextStep(this.ctx.getString(R.string.compose));
-                if (!prepare() || !composeResource()) {
-                    return;
-                }
+                long prepareStarted = System.nanoTime();
+                boolean prepared = prepare();
+                if (this.buildTrace.logger() != null) this.buildTrace.logger().log("Resource tool preparation: " + (System.nanoTime() - prepareStarted) / 1000000L + " ms");
+                if (!prepared) return;
+                long compileStarted = System.nanoTime();
+                boolean compiled = composeResource();
+                if (this.buildTrace.logger() != null) this.buildTrace.logger().log("Resource compose total: " + (System.nanoTime() - compileStarted) / 1000000L + " ms");
+                if (!compiled) return;
                 if (isStopped()) {
                     return;
                 }

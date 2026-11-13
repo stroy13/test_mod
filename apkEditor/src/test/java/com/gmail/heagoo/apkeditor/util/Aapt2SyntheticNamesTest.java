@@ -27,6 +27,18 @@ public class Aapt2SyntheticNamesTest {
         String text = "<!-- @drawable/$avd_hide__0 --><![CDATA[@drawable/$avd_hide__0]]><item name=\"$avd_hide__0\">@drawable/$avd_hide__0</item>";
         assertEquals("<!-- @drawable/$avd_hide__0 --><![CDATA[@drawable/$avd_hide__0]]><item name=\"bavd_hide__0\">@drawable/bavd_hide__0</item>", Aapt2SyntheticNames.rewriteXml(text,map));
     }
+    @Test public void largeUnrelatedXmlIsNotRewritten() throws Exception {
+        StringBuilder xml = new StringBuilder("<resources>");
+        for (int i = 0; i < 100000; i++) xml.append("<string name=\"s").append(i).append("\">text</string>");
+        xml.append("</resources>");
+        String input = xml.toString();
+        Map<String,String> aliases = Collections.singletonMap("$test", "atest");
+        assertSame(input, Aapt2SyntheticNames.rewriteXml(input, aliases));
+        String mixed = "<resources><string name=\"price\">$100</string><item name=\"$test\" type=\"drawable\">@drawable/$test</item></resources>";
+        assertEquals("<resources><string name=\"price\">$100</string><item name=\"atest\" type=\"drawable\">@drawable/atest</item></resources>", Aapt2SyntheticNames.rewriteXml(mixed, aliases));
+        try { Aapt2SyntheticNames.rewriteXml("<!DOCTYPE resources><resources/>", aliases); fail("DTD must be rejected"); }
+        catch (IOException expected) { assertTrue(expected.getMessage().contains("DTD")); }
+    }
     @Test public void actualAapt2RestoresNamesAndIds() throws Exception {
         String sdk=System.getenv("ANDROID_SDK_ROOT"); if (sdk==null) sdk=System.getenv("ANDROID_HOME");
         if (System.getenv("CI")!=null) assertNotNull(sdk); Assume.assumeNotNull(sdk);
